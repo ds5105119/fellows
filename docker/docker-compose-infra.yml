@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:alpine
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_DB: ${POSTGRES__DB}
+      POSTGRES_USER: ${POSTGRES__USER}
+      POSTGRES_PASSWORD: ${POSTGRES__PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES__USER} -d ${POSTGRES__DB}" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    ports:
+      - "${POSTGRES__PORT}:${POSTGRES__PORT}"
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  valkey:
+    image: valkey/valkey:alpine
+    container_name: tangerine_api_valkey
+    restart: always
+    command: >
+      valkey-server
+      --port ${REDIS__PORT}
+      --maxmemory 200mb
+      --maxmemory-policy allkeys-lfu
+      --maxclients 50000
+    ports:
+      - "${REDIS__PORT}:${REDIS__PORT}"
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO__USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO__PASSWORD}
+    ports:
+      - "${MONGO__PORT}:${MONGO__PORT}"

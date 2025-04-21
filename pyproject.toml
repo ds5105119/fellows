@@ -1,0 +1,49 @@
+[tool.poetry]
+name = "AllZip"
+version = "0.1.0"
+description = ""
+authors = ["IIH <ds5105119@gmail.com>"]
+readme = "README.md"
+packages = [
+    { include = "src" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+
+fastapi = {extras = ["standard"], version = "^0.115.2"}
+pydantic-settings = "^2.5.2"
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
+
+webtool = "^0.1.7"
+alembic = "^1.14.0"
+asyncpg = "^0.30.0"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
+
+numpy = "^2.2.1"
+polars = {extras = ["pyarrow", "pandas"], version = "^1.18.0" }
+psycopg = {extras = ["binary"], version = "^3.2.3"}
+nats-py = "^2.9.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "*"
+pytest-asyncio = "^0.24.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+lint.select = ["B", "C4", "E", "F", "N", "I", "W", "UP"]
+lint.ignore = ["F403","F405","E501","E402","B904"]
+lint.fixable = ["A", "B", "C", "D", "E", "F", "I", "UP"]
+lint.unfixable = []
+lint.per-file-ignores = {}
+line-length = 120
+target-version = "py313"
+exclude= ["alembic"]
+
+
+[tool.pytest.ini_options]
+python_files = "test_*.py"
+asyncio_default_fixture_loop_scope = "session"
