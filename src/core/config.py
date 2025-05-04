@@ -79,6 +79,7 @@ class Settings(BaseSettings):
 
     jwt: Annotated[JWT, Field(default_factory=JWT)]
     postgres: DataBaseConfig
+    wakapi_postgres: DataBaseConfig
     redis: DataBaseConfig
     nats: NATS = Field(default_factory=NATS)
 
@@ -89,10 +90,15 @@ class Settings(BaseSettings):
     open_fiscal_data_api: ApiAdapter
     gov_24_data_api: ApiAdapter
     kakao_api: ApiAdapter
+    openai_api: ApiAdapter
 
     @property
     def postgres_dsn(self) -> PostgresDsn:
         return PostgresDsn.build(scheme="postgresql+asyncpg", **self.postgres.model_dump(by_alias=True))
+
+    @property
+    def wakapi_postgres_dsn(self) -> PostgresDsn:
+        return PostgresDsn.build(scheme="postgresql+asyncpg", **self.wakapi_postgres.model_dump(by_alias=True))
 
     @property
     def sync_postgres_dsn(self) -> PostgresDsn:

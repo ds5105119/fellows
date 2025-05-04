@@ -6,16 +6,22 @@ from sqlalchemy import and_, desc, or_
 
 from src.app.open_api.repository.welfare import GovWelfareRepository
 from src.app.open_api.schema.welfare import WelfareDto
-from src.app.user.model.user_data import AcademicStatus, UserData
-from src.app.user.repository.user_data import UserDataRepository
+from src.app.user.model.user_data import AcademicStatus, UserBusinessData, UserData
+from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
 from src.core.dependencies.auth import User, get_current_user_without_error
 from src.core.dependencies.db import postgres_session
 
 
 class GovWelfareService:
-    def __init__(self, repository: GovWelfareRepository, user_data_repository: UserDataRepository):
+    def __init__(
+        self,
+        repository: GovWelfareRepository,
+        user_data_repository: UserDataRepository,
+        user_business_data_repository: UserBusinessDataRepository,
+    ):
         self.repository = repository
         self.user_data_repository = user_data_repository
+        self.user_business_data_repository = user_business_data_repository
 
     @staticmethod
     def _user_data_filter(
@@ -38,6 +44,20 @@ class GovWelfareService:
                 and_(*(col == True for col in status_mapping.values())),
                 and_(*(col == False for col in status_mapping.values())),
                 *(filter_on_empty or []),
+            )
+
+    def _type_filter(self, type):
+        if type == "user":
+            return or_(
+                self.repository.model.user_type.contains("개인"),
+                self.repository.model.user_type.contains("가구"),
+            )
+        else:
+            return or_(
+                self.repository.model.user_type.contains("법인"),
+                self.repository.model.user_type.contains("시설"),
+                self.repository.model.user_type.contains("단체"),
+                self.repository.model.user_type.contains("소상공인"),
             )
 
     def _age_filter(self, user: User):
@@ -210,9 +230,107 @@ class GovWelfareService:
 
         if data.tag:
             if filters:
-                filters = and_(filters, self.repository.model.support_type.contains(data.tag))
+                filters = and_(
+                    filters,
+                    self.repository.model.support_type.contains(data.tag),
+                    self._type_filter("user"),
+                )
             else:
-                filters = [self.repository.model.support_type.contains(data.tag)]
+                filters = [
+                    self.repository.model.support_type.contains(data.tag),
+                    self._type_filter("user"),
+                ]
+
+        result = await self.repository.get_page(
+            session,
+            data.page,
+            data.size,
+            filters,
+            [
+                self.repository.model.id,
+                self.repository.model.views,
+                self.repository.model.service_id,
+                self.repository.model.service_name,
+                self.repository.model.service_summary,
+                self.repository.model.service_category,
+                self.repository.model.service_conditions,
+                self.repository.model.service_description,
+                self.repository.model.apply_period,
+                self.repository.model.apply_url,
+                self.repository.model.document,
+                self.repository.model.receiving_agency,
+                self.repository.model.offc_name,
+                self.repository.model.contact,
+                self.repository.model.support_details,
+            ],
+            [desc(getattr(self.repository.model, data.order_by))],
+        )
+
+        return result.mappings().all()
+
+    async def get_business_welfare(
+        self,
+        session: postgres_session,
+        data: Annotated[WelfareDto, Query()],
+        user: get_current_user_without_error,
+    ):
+        # order_by 가 컬럼에 존재하지 않는 경우 404
+        if not hasattr(self.repository.model, data.order_by):
+            raise HTTPException(status_code=404, detail="Order Column name was Not found")
+
+        # 변수 초기화
+        filters = []
+        specific_filter = None
+        business_data: UserBusinessData | None = None
+
+        # 기본 필터 초기화
+        if data.tag:
+            filters.append(self.repository.model.support_type.contains(data.tag))
+        filters.append(self._type_filter("business"))
+        filters = [f for f in filters if f is not None]
+
+        # business_data 불러오기
+        if user:
+            business_data = await self.user_business_data_repository.get_business_data(session, sub=user.sub)
+
+        if business_data:
+            user_true_ja_attributes = {
+                name
+                for name in business_data.__table__.columns.keys()
+                if name.startswith("JA") and getattr(business_data, name, False)
+            }
+
+            if user_true_ja_attributes:
+                condition_groups = {
+                    "status": {"JA1101", "JA1102", "JA1103"},
+                    "industry": {"JA1201", "JA1202", "JA1299", "JA2201", "JA2202", "JA2203", "JA2299"},
+                    "org_type": {"JA2101", "JA2102", "JA2103"},
+                }
+
+                required_group_checks = []
+
+                for group_name, group_codes in condition_groups.items():
+                    # 하나라도 True를 요구하는 그룹이 있습니까?
+                    service_requires_group = or_(*[getattr(self.repository.model, ja) == True for ja in group_codes])
+
+                    # 그렇다면 하나라도 일치하는 정보가 있습니까?
+                    user_matches_group_requirement = or_(
+                        *[
+                            and_(getattr(self.repository.model, ja) == True, ja in user_true_ja_attributes)
+                            for ja in group_codes
+                        ]
+                    )
+
+                    group_check_clause = or_(~service_requires_group, user_matches_group_requirement)
+                    required_group_checks.append(group_check_clause)
+
+                if required_group_checks:
+                    specific_filter = and_(*required_group_checks)
+                else:
+                    pass
+
+        if specific_filter is not None:
+            filters = [and_(*filters, specific_filter)]
 
         result = await self.repository.get_page(
             session,

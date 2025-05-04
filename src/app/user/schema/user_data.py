@@ -38,6 +38,25 @@ class UserDataDto(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
 
+class UserBusinessDataDto(BaseModel):
+    JA1101: bool = Field(False, description="예비창업자 (Pre-startup founder)")
+    JA1102: bool = Field(False, description="영업중 (Currently operating)")
+    JA1103: bool = Field(False, description="생계곤란/폐업예정자 (Economically distressed / Closing soon)")
+
+    JA1201: bool = Field(False, description="음식적업 (Food business)")
+    JA1202: bool = Field(False, description="제조업 (Manufacturing industry)")
+    JA1299: bool = Field(False, description="기타업종 (Other industries)")
+
+    JA2101: bool = Field(False, description="중소기업 (SME)")
+    JA2102: bool = Field(False, description="사회복지시설 (Social welfare facility)")
+    JA2103: bool = Field(False, description="기관/단체 (Organizations / Institutions)")
+
+    JA2201: bool = Field(False, description="제조업 (Manufacturing)")
+    JA2202: bool = Field(False, description="농업,임업 및 어업 (Agriculture, Forestry and Fisheries)")
+    JA2203: bool = Field(False, description="정보통신업 (Information and Communication Technology)")
+    JA2299: bool = Field(False, description="기타업종 (Other industries)")
+
+
 @partial_model
 class PartialUserDataDto(UserDataDto):
     pass

@@ -2,8 +2,14 @@ from fastapi import HTTPException, status
 from keycloak import KeycloakAdmin
 from sqlalchemy.exc import IntegrityError
 
-from src.app.user.repository.user_data import UserDataRepository
-from src.app.user.schema.user_data import KakaoAddressDto, OIDCAddressDto, PartialUserDataDto, UserDataDto
+from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
+from src.app.user.schema.user_data import (
+    KakaoAddressDto,
+    OIDCAddressDto,
+    PartialUserDataDto,
+    UserBusinessDataDto,
+    UserDataDto,
+)
 from src.core.dependencies.auth import get_current_user, keycloak_admin
 from src.core.dependencies.db import postgres_session
 
@@ -12,9 +18,11 @@ class UserDataService:
     def __init__(
         self,
         repository: UserDataRepository,
+        user_business_data_repository: UserBusinessDataRepository,
         keycloak_admin: KeycloakAdmin,
     ):
         self.repository = repository
+        self.user_business_data_repository = user_business_data_repository
         self.keycloak_admin = keycloak_admin
 
         """
@@ -58,6 +66,45 @@ class UserDataService:
         return result.mappings().first()
 
     async def update_user_data(
+        self,
+        data: UserBusinessDataDto,
+        session: postgres_session,
+        user: get_current_user,
+    ):
+        await self.user_business_data_repository.update(
+            session,
+            [self.user_business_data_repository.model.sub == user.sub],
+            **data.model_dump(exclude_unset=True),
+        )
+
+    async def create_business_data(
+        self,
+        data: UserBusinessDataDto,
+        session: postgres_session,
+        user: get_current_user,
+    ):
+        try:
+            await self.user_business_data_repository.create(
+                session,
+                sub=user.sub,
+                **data.model_dump(exclude_unset=True),
+            )
+        except IntegrityError:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+    async def read_business_data(
+        self,
+        session: postgres_session,
+        user: get_current_user,
+    ):
+        result = await self.user_business_data_repository.get(
+            session,
+            [self.user_business_data_repository.model.sub == user.sub],
+        )
+
+        return result.mappings().first()
+
+    async def update_business_data(
         self,
         data: PartialUserDataDto,
         session: postgres_session,

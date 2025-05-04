@@ -43,7 +43,6 @@ class GovWelfareSaver(PostgresDataSaver):
         df = join(*[m.data for m in self.manager], by=["서비스ID"]).sort("서비스ID")
         df = df.rename(columns_mapping)
         df = df.drop(["자치법규", "행정규칙", "문의처", "접수기관명"], strict=False)
-        df = df.filter(df["user_type"].str.contains("개인") | df["user_type"].str.contains("가구"))
         df = cast_y_null_to_bool(df)
         df = df.with_columns(pl.col("views").fill_null("0").cast(pl.Int32))
         df = df.with_columns(

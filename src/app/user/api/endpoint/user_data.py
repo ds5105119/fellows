@@ -22,6 +22,21 @@ async def update_user_data(_: Annotated[None, Depends(user_data_service.update_u
     pass
 
 
+@router.post("/business", status_code=status.HTTP_201_CREATED)
+async def create_business_data(_: Annotated[None, Depends(user_data_service.create_business_data)]):
+    pass
+
+
+@router.get("/business", status_code=status.HTTP_200_OK)
+async def read_business_data(business_data: Annotated[None, Depends(user_data_service.read_business_data)]):
+    return business_data
+
+
+@router.patch("/business", status_code=status.HTTP_200_OK)
+async def update_business_data(_: Annotated[None, Depends(user_data_service.update_business_data)]):
+    pass
+
+
 @router.patch("/address", status_code=status.HTTP_200_OK)
 async def update_address_oidc(_: Annotated[None, Depends(user_data_service.update_address_oidc)]):
     pass

@@ -8,9 +8,15 @@ from src.app.open_api.api.dependencies import gov_welfare_service
 router = APIRouter()
 
 
-@limiter(max_requests=3000)
+@limiter(max_requests=300)
 @router.get("/recommend")
 async def recommend_welfare(result: Annotated[Any, Depends(gov_welfare_service.get_personal_welfare)]):
+    return result
+
+
+@limiter(max_requests=300)
+@router.get("/business")
+async def business_welfare(result: Annotated[Any, Depends(gov_welfare_service.get_business_welfare)]):
     return result
 
 

@@ -24,6 +24,7 @@ numpy = "^2.2.1"
 polars = {extras = ["pyarrow", "pandas"], version = "^1.18.0" }
 psycopg = {extras = ["binary"], version = "^3.2.3"}
 nats-py = "^2.9.0"
+openai = "^1.77.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "*"

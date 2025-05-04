@@ -34,6 +34,7 @@ http_bearer = ExtendHTTPBearer()
 async def _get_current_user(
     data: Annotated[dict, Depends(http_bearer, use_cache=False)],
 ) -> User:
+    print(data)
     if not data:
         raise HTTPException(status_code=403)
 

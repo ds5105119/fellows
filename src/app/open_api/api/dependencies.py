@@ -11,7 +11,7 @@ from src.app.open_api.repository.fiscal import FiscalByYearOffcRepository, Fisca
 from src.app.open_api.repository.welfare import GovWelfareRepository
 from src.app.open_api.service.fiscal import FiscalService
 from src.app.open_api.service.welfare import GovWelfareService
-from src.app.user.api.dependencies import user_data_repository
+from src.app.user.api.dependencies import user_business_data_repository, user_data_repository
 from src.core.config import settings
 from src.core.dependencies.db import Postgres_sync, Redis
 from src.core.utils.openapi.data_cache import RedisDataCache
@@ -81,4 +81,4 @@ fiscal_by_year_offc_repository = FiscalByYearOffcRepository(FiscalByYearOffc)
 fiscal_service = FiscalService(fiscal_repository, fiscal_by_year_repository, fiscal_by_year_offc_repository)
 
 gov_welfare_repository = GovWelfareRepository(GovWelfare)
-gov_welfare_service = GovWelfareService(gov_welfare_repository, user_data_repository)
+gov_welfare_service = GovWelfareService(gov_welfare_repository, user_data_repository, user_business_data_repository)
