@@ -55,19 +55,19 @@ class UserBusinessData(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     sub: Mapped[int] = mapped_column(String, unique=True, nullable=False)
 
-    JA1101: Mapped[bool] = mapped_column(Boolean, default=False)  # 예비창업자
-    JA1102: Mapped[bool] = mapped_column(Boolean, default=False)  # 영업중
-    JA1103: Mapped[bool] = mapped_column(Boolean, default=False)  # 생계곤란/폐업예정자
+    ja1101: Mapped[bool] = mapped_column(Boolean, default=False)  # 예비창업자
+    ja1102: Mapped[bool] = mapped_column(Boolean, default=False)  # 영업중
+    ja1103: Mapped[bool] = mapped_column(Boolean, default=False)  # 생계곤란/폐업예정자
 
-    JA1201: Mapped[bool] = mapped_column(Boolean, default=False)  # 음식적업
-    JA1202: Mapped[bool] = mapped_column(Boolean, default=False)  # 제조업
-    JA1299: Mapped[bool] = mapped_column(Boolean, default=False)  # 기타업종
+    ja1201: Mapped[bool] = mapped_column(Boolean, default=False)  # 음식적업
+    ja1202: Mapped[bool] = mapped_column(Boolean, default=False)  # 제조업
+    ja1299: Mapped[bool] = mapped_column(Boolean, default=False)  # 기타업종
 
-    JA2101: Mapped[bool] = mapped_column(Boolean, default=False)  # 중소기업
-    JA2102: Mapped[bool] = mapped_column(Boolean, default=False)  # 사회복지시설
-    JA2103: Mapped[bool] = mapped_column(Boolean, default=False)  # 기관/단체
+    ja2101: Mapped[bool] = mapped_column(Boolean, default=False)  # 중소기업
+    ja2102: Mapped[bool] = mapped_column(Boolean, default=False)  # 사회복지시설
+    ja2103: Mapped[bool] = mapped_column(Boolean, default=False)  # 기관/단체
 
-    JA2201: Mapped[bool] = mapped_column(Boolean, default=False)  # 제조업
-    JA2202: Mapped[bool] = mapped_column(Boolean, default=False)  # 농업,임업 및 어업
-    JA2203: Mapped[bool] = mapped_column(Boolean, default=False)  # 정보통신업
-    JA2299: Mapped[bool] = mapped_column(Boolean, default=False)  # 기타업종
+    ja2201: Mapped[bool] = mapped_column(Boolean, default=False)  # 제조업
+    ja2202: Mapped[bool] = mapped_column(Boolean, default=False)  # 농업,임업 및 어업
+    ja2203: Mapped[bool] = mapped_column(Boolean, default=False)  # 정보통신업
+    ja2299: Mapped[bool] = mapped_column(Boolean, default=False)  # 기타업종

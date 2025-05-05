@@ -67,13 +67,13 @@ class UserDataService:
 
     async def update_user_data(
         self,
-        data: UserBusinessDataDto,
+        data: PartialUserDataDto,
         session: postgres_session,
         user: get_current_user,
     ):
-        await self.user_business_data_repository.update(
+        await self.repository.update(
             session,
-            [self.user_business_data_repository.model.sub == user.sub],
+            [self.repository.model.sub == user.sub],
             **data.model_dump(exclude_unset=True),
         )
 
@@ -87,7 +87,7 @@ class UserDataService:
             await self.user_business_data_repository.create(
                 session,
                 sub=user.sub,
-                **data.model_dump(exclude_unset=True),
+                **data.model_dump(),
             )
         except IntegrityError:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
@@ -106,14 +106,14 @@ class UserDataService:
 
     async def update_business_data(
         self,
-        data: PartialUserDataDto,
+        data: UserBusinessDataDto,
         session: postgres_session,
         user: get_current_user,
     ):
-        await self.repository.update(
+        await self.user_business_data_repository.update(
             session,
-            [self.repository.model.sub == user.sub],
-            **data.model_dump(exclude_unset=True),
+            [self.user_business_data_repository.model.sub == user.sub],
+            **data.model_dump(),
         )
 
     async def update_address_oidc(

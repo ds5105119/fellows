@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import Annotated, Sequence
 
 from fastapi import HTTPException, Query
-from sqlalchemy import and_, desc, or_
+from sqlalchemy import and_, cast, desc, func, or_
+from sqlalchemy.dialects.postgresql import TSVECTOR
 
 from src.app.open_api.repository.welfare import GovWelfareRepository
 from src.app.open_api.schema.welfare import WelfareDto
@@ -257,6 +258,7 @@ class GovWelfareService:
                 self.repository.model.service_description,
                 self.repository.model.apply_period,
                 self.repository.model.apply_url,
+                self.repository.model.detail_url,
                 self.repository.model.document,
                 self.repository.model.receiving_agency,
                 self.repository.model.offc_name,
@@ -282,10 +284,37 @@ class GovWelfareService:
         filters = []
         specific_filter = None
         business_data: UserBusinessData | None = None
+        columns = [
+            self.repository.model.id,
+            self.repository.model.views,
+            self.repository.model.service_id,
+            self.repository.model.service_name,
+            self.repository.model.service_summary,
+            self.repository.model.service_category,
+            self.repository.model.service_conditions,
+            self.repository.model.service_description,
+            self.repository.model.apply_period,
+            self.repository.model.apply_url,
+            self.repository.model.detail_url,
+            self.repository.model.document,
+            self.repository.model.receiving_agency,
+            self.repository.model.offc_name,
+            self.repository.model.dept_name,
+            self.repository.model.dept_type,
+            self.repository.model.contact,
+            self.repository.model.support_details,
+            self.repository.model.support_targets,
+        ]
 
         # 기본 필터 초기화
         if data.tag:
             filters.append(self.repository.model.support_type.contains(data.tag))
+        if data.keyword:
+            filters.append(
+                cast(func.to_tsvector("simple", self.repository.model.service_name), TSVECTOR)
+                .op("||")(cast(func.to_tsvector("simple", self.repository.model.service_summary), TSVECTOR))
+                .op("@@")(func.websearch_to_tsquery("simple", data.keyword))
+            )
         filters.append(self._type_filter("business"))
         filters = [f for f in filters if f is not None]
 
@@ -330,30 +359,14 @@ class GovWelfareService:
                     pass
 
         if specific_filter is not None:
-            filters = [and_(*filters, specific_filter)]
+            filters = [*filters, specific_filter]
 
         result = await self.repository.get_page(
             session,
             data.page,
             data.size,
             filters,
-            [
-                self.repository.model.id,
-                self.repository.model.views,
-                self.repository.model.service_id,
-                self.repository.model.service_name,
-                self.repository.model.service_summary,
-                self.repository.model.service_category,
-                self.repository.model.service_conditions,
-                self.repository.model.service_description,
-                self.repository.model.apply_period,
-                self.repository.model.apply_url,
-                self.repository.model.document,
-                self.repository.model.receiving_agency,
-                self.repository.model.offc_name,
-                self.repository.model.contact,
-                self.repository.model.support_details,
-            ],
+            columns,
             [desc(getattr(self.repository.model, data.order_by))],
         )
 

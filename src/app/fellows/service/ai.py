@@ -19,6 +19,7 @@ class AIService:
             input=payload,
             max_output_tokens=1000,
             temperature=0.0,
+            top_p=0.02,
             stream=True,
         )
 

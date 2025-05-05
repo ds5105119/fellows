@@ -11,6 +11,7 @@ from src.core.config import settings
 
 class User(BaseModel):
     sub: str
+    email: str
     username: str
     gender: str
     birthdate: str | date

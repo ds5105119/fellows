@@ -1,3 +1,5 @@
+import logging
+import logging.config
 from contextlib import asynccontextmanager
 
 import httpx
@@ -13,11 +15,34 @@ from src.core.config import settings
 from src.core.dependencies.db import Postgres, Redis
 from src.core.dependencies.infra import nc
 
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "format": "[%(asctime)s] [%(levelname)s] [%(name)s] - %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+        },
+    },
+    "root": {
+        "level": "INFO",
+        "handlers": ["console"],
+    },
+}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # app start
-    print("Application Started")
+    logging.config.dictConfig(LOGGING_CONFIG)
+    log = logging.getLogger(__name__)
+
+    log.info("Application Started")
     await nc.connect(servers=settings.nats.server, name=settings.nats.name)
     await fiscal_data_manager.init()
     await gov24_service_conditions_manager.init()
@@ -31,4 +56,4 @@ async def lifespan(app: FastAPI):
     await Postgres.aclose()
     await Redis.aclose()
     await app.requests_client.aclose()
-    print("Application Stopped")
+    log.info("Application Stopped")
