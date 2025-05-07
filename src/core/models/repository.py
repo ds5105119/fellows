@@ -2,7 +2,7 @@ from typing import Any, Sequence, TypeVar, cast
 
 from sqlalchemy import Result, SQLColumnExpression, delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute, Session
 from sqlalchemy.sql.base import ExecutableOption
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.sql.selectable import Select
@@ -50,9 +50,12 @@ class BaseReadRepository[T](BaseRepository[T]):
         orderby: Sequence[ColumnElement] | None = None,
         options: Sequence[ExecutableOption] = None,
         stmt: Select | None = None,
+        join: Sequence[ColumnElement | InstrumentedAttribute] | None = None,
     ) -> _P:
         if stmt is None:
             stmt = select(self.model.__table__)
+        if join:
+            stmt = stmt.join(*join)
         if filters:
             stmt = stmt.where(*filters)
         if orderby:
@@ -73,6 +76,7 @@ class BaseReadRepository[T](BaseRepository[T]):
         orderby: Sequence[ColumnElement] | None = None,
         options: Sequence[ExecutableOption] = None,
         stmt: Select | None = None,
+        join: Sequence[ColumnElement | InstrumentedAttribute] | None = None,
     ) -> _P:
         if not hasattr(self.model, "id"):
             raise AttributeError("Model does not have an 'id' attribute")
@@ -84,6 +88,7 @@ class BaseReadRepository[T](BaseRepository[T]):
             orderby=orderby,
             options=options,
             stmt=stmt,
+            join=join,
         )
 
     def get_page(
@@ -95,6 +100,7 @@ class BaseReadRepository[T](BaseRepository[T]):
         columns: Sequence[SQLColumnExpression | DeclarativeBase] | None = None,
         orderby: Sequence[ColumnElement] | None = None,
         options: Sequence[ExecutableOption] = None,
+        join: Sequence[ColumnElement | InstrumentedAttribute] | None = None,
     ) -> _P:
         return self.get(
             session=session,
@@ -103,6 +109,7 @@ class BaseReadRepository[T](BaseRepository[T]):
             orderby=orderby,
             options=options,
             stmt=select(self.model.__table__).fetch(size).offset(page * size),
+            join=join,
         )
 
     def get_instance(
@@ -111,6 +118,7 @@ class BaseReadRepository[T](BaseRepository[T]):
         filters: Sequence,
         orderby: Sequence[ColumnElement] | None = None,
         options: Sequence[ExecutableOption] = None,
+        join: Sequence[ColumnElement | InstrumentedAttribute] | None = None,
     ) -> _IP:
         return self.get(
             session=session,
@@ -118,6 +126,7 @@ class BaseReadRepository[T](BaseRepository[T]):
             orderby=orderby,
             options=options,
             stmt=select(self.model),
+            join=join,
         )
 
 
@@ -183,9 +192,12 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         orderby: Sequence[ColumnElement] | None = None,
         options: Sequence[ExecutableOption] = None,
         stmt: Select | None = None,
+        join: Sequence[ColumnElement | InstrumentedAttribute] | None = None,
     ) -> _P:
         if stmt is None:
             stmt = select(self.model.__table__)
+        if join:
+            stmt.join(*join)
         if filters:
             stmt = stmt.where(*filters)
         if orderby:
@@ -206,6 +218,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         orderby: Sequence[ColumnElement] | None = None,
         options: Sequence[ExecutableOption] = None,
         stmt: Select | None = None,
+        join: Sequence[ColumnElement | InstrumentedAttribute] | None = None,
     ) -> _P:
         if not hasattr(self.model, "id"):
             raise AttributeError("Model does not have an 'id' attribute")
@@ -217,6 +230,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
             orderby=orderby,
             options=options,
             stmt=stmt,
+            join=join,
         )
 
     async def get_page(
@@ -228,6 +242,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         columns: Sequence[SQLColumnExpression | DeclarativeBase] | None = None,
         orderby: Sequence[ColumnElement] | None = None,
         options: Sequence[ExecutableOption] = None,
+        join: Sequence[ColumnElement | InstrumentedAttribute] | None = None,
     ) -> _P:
         return await self.get(
             session=session,
@@ -235,7 +250,8 @@ class ABaseReadRepository[T](ABaseRepository[T]):
             columns=columns,
             orderby=orderby,
             options=options,
-            stmt=select(self.model.__table__).fetch(size).offset(page * size),
+            stmt=select(self.model).fetch(size).offset(page * size),
+            join=join,
         )
 
     async def get_instance(
@@ -244,6 +260,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         filters: Sequence,
         orderby: Sequence[ColumnElement] | None = None,
         options: Sequence[ExecutableOption] = None,
+        join: Sequence[ColumnElement | InstrumentedAttribute] | None = None,
     ) -> _IP:
         return await self.get(
             session=session,
@@ -251,6 +268,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
             orderby=orderby,
             options=options,
             stmt=select(self.model),
+            join=join,
         )
 
 

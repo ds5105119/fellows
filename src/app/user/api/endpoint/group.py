@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
 
@@ -26,7 +26,7 @@ async def read_group(
 
 
 @router.put("/{group_id}", response_model=GroupRepresentation)
-async def modify_group(
+async def update_group(
     updated_group: Annotated[GroupRepresentation, Depends(group_service.update_group)],
 ):
     """그룹 기본 정보(이름, parentId)를 수정합니다. (owner 또는 admin 접근 가능)"""
@@ -44,9 +44,9 @@ async def remove_group(
 # --- Group Member & Role Management Endpoints ---
 
 
-@router.get("/{group_id}/members", response_model=List[Dict[str, Any]])
+@router.get("/{group_id}/members", response_model=list[dict[str, Any]])
 async def read_group_members(
-    members: Annotated[List[Dict[str, Any]], Depends(group_service.get_group_members_with_roles)],
+    members: Annotated[list[dict[str, Any]], Depends(group_service.get_group_members_with_roles)],
 ):
     """그룹 멤버 목록과 역할을 조회합니다. (멤버 이상 접근 가능)"""
     return members
@@ -89,23 +89,23 @@ async def invite_user_to_group(
 
 @router.post("/invitations/accept", status_code=status.HTTP_200_OK)
 async def accept_group_invitation(
-    result: Annotated[Dict[str, Any], Depends(group_service.accept_invitation)],
+    result: Annotated[dict[str, Any], Depends(group_service.accept_invitation)],
 ):
     """그룹 초대를 수락합니다."""
     return result
 
 
-@router.get("/invitations/sent", response_model=List[GroupInvitationResponse])
+@router.get("/invitations/sent", response_model=list[GroupInvitationResponse])
 async def get_sent_invitations(
-    invitations_raw: Annotated[List[Dict[str, Any]], Depends(group_service.get_sent_invite)],
+    invitations_raw: Annotated[list[dict[str, Any]], Depends(group_service.get_sent_invites)],
 ):
     """자신이 보낸 초대 목록을 조회합니다."""
     return [GroupInvitationResponse.model_validate(inv) for inv in invitations_raw]
 
 
-@router.get("/invitations/received", response_model=List[GroupInvitationResponse])
+@router.get("/invitations/received", response_model=list[GroupInvitationResponse])
 async def get_received_invitations(
-    invitations_raw: Annotated[List[Dict[str, Any]], Depends(group_service.get_received_invite)],
+    invitations_raw: Annotated[list[dict[str, Any]], Depends(group_service.get_received_invites)],
 ):
     """자신이 받은 초대 목록을 조회합니다."""
     return [GroupInvitationResponse.model_validate(inv) for inv in invitations_raw]

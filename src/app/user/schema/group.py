@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class GroupRequest(BaseModel):
@@ -36,6 +36,8 @@ class GroupInvitationCreate(BaseModel):
 
 
 class GroupInvitationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     group_id: str
     inviter_sub: str
@@ -45,10 +47,7 @@ class GroupInvitationResponse(BaseModel):
     token: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
-
-class GetInvitationRequest(BaseModel):
+class GetInvitationsRequest(BaseModel):
     page: int = Field(0, ge=0, description="Page number")
     size: int = Field(10, ge=1, le=20, description="Page size")

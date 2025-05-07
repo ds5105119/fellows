@@ -15,7 +15,7 @@ from sqlalchemy import desc
 from src.app.user.model.group import GroupInvitation
 from src.app.user.repository.group import GroupInvitationRepository
 from src.app.user.schema.group import (
-    GetInvitationRequest,
+    GetInvitationsRequest,
     GroupInvitationCreate,
     GroupRepresentation,
     GroupRequest,
@@ -459,9 +459,9 @@ class GroupService:
                 exc_info=True,
             )
 
-    async def get_sent_invite(
+    async def get_sent_invites(
         self,
-        data: Annotated[GetInvitationRequest, Query()],
+        data: Annotated[GetInvitationsRequest, Query()],
         user: get_current_user,
         session: postgres_session,
     ):
@@ -473,11 +473,11 @@ class GroupService:
             orderby=[desc(self.invitation_repository.model.created_at)],
         )
 
-        return result.all()
+        return result.scalars().all()
 
-    async def get_received_invite(
+    async def get_received_invites(
         self,
-        data: Annotated[GetInvitationRequest, Query()],
+        data: Annotated[GetInvitationsRequest, Query()],
         user: get_current_user,
         session: postgres_session,
     ):
@@ -489,7 +489,7 @@ class GroupService:
             orderby=[desc(self.invitation_repository.model.created_at)],
         )
 
-        return result.all()
+        return result.scalars().all()
 
     async def delete_sent_invite(
         self,

@@ -381,5 +381,5 @@ class GovWelfareService:
         return result.mappings().first()
 
     async def get_welfare_id(self, session: postgres_session):
-        result = await self.repository.get(session, filters=[], columns=[self.repository.model.service_id])
+        result = await self.repository.get(session, columns=[self.repository.model.service_id])
         return result.mappings().all()
