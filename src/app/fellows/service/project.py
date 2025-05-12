@@ -236,9 +236,7 @@ class ProjectService:
             **payload,
         )
 
-        project = await self.get_project(user, session, project_id)
-
-        return project
+        return await self.get_project(user, session, project_id)
 
     async def add_file_to_project(
         self,
@@ -281,6 +279,14 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
         return await self.get_project(user, session, project_id)
+
+    async def delete_project(
+        self,
+        user: get_current_user,
+        session: postgres_session,
+        project_id: str = Path(),
+    ):
+        await self.project_repository.delete_by_project_id_sub(session, project_id, user.sub)
 
     async def get_project_feature_estimate(
         self,

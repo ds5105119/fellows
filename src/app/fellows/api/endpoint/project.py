@@ -48,6 +48,22 @@ async def update_project_info(
     return updated_project
 
 
+@router.post("/{project_id}/files")
+async def add_files_to_project(
+    updated_project: Annotated[ProjectSchema, Depends(project_service.add_file_to_project)],
+):
+    """`project_id`로 프로젝트에 파일을 추가합니다"""
+    return updated_project
+
+
+@router.delete("/{project_id}")
+async def delete_project(
+    _: Annotated[None, Depends(project_service.delete_project)],
+):
+    """`project_id`로 프로젝트를 삭제합니다. (삭제 가능한 경우에만)"""
+    pass
+
+
 @limiter(max_requests=200, interval=60 * 60 * 24)
 @router.get("/estimate/feature", response_model=ProjectFeatureEstimateResponse)
 async def feature_estimate_stream(

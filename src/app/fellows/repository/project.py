@@ -1,3 +1,6 @@
+from sqlalchemy import cast, delete
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.app.fellows.model.project import Project, ProjectGroups, ProjectInfo, ProjectInfoFileRecords
 from src.core.models.repository import (
     ABaseCreateRepository,
@@ -20,7 +23,14 @@ class ProjectUpdateRepository(ABaseUpdateRepository[Project]):
 
 
 class ProjectDeleteRepository(ABaseDeleteRepository[Project]):
-    pass
+    async def delete_by_project_id_sub(self, session: AsyncSession, project_id: str, sub: str) -> None:
+        stmt = delete(self.model).where(
+            self.model.project_id == project_id,
+            self.model.sub == sub,
+            self.model.deletable == False,
+        )
+        await session.execute(stmt)
+        await session.commit()
 
 
 class ProjectInfoCreateRepository(ABaseCreateRepository[ProjectInfo]):
