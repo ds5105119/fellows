@@ -1,4 +1,4 @@
-from sqlalchemy import cast, delete
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.fellows.model.project import Project, ProjectGroups, ProjectInfo, ProjectInfoFileRecords
