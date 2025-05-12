@@ -1,4 +1,4 @@
-from src.app.fellows.model.project import Project, ProjectGroupLink, ProjectInfo
+from src.app.fellows.model.project import Project, ProjectGroups, ProjectInfo, ProjectInfoFileRecords
 from src.core.models.repository import (
     ABaseCreateRepository,
     ABaseDeleteRepository,
@@ -39,19 +39,35 @@ class ProjectInfoDeleteRepository(ABaseDeleteRepository[ProjectInfo]):
     pass
 
 
-class ProjectGroupLinkCreateRepository(ABaseCreateRepository[ProjectGroupLink]):
+class ProjectGroupsCreateRepository(ABaseCreateRepository[ProjectGroups]):
     pass
 
 
-class ProjectGroupLinkReadRepository(ABaseReadRepository[ProjectGroupLink]):
+class ProjectGroupsReadRepository(ABaseReadRepository[ProjectGroups]):
     pass
 
 
-class ProjectGroupLinkUpdateRepository(ABaseUpdateRepository[ProjectGroupLink]):
+class ProjectGroupsUpdateRepository(ABaseUpdateRepository[ProjectGroups]):
     pass
 
 
-class ProjectGroupLinkDeleteRepository(ABaseDeleteRepository[ProjectGroupLink]):
+class ProjectGroupsDeleteRepository(ABaseDeleteRepository[ProjectGroups]):
+    pass
+
+
+class ProjectInfoFileRecordCreateRepository(ABaseCreateRepository[ProjectInfoFileRecords]):
+    pass
+
+
+class ProjectInfoFileRecordReadRepository(ABaseReadRepository[ProjectInfoFileRecords]):
+    pass
+
+
+class ProjectInfoFileRecordUpdateRepository(ABaseUpdateRepository[ProjectInfoFileRecords]):
+    pass
+
+
+class ProjectInfoFileRecordDeleteRepository(ABaseDeleteRepository[ProjectInfoFileRecords]):
     pass
 
 
@@ -73,10 +89,19 @@ class ProjectInfoRepository(
     pass
 
 
-class ProjectGroupLinkRepository(
-    ProjectGroupLinkCreateRepository,
-    ProjectGroupLinkReadRepository,
-    ProjectGroupLinkUpdateRepository,
-    ProjectGroupLinkDeleteRepository,
+class ProjectGroupsRepository(
+    ProjectGroupsCreateRepository,
+    ProjectGroupsReadRepository,
+    ProjectGroupsUpdateRepository,
+    ProjectGroupsDeleteRepository,
+):
+    pass
+
+
+class ProjectInfoFileRecordRepository(
+    ProjectInfoFileRecordCreateRepository,
+    ProjectInfoFileRecordReadRepository,
+    ProjectInfoFileRecordUpdateRepository,
+    ProjectInfoFileRecordDeleteRepository,
 ):
     pass

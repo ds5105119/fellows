@@ -1,5 +1,6 @@
 from typing import Annotated
 
+import boto3
 from fastapi import Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,14 @@ Redis = RedisCache(settings.redis_dsn.unicode_string())
 
 postgres_session = Annotated[AsyncSession, Depends(Postgres)]
 wakapi_postgres_session = Annotated[AsyncSession, Depends(Wakapi_Postgres)]
+
+r2 = boto3.client(
+    service_name="s3",
+    endpoint_url=f"https://{settings.cloudflare.account_id}.r2.cloudflarestorage.com",
+    aws_access_key_id=settings.cloudflare.access_key_id,
+    aws_secret_access_key=settings.cloudflare.secret_access_key,
+    region_name="auto",
+)
 
 
 async def create_postgis_extension(async_db: AsyncDB = Postgres):

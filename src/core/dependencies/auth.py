@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer
@@ -9,6 +9,15 @@ from pydantic import BaseModel, Field, field_validator
 from src.core.config import settings
 
 
+class Address(BaseModel):
+    formatted: str | None = Field(default=None)
+    street_address: str | None = Field(default=None)
+    locality: str | None = Field(default=None)
+    region: str | None = Field(default=None)
+    postal_code: str | None = Field(default=None)
+    country: str | None = Field(default=None)
+
+
 class User(BaseModel):
     sub: str
     email: str
@@ -16,7 +25,19 @@ class User(BaseModel):
     gender: str
     birthdate: str | date
     access_token: str
-    location: list[int] | None = Field(default=[])
+    location: list[int] | None = Field(default_factory=list)
+
+    # 확장 필드들
+    name: str | None = Field(default=None)
+    given_name: str | None = Field(default=None)
+    family_name: str | None = Field(default=None)
+    email_verified: bool | None = Field(default=None)
+    address: Address | None = Field(default=None)
+    groups: list[str] | None = Field(default_factory=list)
+    realm_access: dict[str, list[str]] | None = Field(default_factory=dict)
+    resource_access: dict[str, Any] | None = Field(default_factory=dict)
+    scope: str | None = Field(default=None)
+    sub_locality: str | None = Field(default=None)
 
     @field_validator("birthdate", mode="before")
     def parse_birthdate(cls, value):

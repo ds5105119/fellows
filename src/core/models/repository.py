@@ -1,6 +1,7 @@
+from dataclasses import dataclass
 from typing import Any, Sequence, TypeVar, cast
 
-from sqlalchemy import Result, SQLColumnExpression, delete, insert, select, update
+from sqlalchemy import Result, SQLColumnExpression, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute, Session
 from sqlalchemy.sql.base import ExecutableOption
@@ -10,6 +11,12 @@ from sqlalchemy.sql.selectable import Select
 T = TypeVar("T", bound=DeclarativeBase)
 _P = Result[tuple[Any]]
 _IP = Result[tuple[T]]
+
+
+@dataclass
+class PaginatedResult[T]:
+    total: int
+    items: T | None
 
 
 class BaseRepository[T]:
@@ -31,7 +38,7 @@ class BaseCreateRepository[T](BaseRepository[T]):
         kwargs = self._dict_to_model(kwargs)
         session.add(entity := self.model(**kwargs))
         session.commit()
-        session.refresh(self.model)
+        session.refresh(entity)
 
         return entity
 
@@ -131,17 +138,28 @@ class BaseReadRepository[T](BaseRepository[T]):
 
 
 class BaseUpdateRepository[T](BaseRepository[T]):
-    def update(self, session: Session, filters: Sequence, **kwargs) -> None:
-        kwargs = self._dict_to_model(kwargs)
-        stmt = update(self.model).where(*filters).values(**kwargs)
-        session.execute(stmt)
+    def update(
+        self,
+        session: Session,
+        filters: Sequence,
+        columns: Sequence[SQLColumnExpression | DeclarativeBase] | None = None,
+        options: Sequence[ExecutableOption] = None,
+        stmt: Select | None = None,
+        **kwargs,
+    ) -> _P:
+        if stmt is None:
+            stmt = update(self.model)
+        if filters:
+            stmt = stmt.where(*filters)
+        if options:
+            stmt = stmt.options(*options)
+        if columns:
+            stmt = stmt.with_only_columns(*columns)
+        stmt = stmt.values(**self._dict_to_model(kwargs))
+        result = session.execute(stmt)
         session.commit()
 
-    def update_by_id(self, session: Session, id: int | str, **kwargs) -> None:
-        kwargs = self._dict_to_model(kwargs)
-        stmt = update(self.model).where(cast("ColumnElement[bool]", self.model.id == id)).values(**kwargs)
-        session.execute(stmt)
-        session.commit()
+        return result
 
 
 class BaseDeleteRepository[T](BaseRepository[T]):
@@ -197,7 +215,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         if stmt is None:
             stmt = select(self.model.__table__)
         if join:
-            stmt.join(*join)
+            stmt = stmt.join(*join)
         if filters:
             stmt = stmt.where(*filters)
         if orderby:
@@ -254,6 +272,32 @@ class ABaseReadRepository[T](ABaseRepository[T]):
             join=join,
         )
 
+    async def get_page_with_total(
+        self,
+        session: AsyncSession,
+        page: int,
+        size: int,
+        filters: Sequence,
+        columns: Sequence[SQLColumnExpression | DeclarativeBase] | None = None,
+        orderby: Sequence[ColumnElement] | None = None,
+        options: Sequence[ExecutableOption] = None,
+        join: Sequence[ColumnElement | InstrumentedAttribute] | None = None,
+    ) -> PaginatedResult[_P]:
+        total_result = await self.get(
+            session,
+            filters,
+            join=join,
+            stmt=select(func.count()).select_from(self.model.__table__),
+        )
+        total = int(total_result.scalar_one_or_none()) or 0
+
+        if total == 0:
+            return PaginatedResult(total, None)
+
+        items = await self.get_page(session, page, size, filters, columns, orderby, options, join)
+
+        return PaginatedResult(total, items)
+
     async def get_instance(
         self,
         session: AsyncSession,
@@ -273,17 +317,28 @@ class ABaseReadRepository[T](ABaseRepository[T]):
 
 
 class ABaseUpdateRepository[T](ABaseRepository[T]):
-    async def update(self, session: AsyncSession, filters: Sequence, **kwargs) -> None:
-        kwargs = self._dict_to_model(kwargs)
-        stmt = update(self.model).where(*filters).values(**kwargs)
-        await session.execute(stmt)
+    async def update(
+        self,
+        session: AsyncSession,
+        filters: Sequence,
+        columns: Sequence[SQLColumnExpression | DeclarativeBase] | None = None,
+        options: Sequence[ExecutableOption] = None,
+        stmt: Select | None = None,
+        **kwargs,
+    ) -> _P:
+        if stmt is None:
+            stmt = update(self.model)
+        if filters:
+            stmt = stmt.where(*filters)
+        if options:
+            stmt = stmt.options(*options)
+        if columns:
+            stmt = stmt.with_only_columns(*columns)
+        stmt = stmt.values(**self._dict_to_model(kwargs))
+        result = await session.execute(stmt)
         await session.commit()
 
-    async def update_by_id(self, session: AsyncSession, id: int | str, **kwargs) -> None:
-        kwargs = self._dict_to_model(kwargs)
-        stmt = update(self.model).where(cast("ColumnElement[bool]", self.model.id == id)).values(**kwargs)
-        await session.execute(stmt)
-        await session.commit()
+        return result
 
 
 class ABaseDeleteRepository[T](ABaseRepository[T]):

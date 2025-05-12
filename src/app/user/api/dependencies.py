@@ -1,13 +1,17 @@
+from src.app.user.model.cloud import FileRecord
 from src.app.user.model.group import GroupInvitation
 from src.app.user.model.user_data import UserBusinessData, UserData
 from src.app.user.model.wakapi import Users
+from src.app.user.repository.cloud import FileRecordRepository
 from src.app.user.repository.group import GroupInvitationRepository
 from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
 from src.app.user.repository.wakapi import WakapiUserRepository
+from src.app.user.service.cloud import CloudService
 from src.app.user.service.group import GroupService
 from src.app.user.service.user_data import UserDataService
 from src.app.user.service.wakapi import WakapiService
 from src.core.dependencies.auth import keycloak_admin
+from src.core.dependencies.db import r2
 
 invitation_repository = GroupInvitationRepository(GroupInvitation)
 group_service = GroupService(invitation_repository, keycloak_admin)
@@ -18,3 +22,6 @@ user_data_service = UserDataService(user_data_repository, user_business_data_rep
 
 wakapi_repository = WakapiUserRepository(Users)
 wakapi_service = WakapiService(wakapi_repository)
+
+file_record_repository = FileRecordRepository(FileRecord)
+cloud_service = CloudService(file_record_repository, r2)

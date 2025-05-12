@@ -15,7 +15,7 @@ fastapi = {extras = ["standard"], version = "^0.115.2"}
 pydantic-settings = "^2.5.2"
 uvicorn = {extras = ["standard"], version = "^0.34.0"}
 
-webtool = "^0.1.7"
+webtool = "^0.1.10"
 alembic = "^1.14.0"
 asyncpg = "^0.30.0"
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
@@ -25,6 +25,8 @@ polars = {extras = ["pyarrow", "pandas"], version = "^1.18.0" }
 psycopg = {extras = ["binary"], version = "^3.2.3"}
 nats-py = "^2.9.0"
 openai = "^1.77.0"
+boto3 = "^1.38.13"
+boto3-stubs = {extras = ["s3"], version = "^1.38.13"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "*"

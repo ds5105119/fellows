@@ -20,7 +20,7 @@ class WakapiService:
     async def make_wakapi_user(self, session: AsyncSession, user: User) -> str:
         key = str(uuid4())
         aware_dt = datetime.now(UTC)
-        naive_dt = aware_dt.replace(tzinfo=None)  # ← tz 제거
+        naive_dt = aware_dt.replace(tzinfo=None)
 
         try:
             await self.repository.create(

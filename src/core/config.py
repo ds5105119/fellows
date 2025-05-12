@@ -51,7 +51,8 @@ class AWS(BaseModel):
     access_key_id: str
     secret_access_key: str
     storage_bucket_name: str
-    s3_region_name: str
+    s3_region_name: str | None = Field(default=None)
+    account_id: str | None = Field(default=None)
 
 
 class NATS(BaseModel):
@@ -84,6 +85,7 @@ class Settings(BaseSettings):
     nats: NATS = Field(default_factory=NATS)
 
     aws: AWS
+    cloudflare: AWS
     keycloak: KeycloakOpenIDClientConfig
     keycloak_admin: KeycloakAdminClientConfig
 
