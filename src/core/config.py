@@ -1,3 +1,5 @@
+import json
+import os
 from pathlib import Path
 from typing import Annotated
 
@@ -119,4 +121,13 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
+env_json = os.environ.get("ENV")
+
+if not env_json:
+    try:
+        payload = json.loads(env_json)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"ENV에 담긴 JSON 파싱 실패: {e}")
+    settings = Settings(**payload)
+else:
+    settings = Settings()
