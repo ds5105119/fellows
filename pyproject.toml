@@ -27,6 +27,7 @@ nats-py = "^2.9.0"
 openai = "^1.77.0"
 boto3 = "^1.38.13"
 boto3-stubs = {extras = ["s3"], version = "^1.38.13"}
+gunicorn = "^23.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "*"
