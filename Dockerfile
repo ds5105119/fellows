@@ -17,11 +17,5 @@ RUN poetry install --no-root --only main
 
 COPY src ./src
 
-ENV PYTHONPATH=/app/src
-
 EXPOSE 8080
-
-CMD ["gunicorn", "src.main:app", \
-     "-k", "uvicorn.workers.UvicornWorker", \
-     "-b", "0.0.0.0:8080", \
-     "--workers=2"]
+CMD ["gunicorn", "src.main:app", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8080", "--workers=2"]
