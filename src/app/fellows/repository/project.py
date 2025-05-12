@@ -27,7 +27,7 @@ class ProjectDeleteRepository(ABaseDeleteRepository[Project]):
         stmt = delete(self.model).where(
             self.model.project_id == project_id,
             self.model.sub == sub,
-            self.model.deletable == False,
+            self.model.deletable == True,
         )
         await session.execute(stmt)
         await session.commit()

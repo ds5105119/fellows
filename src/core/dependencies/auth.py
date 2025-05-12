@@ -4,7 +4,7 @@ from typing import Annotated, Any, Optional
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer
 from keycloak import KeycloakAdmin, KeycloakOpenID, KeycloakOpenIDConnection
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from src.core.config import settings
 
@@ -57,16 +57,20 @@ async def _get_current_user(
     data: Annotated[dict, Depends(http_bearer, use_cache=False)],
 ) -> User:
     print(data)
-    if not data:
-        raise HTTPException(status_code=403)
 
-    return User(**data)
+    try:
+        return User(**data)
+    except ValidationError:
+        raise HTTPException(status_code=403)
 
 
 async def _get_current_user_without_error(
     data: Annotated[dict, Depends(http_bearer, use_cache=False)],
 ) -> User | None:
-    return User(**data) if data else None
+    try:
+        return User(**data) if data else None
+    except ValidationError:
+        raise HTTPException(status_code=403)
 
 
 get_current_user = Annotated[User, Depends(_get_current_user)]
