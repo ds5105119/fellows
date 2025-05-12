@@ -16,8 +16,9 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 RUN poetry install --no-root --only main
 
 COPY . .
-ENV PYTHONPATH=/app
+
+ENV PYTHONPATH=/app/src
 
 EXPOSE 8080
 
-CMD ["gunicorn", "src.main:app", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8080", "--workers=2"]
+CMD ["gunicorn", "main:app", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8080", "--workers=2"]
