@@ -121,12 +121,12 @@ class Settings(BaseSettings):
     )
 
 
-env_json = os.environ.get("ENV")
+env_json = os.environ.get("FELLOWS_ENV")
 
-if not env_json:
+if env_json:
     try:
         payload = json.loads(env_json)
-    except json.JSONDecodeError as e:
+    except Exception as e:
         raise RuntimeError(f"ENV에 담긴 JSON 파싱 실패: {e}")
     settings = Settings(**payload)
 else:
