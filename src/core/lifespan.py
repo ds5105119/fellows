@@ -43,11 +43,11 @@ async def lifespan(app: FastAPI):
     log = logging.getLogger(__name__)
 
     log.info("Application Started")
-    await nc.connect(servers=settings.nats.server, name=settings.nats.name)
-    await fiscal_data_manager.init()
-    await gov24_service_conditions_manager.init()
-    await gov24_service_detail_manager.init()
-    await gov24_service_list_manager.init()
+    # await nc.connect(servers=settings.nats.server, name=settings.nats.name)
+    # await fiscal_data_manager.init()
+    # await gov24_service_conditions_manager.init()
+    # await gov24_service_detail_manager.init()
+    # await gov24_service_list_manager.init()
     app.requests_client = httpx.AsyncClient()
 
     yield
