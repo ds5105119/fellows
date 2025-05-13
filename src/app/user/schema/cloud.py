@@ -36,6 +36,11 @@ class PresignedGetRequest(BaseModel):
     md5: str | None = Field(default=None)
 
 
+class PresignedDeleteRequest(BaseModel):
+    key: str
+    sse_key: str
+
+
 class PresignedHeader(BaseModel):
     x_amz_server_side_encryption_customer_algorithm: str | None = Field(default=None)
     x_amz_server_side_encryption_customer_key: str | None = Field(default=None)

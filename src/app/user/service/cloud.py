@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import logging
 import os
-import secrets
 from typing import Annotated
 from uuid import uuid4
 
@@ -13,7 +12,13 @@ from mypy_boto3_s3 import S3Client
 from sqlalchemy.exc import IntegrityError
 
 from src.app.user.repository.cloud import FileRecordRepository
-from src.app.user.schema.cloud import PresignedGetRequest, PresignedHeader, PresignedPutRequest, PresignedPutResponse
+from src.app.user.schema.cloud import (
+    PresignedDeleteRequest,
+    PresignedGetRequest,
+    PresignedHeader,
+    PresignedPutRequest,
+    PresignedPutResponse,
+)
 from src.core.config import settings
 from src.core.dependencies.auth import get_current_user
 from src.core.dependencies.db import postgres_session
@@ -122,7 +127,7 @@ class CloudService:
         self,
         user: get_current_user,
         session: postgres_session,
-        data: Annotated[PresignedGetRequest, Query()],
+        data: Annotated[PresignedDeleteRequest, Query()],
     ) -> None:
         result = await self.file_record_repository.get_instance(
             session,
