@@ -10,4 +10,5 @@ class FileRecord(Base):
     key: Mapped[str] = mapped_column(String, primary_key=True, unique=True)
     sub: Mapped[int] = mapped_column(String, nullable=False)
     algorithm: Mapped[str] = mapped_column(String, nullable=False, default="AES256")
-    sse_key: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    sse_key: Mapped[str] = mapped_column(String, nullable=False)
+    md5: Mapped[str] = mapped_column(String, nullable=False)

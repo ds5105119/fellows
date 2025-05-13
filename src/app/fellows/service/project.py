@@ -12,10 +12,10 @@ from src.app.fellows.repository.project import ProjectInfoFileRecordRepository, 
 from src.app.fellows.schema.project import (
     GetProjectsRequest,
     ProjectFeatureEstimateRequest,
+    ProjectFileRecordsSchema,
     ProjectInfoSchema,
     ProjectSchema,
 )
-from src.app.user.schema.cloud import FileRecord
 from src.core.dependencies.auth import get_current_user
 from src.core.dependencies.db import postgres_session
 
@@ -48,10 +48,14 @@ class ProjectService:
     ):
         project_info_data = data.model_dump(exclude_unset=True, exclude={"files"})
         project_info = self.project_info_repository.model(**project_info_data)
-        file_records: list[FileRecord] = data.files or []
+        file_records: list[ProjectFileRecordsSchema] = data.files or []
 
         for file in file_records:
-            project_info.files.append(self.project_info_file_record_repository.model(file_record_key=file.key))
+            project_info.files.append(
+                self.project_info_file_record_repository.model(
+                    file_record_key=file.file_record_key,
+                )
+            )
 
         project = await self.project_repository.create(
             session,
@@ -76,9 +80,9 @@ class ProjectService:
                 self.project_repository.model.sub == user.sub,
             ],
             options=[
-                subqueryload(self.project_repository.model.project_info).subqueryload(
-                    self.project_info_repository.model.files
-                )
+                subqueryload(self.project_repository.model.project_info)
+                .subqueryload(self.project_info_repository.model.files)
+                .subqueryload(self.project_info_file_record_repository.model.file_record)
             ],
         )
 
@@ -119,9 +123,9 @@ class ProjectService:
             filters,
             orderby=[order_sort(getattr(order_by_table, order_by))],
             options=[
-                subqueryload(self.project_repository.model.project_info).subqueryload(
-                    self.project_info_repository.model.files
-                )
+                subqueryload(self.project_repository.model.project_info)
+                .subqueryload(self.project_info_repository.model.files)
+                .subqueryload(self.project_info_file_record_repository.model.file_record)
             ],
             join=[
                 self.project_info_repository.model,
@@ -156,9 +160,9 @@ class ProjectService:
                 ),
             ],
             options=[
-                subqueryload(self.project_repository.model.project_info).subqueryload(
-                    self.project_info_repository.model.files
-                )
+                subqueryload(self.project_repository.model.project_info)
+                .subqueryload(self.project_info_repository.model.files)
+                .subqueryload(self.project_info_file_record_repository.model.file_record)
             ],
         )
 
@@ -204,9 +208,9 @@ class ProjectService:
             filters,
             orderby=[desc(getattr(self.project_repository.model, data.order_by))],
             options=[
-                subqueryload(self.project_repository.model.project_info).subqueryload(
-                    self.project_info_repository.model.files
-                )
+                subqueryload(self.project_repository.model.project_info)
+                .subqueryload(self.project_info_repository.model.files)
+                .subqueryload(self.project_info_file_record_repository.model.file_record)
             ],
             join=[self.project_repository.model.project_info],
         )
@@ -240,7 +244,7 @@ class ProjectService:
 
     async def add_file_to_project(
         self,
-        data: FileRecord,
+        data: ProjectFileRecordsSchema,
         user: get_current_user,
         session: postgres_session,
         project_id: str = Path(),
@@ -273,7 +277,7 @@ class ProjectService:
             await self.project_info_file_record_repository.create(
                 session,
                 project_info_id=project_info.id,
-                file_record_key=data.key,
+                file_record_key=data.file_record_key,
             )
         except IntegrityError:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)

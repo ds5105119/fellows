@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import logging
+import os
 import secrets
 from typing import Annotated
 from uuid import uuid4
@@ -29,9 +30,10 @@ class CloudService:
         self.file_record_repository = file_record_repository
         self.client = client
 
-    def generate_sse_c_headers(self, key_length: int = 128):
-        key = secrets.token_urlsafe(key_length)
-        md5 = base64.b64encode(hashlib.md5(key.encode()).digest()).decode("utf-8")
+    def generate_sse_c_headers(self):
+        raw_key = os.urandom(32)
+        key = base64.b64encode(raw_key).decode("utf-8")
+        md5 = base64.b64encode(hashlib.md5(raw_key).digest()).decode("utf-8")
 
         return {
             "SSECustomerAlgorithm": "AES256",
@@ -63,9 +65,9 @@ class CloudService:
         session: postgres_session,
         data: Annotated[PresignedPutRequest, Query()],
     ) -> PresignedPutResponse:
-        key = f"{data.suffix}{uuid4()}"
+        key = f"{data.suffix}_{uuid4()}"
         headers = self.generate_sse_c_headers()
-        presigned_url = self.get_presigned_url("get_object", key, 600, headers)
+        presigned_url = self.get_presigned_url("put_object", key, 600, headers)
 
         try:
             await self.file_record_repository.create(
@@ -73,14 +75,15 @@ class CloudService:
                 key=key,
                 sub=user.sub,
                 sse_key=headers.get("SSECustomerKey"),
+                md5=headers.get("SSECustomerKeyMD5"),
             )
 
-        except IntegrityError:
+        except IntegrityError as e:
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Unknown error")
 
         response.headers["x-amz-server-side-encryption-customer-algorithm"] = headers.get("SSECustomerAlgorithm")
         response.headers["x-amz-server-side-encryption-customer-key"] = headers.get("SSECustomerKey")
-        response.headers["x-amz-server-side-encryption-customer-key-MD5"] = headers.get("SSECustomerKeyMD5")
+        response.headers["x-amz-server-side-encryption-customer-key-md5"] = headers.get("SSECustomerKeyMD5")
 
         return PresignedPutResponse(
             presigned_url=presigned_url,
@@ -98,11 +101,14 @@ class CloudService:
     ) -> str:
         algorithm = data.algorithm or headers.x_amz_server_side_encryption_customer_algorithm
         key = data.sse_key or headers.x_amz_server_side_encryption_customer_key
+        md5 = (
+            data.md5
+            or headers.x_amz_server_side_encryption_customer_key_MD5
+            or base64.b64encode(hashlib.md5(key.encode()).digest()).decode("utf-8")
+        )
 
         if not algorithm or not key:
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
-
-        md5 = base64.b64encode(hashlib.md5(key.encode()).digest()).decode("utf-8")
 
         headers = {
             "SSECustomerAlgorithm": algorithm,

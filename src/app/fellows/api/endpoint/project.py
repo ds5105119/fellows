@@ -6,7 +6,7 @@ from webtool.throttle import limiter
 
 from src.app.fellows.api.dependencies import project_service
 from src.app.fellows.model.project import Project
-from src.app.fellows.schema.project import ProjectFeatureEstimateResponse, ProjectSchema
+from src.app.fellows.schema.project import ProjectFeatureEstimateResponse, ProjectFileRecordsSchema, ProjectSchema
 from src.core.dependencies.auth import get_current_user
 from src.core.dependencies.db import postgres_session
 from src.core.models.repository import PaginatedResult
