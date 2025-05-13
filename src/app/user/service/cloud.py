@@ -78,8 +78,8 @@ class CloudService:
         except IntegrityError:
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Unknown error")
 
-        response.headers["x_amz_server_side_encryption_customer_algorithm"] = headers.get("SSECustomerAlgorithm")
-        response.headers["x_amz_server_side_encryption_customer_key"] = headers.get("SSECustomerKey")
+        response.headers["x-amz-server-side-encryption-customer-algorithm"] = headers.get("SSECustomerAlgorithm")
+        response.headers["x-amz-server-side-encryption-customer-key"] = headers.get("SSECustomerKey")
         response.headers["x-amz-server-side-encryption-customer-key-MD5"] = headers.get("SSECustomerKeyMD5")
 
         return PresignedPutResponse(
@@ -87,6 +87,7 @@ class CloudService:
             algorithm="AES256",
             key=key,
             sse_key=headers.get("SSECustomerKey"),
+            md5=headers.get("SSECustomerKeyMD5"),
         )
 
     async def create_get_presigned_url(

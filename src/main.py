@@ -54,14 +54,12 @@ app = create_application(debug=settings.debug)
 
 
 if __name__ == "__main__":
-    import multiprocessing
-
     import uvicorn
 
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=8000,
-        workers=multiprocessing.cpu_count() * 2 + 1,
+        workers=1,
         reload=settings.debug,
     )

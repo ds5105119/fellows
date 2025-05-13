@@ -16,6 +16,7 @@ class PresignedPutResponse(BaseModel):
     key: str
     algorithm: str = Field(default="AES256")
     sse_key: str
+    md5: str
 
 
 class PresignedGetRequest(BaseModel):
