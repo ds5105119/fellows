@@ -7,7 +7,11 @@ from sqlalchemy import asc, cast, desc, exists, func, select
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import subqueryload
 
-from src.app.fellows.data.project import estimation_instruction, feature_estimate_instruction
+from src.app.fellows.data.project import (
+    estimation_instruction,
+    feature_estimate_instruction,
+    project_information_instruction,
+)
 from src.app.fellows.repository.project import ProjectInfoFileRecordRepository, ProjectInfoRepository, ProjectRepository
 from src.app.fellows.schema.project import (
     GetProjectsRequest,
@@ -115,6 +119,9 @@ class ProjectService:
 
         if data.keyword:
             filters.append(self._keyword_to_project_filter(data.keyword))
+
+        if data.status:
+            filters.append(self.project_repository.model.status == data.status)
 
         result = await self.project_repository.get_page_with_total(
             session,
@@ -343,6 +350,12 @@ class ProjectService:
                 yield "event: stream_done\n"  # 이벤트 타입 지정
                 yield "data: \n\n"
             elif event.type == "response.completed":
+                ai_estimate = event.response.output_text
+                try:
+                    emoji, total_amount = await self.project_estimate_after_job(ai_estimate)
+                except:
+                    emoji, total_amount = None, None
+
                 await self.project_repository.update(
                     session,
                     [
@@ -350,5 +363,24 @@ class ProjectService:
                         self.project_repository.model.sub == user.sub,
                     ],
                     ai_estimate=event.response.output_text,
+                    emoji=emoji,
+                    total_amount=total_amount,
                 )
                 break
+
+    async def project_estimate_after_job(self, ai_estimate: str):
+        response = await self.client.responses.create(
+            model="gpt-4.1-mini-2025-04-14",
+            instructions=project_information_instruction,
+            input=ai_estimate,
+            max_output_tokens=100,
+            temperature=0.0,
+            top_p=1.0,
+        )
+
+        result = [s.strip() for s in response.output_text.split(",")]
+
+        emoji = result[0]
+        total_amount = int(result[1])
+
+        return emoji, total_amount

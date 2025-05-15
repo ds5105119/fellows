@@ -14,6 +14,19 @@ feature_estimate_instruction = """AI 역할: SI 컨설턴트
 title1, title2, ...
 """
 
+project_information_instruction = """AI 역할: 정보 추출
+
+Markdown 내용을 읽고 다음을 출력하세요:
+
+1. 프로젝트 제목에 어울리는 이모지 1개 (예: 쥬얼리 → 💍, 산업 → ⚙️, 교육 → 📚)
+2. 총액 (숫자만, 쉼표 제거)
+
+제목은 '## 📌' 아래 줄에서 찾고, 총액은 '합계' 또는 '총계'에 있는 숫자를 사용하세요.
+
+출력 형식:  
+이모지, 금액  
+예: ✨, 8420000
+"""
 
 estimation_instruction = """당신은 SI 업체의 견적 자동 생성 AI (Markdown 전용)입니다.
 

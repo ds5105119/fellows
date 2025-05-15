@@ -60,7 +60,7 @@ class ProjectInfoSchema(BaseModel):
     files: list[ProjectFileRecordsSchema] = Field(default_factory=list)
 
     # --- 일정 및 기타 ---
-    start_date: date | None = Field(default_factory=date.today)
+    start_date: date | None = Field(default=None)
     desired_deadline: date | None = Field(default=None)
     maintenance_required: bool = Field(False)
 
@@ -70,6 +70,7 @@ class GetProjectsRequest(BaseModel):
     size: int = Field(10, ge=1, le=20, description="Page size")
     keyword: str | None = Field(default=None)
     order_by: str = Field(default="updated_at")
+    status: str | None = Field(default=None)
 
 
 class ProjectSchema(BaseModel):
@@ -78,8 +79,12 @@ class ProjectSchema(BaseModel):
     id: int
     sub: str
     project_id: str
+
     status: str
     ai_estimate: str | None = None
+    emoji: str | None = None
+    total_amount: int | None = None
+
     created_at: datetime
     updated_at: datetime
     deletable: bool

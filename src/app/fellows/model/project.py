@@ -27,6 +27,8 @@ class Project(Base):
 
     status: Mapped[str] = mapped_column(String, default="draft")
     ai_estimate: Mapped[str] = mapped_column(Text, nullable=True)
+    emoji: Mapped[str] = mapped_column(String, nullable=True)
+    total_amount: Mapped[int] = mapped_column(Integer, nullable=True)
 
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

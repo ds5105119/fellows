@@ -12,6 +12,12 @@ from src.core.dependencies.auth import keycloak_openid
 from src.core.dependencies.db import Redis
 from src.core.lifespan import lifespan
 
+if settings.debug:
+    import logging
+
+    sqlalchemy_logger = logging.getLogger("sqlalchemy.engine")
+    sqlalchemy_logger.setLevel(logging.INFO)
+
 
 def create_application(debug=False) -> FastAPI:
     middleware = [

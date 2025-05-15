@@ -66,7 +66,7 @@ async def delete_project(
 
 @limiter(max_requests=200, interval=60 * 60 * 24)
 @router.get("/estimate/feature", response_model=ProjectFeatureEstimateResponse)
-async def feature_estimate_stream(
+async def feature_estimate(
     features: Annotated[list[str], Depends(project_service.get_project_feature_estimate)],
 ):
     return ProjectFeatureEstimateResponse(feature_list=features)

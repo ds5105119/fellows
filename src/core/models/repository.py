@@ -287,12 +287,12 @@ class ABaseReadRepository[T](ABaseRepository[T]):
             session,
             filters,
             join=join,
-            stmt=select(func.count()).select_from(self.model.__table__),
+            stmt=select(func.count(self.model.id)),
         )
         total = int(total_result.scalar_one_or_none()) or 0
 
         if total == 0:
-            return PaginatedResult(total, None)
+            return PaginatedResult(total, [])
 
         items = await self.get_page(session, page, size, filters, columns, orderby, options, join)
 
