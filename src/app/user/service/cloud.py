@@ -78,6 +78,7 @@ class CloudService:
             await self.file_record_repository.create(
                 session,
                 key=key,
+                name=data.name,
                 sub=user.sub,
                 sse_key=headers.get("SSECustomerKey"),
                 md5=headers.get("SSECustomerKeyMD5"),
@@ -100,7 +101,6 @@ class CloudService:
 
     async def create_get_presigned_url(
         self,
-        user: get_current_user,
         data: Annotated[PresignedGetRequest, Query()],
         headers: Annotated[PresignedHeader, Header()],
     ) -> str:
@@ -148,4 +148,10 @@ class CloudService:
             )
         except ClientError as e:
             logger.error("Cloudflare delete error: %s", e)
+            raise HTTPException(status_code=500, detail="Deletion failed")
+
+        try:
+            await self.file_record_repository.delete_by_key(session, key=file_record.key)
+        except Exception as e:
+            logger.error("Database Delete Error: %s", e)
             raise HTTPException(status_code=500, detail="Deletion failed")

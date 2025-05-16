@@ -17,12 +17,17 @@ class Project(Base):
 
     project_id: Mapped[str] = mapped_column(String, unique=True, nullable=False, default=lambda: str(uuid4()))
 
-    project_info_id: Mapped[int] = mapped_column(ForeignKey("project_info.id"), unique=True, nullable=False)
-    project_info: Mapped["ProjectInfo"] = relationship(back_populates="project", uselist=False)
-    groups: Mapped[list["ProjectGroups"]] = relationship(
+    project_info: Mapped["ProjectInfo"] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
+        single_parent=True,
+        uselist=False,
+        passive_deletes=True,
+    )
+    groups: Mapped[list["ProjectGroups"]] = relationship(
+        back_populates="project",
         lazy="subquery",
+        cascade="all, delete-orphan",
     )
 
     status: Mapped[str] = mapped_column(String, default="draft")
@@ -47,6 +52,8 @@ class ProjectInfo(Base):
     __tablename__ = "project_info"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    project_id = mapped_column(ForeignKey("project.id", ondelete="CASCADE"), unique=True, nullable=False)
     project: Mapped["Project"] = relationship(back_populates="project_info", uselist=False)
 
     # 필수 항목
@@ -78,7 +85,7 @@ class ProjectInfo(Base):
 class ProjectGroups(Base):
     __tablename__ = "project_groups"
 
-    project_id: Mapped[int] = mapped_column(ForeignKey("project.id"), primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("project.id", ondelete="CASCADE"), unique=True, nullable=False)
     project: Mapped["Project"] = relationship(back_populates="groups")
 
     group_id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -87,8 +94,8 @@ class ProjectGroups(Base):
 class ProjectInfoFileRecords(Base):
     __tablename__ = "project_file_records"
 
-    project_info_id: Mapped[int] = mapped_column(ForeignKey("project_info.id"), primary_key=True)
+    project_info_id: Mapped[int] = mapped_column(ForeignKey("project_info.id", ondelete="CASCADE"), primary_key=True)
     project_info: Mapped["ProjectInfo"] = relationship(back_populates="files")
 
-    file_record_key: Mapped[str] = mapped_column(ForeignKey("file_records.key"), primary_key=True)
+    file_record_key: Mapped[str] = mapped_column(ForeignKey("file_records.key", ondelete="CASCADE"), primary_key=True)
     file_record: Mapped["FileRecord"] = relationship()

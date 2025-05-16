@@ -4,20 +4,23 @@ from pydantic import BaseModel, ConfigDict, Field
 class FileRecord(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    algorithm: str = Field(default="AES256")
     key: str
+    name: str
+    algorithm: str = Field(default="AES256")
     sse_key: str | None = Field(default=None)
 
 
 class FileRecordResponseOnly(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    key: str
+    name: str
     algorithm: str = Field(default="AES256")
-    key: str | None = Field(default=None)
     sse_key: str | None = Field(default=None)
 
 
 class PresignedPutRequest(BaseModel):
+    name: str
     suffix: str
 
 

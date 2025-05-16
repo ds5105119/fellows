@@ -37,7 +37,7 @@ class ProjectFileRecordsSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     project_info_id: int | None = Field(default=None)
     file_record_key: str
-    file_record: FileRecordResponseOnly | None = Field(default=None)
+    file_record: FileRecordResponseOnly
 
 
 class ProjectInfoSchema(BaseModel):

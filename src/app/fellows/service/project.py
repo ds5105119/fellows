@@ -136,7 +136,7 @@ class ProjectService:
             ],
             join=[
                 self.project_info_repository.model,
-                self.project_repository.model.project_info_id == self.project_info_repository.model.id,
+                self.project_repository.model.project_info,
             ],
         )
 
@@ -233,10 +233,14 @@ class ProjectService:
     ):
         payload = data.model_dump(exclude_unset=True, exclude={"files"})
 
-        subquery = select(self.project_repository.model.project_id).where(
-            self.project_repository.model.project_id == project_id,
-            self.project_repository.model.sub == user.sub,
-            self.project_repository.model.project_info_id == self.project_info_repository.model.id,
+        subquery = (
+            select(self.project_repository.model.project_id)
+            .select_from(self.project_repository.model)
+            .join(self.project_info_repository.model)
+            .where(
+                self.project_repository.model.project_id == project_id,
+                self.project_repository.model.sub == user.sub,
+            )
         )
 
         result = await self.project_info_repository.update(
