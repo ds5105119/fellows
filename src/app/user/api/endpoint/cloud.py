@@ -8,20 +8,20 @@ from src.app.user.schema.cloud import PresignedPutResponse
 router = APIRouter()
 
 
-@router.get("/presigned/get", response_model=str)
+@router.get("/object/presigned/get", response_model=str)
 async def create_presigned_get_request(
     url: Annotated[str, Depends(cloud_service.create_get_presigned_url)],
 ):
     return url
 
 
-@router.get("/presigned/put", response_model=PresignedPutResponse)
+@router.get("/object/presigned/put", response_model=PresignedPutResponse)
 async def create_presigned_put_request(
     url: Annotated[PresignedPutResponse, Depends(cloud_service.create_put_presigned_url)],
 ):
     return url
 
 
-@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/object", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_object(_: Annotated[None, Depends(cloud_service.delete_file)]):
     pass

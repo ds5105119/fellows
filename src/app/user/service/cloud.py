@@ -125,7 +125,6 @@ class CloudService:
 
     async def delete_file(
         self,
-        user: get_current_user,
         session: postgres_session,
         data: Annotated[PresignedDeleteRequest, Query()],
     ) -> None:

@@ -121,7 +121,7 @@ class ProjectService:
             filters.append(self._keyword_to_project_filter(data.keyword))
 
         if data.status:
-            filters.append(self.project_repository.model.status == data.status)
+            filters.append(self.project_repository.model.status.contains(data.status))
 
         result = await self.project_repository.get_page_with_total(
             session,
