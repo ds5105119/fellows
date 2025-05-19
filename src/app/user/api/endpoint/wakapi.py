@@ -8,5 +8,10 @@ router = APIRouter()
 
 
 @router.get("", status_code=status.HTTP_200_OK)
+async def read_my_api_key(api_key: Annotated[str, Depends(wakapi_service.read_my_api_key)]) -> str:
+    return api_key
+
+
+@router.get("/{sub}", status_code=status.HTTP_200_OK)
 async def read_api_key(api_key: Annotated[str, Depends(wakapi_service.read_api_key)]) -> str:
     return api_key

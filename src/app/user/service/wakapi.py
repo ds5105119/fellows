@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Path, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -48,7 +48,26 @@ class WakapiService:
         self,
         session: wakapi_postgres_session,
         user: get_current_user,
+        sub: str = Path(),
     ) -> str:
+        if not any(group.find("dev") != -1 for group in user.groups):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        key = await self.repository.get_user_key_by_sub(session, sub)
+
+        if not key:
+            key = await self.make_wakapi_user(session, user)
+
+        return key
+
+    async def read_my_api_key(
+        self,
+        session: wakapi_postgres_session,
+        user: get_current_user,
+    ) -> str:
+        if not any(group.find("dev") != -1 for group in user.groups):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
         key = await self.repository.get_user_key_by_sub(session, user.sub)
 
         if not key:

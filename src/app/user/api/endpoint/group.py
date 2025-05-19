@@ -1,114 +1,90 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
 from src.app.user.api.dependencies import group_service
-from src.app.user.model.group import GroupInvitation
-from src.app.user.schema.group import GroupInvitationResponse, GroupRepresentation
+from src.app.user.schema.group import *
 
 router = APIRouter()
 
 
-@router.post("/", response_model=GroupRepresentation, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=GroupResponse, status_code=status.HTTP_201_CREATED)
 async def create_new_group(
-    created_group: Annotated[GroupRepresentation, Depends(group_service.create_group)],
+    created_group: Annotated[GroupResponse, Depends(group_service.create_group)],
 ):
     """새로운 그룹을 생성합니다. `parentId`는 필수입니다."""
     return created_group
 
 
-@router.get("/{group_id}", response_model=GroupRepresentation)
+@router.get("/{group}", response_model=GroupResponse)
 async def read_group(
-    group_info: Annotated[GroupRepresentation, Depends(group_service.get_group)],
+    group: Annotated[GroupResponse, Depends(group_service.get_group_by_id)],
 ):
-    """특정 그룹 정보를 조회합니다. (멤버 이상 접근 가능)"""
-    return group_info
+    return group
 
 
-@router.put("/{group_id}", response_model=GroupRepresentation)
+@router.get("/", response_model=GroupsPaginatedResponse)
+async def read_groups(
+    groups: Annotated[GroupsPaginatedResponse, Depends(group_service.get_groups)],
+):
+    return groups
+
+
+@router.put("/{group}", response_model=GroupResponse)
 async def update_group(
-    updated_group: Annotated[GroupRepresentation, Depends(group_service.update_group)],
+    group: Annotated[GroupResponse, Depends(group_service.update_group)],
 ):
-    """그룹 기본 정보(이름, parentId)를 수정합니다. (owner 또는 admin 접근 가능)"""
-    return updated_group
+    return group
 
 
-@router.delete("/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{group}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_group(
     _: Annotated[None, Depends(group_service.delete_group)],
 ):
-    """그룹을 삭제합니다. (Owner만 가능)"""
     return None
 
 
 # --- Group Member & Role Management Endpoints ---
 
 
-@router.get("/{group_id}/members", response_model=list[dict[str, Any]])
-async def read_group_members(
-    members: Annotated[list[dict[str, Any]], Depends(group_service.get_group_members_with_roles)],
+@router.post("/{group}/invitations", response_model=GroupInvitationResponse, status_code=status.HTTP_201_CREATED)
+async def invite_user_to_group(
+    invitation: Annotated[GroupInvitationResponse, Depends(group_service.invite_member_to_group)],
 ):
-    """그룹 멤버 목록과 역할을 조회합니다. (멤버 이상 접근 가능)"""
-    return members
+    """그룹에 사용자를 이메일로 초대합니다. (owner 또는 admin 접근 가능)"""
+    return invitation
 
 
-@router.put("/{group_id}/admins/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def add_group_admin_role(
-    _: Annotated[None, Depends(group_service.add_admin_role)],
+@router.get("/invitations/accept", response_model=GroupResponse)
+async def accept_group_invitation(
+    result: Annotated[GroupResponse, Depends(group_service.accept_group_invitation)],
 ):
-    """멤버에게 Admin 역할을 부여합니다. (Owner만 가능)"""
-    return None
+    return result
 
 
-@router.delete("/{group_id}/admins/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def remove_group_admin_role(
-    _: Annotated[None, Depends(group_service.remove_admin_role)],
+@router.put("/{group}/member/{member}", response_model=GroupResponse)
+async def update_group_member_details(
+    result: Annotated[GroupResponse, Depends(group_service.update_group_member_details)],
 ):
-    """Admin 역할을 제거하고 Member로 만듭니다. (Owner만 가능)"""
-    return None
+    return result
 
 
-@router.delete("/{group_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def remove_group_member(
-    _: Annotated[None, Depends(group_service.remove_member)],
+@router.delete("/{group}/member/{member}", status_code=status.HTTP_204_NO_CONTENT)
+async def update_group_member_details(
+    _: Annotated[None, Depends(group_service.remove_member_from_group)],
 ):
-    """그룹에서 멤버를 제거합니다. (owner/admin은 타인 제거 가능, member는 자신만 제거 가능)"""
-    return None
+    pass
 
 
 # --- Group Invitation Endpoints ---
 
 
-@router.post("/{group_id}/invitations", response_model=GroupInvitationResponse, status_code=status.HTTP_201_CREATED)
-async def invite_user_to_group(
-    invitation_db: Annotated[GroupInvitation, Depends(group_service.invite_member)],
-):
-    """그룹에 사용자를 이메일로 초대합니다. (owner 또는 admin 접근 가능)"""
-    return GroupInvitationResponse.model_validate(invitation_db)
-
-
-@router.post("/invitations/accept", status_code=status.HTTP_200_OK)
-async def accept_group_invitation(
-    result: Annotated[dict[str, Any], Depends(group_service.accept_invitation)],
-):
-    """그룹 초대를 수락합니다."""
-    return result
-
-
-@router.get("/invitations/sent", response_model=list[GroupInvitationResponse])
+@router.get("/invitations/sent", response_model=GroupInvitationsPaginatedResponse)
 async def get_sent_invitations(
-    invitations_raw: Annotated[list[dict[str, Any]], Depends(group_service.get_sent_invites)],
+    invitations: Annotated[GroupInvitationsPaginatedResponse, Depends(group_service.get_sent_invites)],
 ):
     """자신이 보낸 초대 목록을 조회합니다."""
-    return [GroupInvitationResponse.model_validate(inv) for inv in invitations_raw]
-
-
-@router.get("/invitations/received", response_model=list[GroupInvitationResponse])
-async def get_received_invitations(
-    invitations_raw: Annotated[list[dict[str, Any]], Depends(group_service.get_received_invites)],
-):
-    """자신이 받은 초대 목록을 조회합니다."""
-    return [GroupInvitationResponse.model_validate(inv) for inv in invitations_raw]
+    return invitations
 
 
 @router.delete("/invitations/sent", status_code=status.HTTP_204_NO_CONTENT)
@@ -117,6 +93,14 @@ async def delete_sent_invitation(
 ):
     """자신이 보낸 초대를 삭제합니다."""
     return None
+
+
+@router.get("/invitations/received", response_model=GroupInvitationsPaginatedResponse)
+async def get_received_invitations(
+    invitations: Annotated[GroupInvitationsPaginatedResponse, Depends(group_service.get_received_invites)],
+):
+    """자신이 받은 초대 목록을 조회합니다."""
+    return invitations
 
 
 @router.delete("/invitations/received", status_code=status.HTTP_204_NO_CONTENT)

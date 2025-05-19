@@ -60,7 +60,7 @@ async def _get_current_user(
 
     try:
         return User(**data)
-    except ValidationError:
+    except (ValidationError, TypeError):
         raise HTTPException(status_code=403)
 
 
@@ -69,7 +69,7 @@ async def _get_current_user_without_error(
 ) -> User | None:
     try:
         return User(**data) if data else None
-    except ValidationError:
+    except (ValidationError, TypeError):
         raise HTTPException(status_code=403)
 
 

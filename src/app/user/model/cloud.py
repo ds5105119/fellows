@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.core.models.base import Base
 
 if TYPE_CHECKING:
-    from src.app.fellows.model.project import ProjectInfoFileRecords
+    from src.app.fellows.model.project import ProjectInfoFileRecordLink
 
 
 class FileRecord(Base):
@@ -19,7 +19,7 @@ class FileRecord(Base):
     sse_key: Mapped[str] = mapped_column(String, nullable=False)
     md5: Mapped[str] = mapped_column(String, nullable=False)
 
-    project_info: Mapped[list["ProjectInfoFileRecords"]] = relationship(
+    project_info: Mapped[list["ProjectInfoFileRecordLink"]] = relationship(
         back_populates="file_record",
         cascade="all, delete-orphan",
     )

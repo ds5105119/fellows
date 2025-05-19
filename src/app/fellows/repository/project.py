@@ -1,7 +1,7 @@
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.fellows.model.project import Project, ProjectGroups, ProjectInfo, ProjectInfoFileRecords
+from src.app.fellows.model.project import Project, ProjectInfo, ProjectInfoFileRecordLink
 from src.core.models.repository import (
     ABaseCreateRepository,
     ABaseDeleteRepository,
@@ -49,35 +49,19 @@ class ProjectInfoDeleteRepository(ABaseDeleteRepository[ProjectInfo]):
     pass
 
 
-class ProjectGroupsCreateRepository(ABaseCreateRepository[ProjectGroups]):
+class ProjectInfoFileRecordCreateRepository(ABaseCreateRepository[ProjectInfoFileRecordLink]):
     pass
 
 
-class ProjectGroupsReadRepository(ABaseReadRepository[ProjectGroups]):
+class ProjectInfoFileRecordReadRepository(ABaseReadRepository[ProjectInfoFileRecordLink]):
     pass
 
 
-class ProjectGroupsUpdateRepository(ABaseUpdateRepository[ProjectGroups]):
+class ProjectInfoFileRecordUpdateRepository(ABaseUpdateRepository[ProjectInfoFileRecordLink]):
     pass
 
 
-class ProjectGroupsDeleteRepository(ABaseDeleteRepository[ProjectGroups]):
-    pass
-
-
-class ProjectInfoFileRecordCreateRepository(ABaseCreateRepository[ProjectInfoFileRecords]):
-    pass
-
-
-class ProjectInfoFileRecordReadRepository(ABaseReadRepository[ProjectInfoFileRecords]):
-    pass
-
-
-class ProjectInfoFileRecordUpdateRepository(ABaseUpdateRepository[ProjectInfoFileRecords]):
-    pass
-
-
-class ProjectInfoFileRecordDeleteRepository(ABaseDeleteRepository[ProjectInfoFileRecords]):
+class ProjectInfoFileRecordDeleteRepository(ABaseDeleteRepository[ProjectInfoFileRecordLink]):
     pass
 
 
@@ -95,15 +79,6 @@ class ProjectInfoRepository(
     ProjectInfoReadRepository,
     ProjectInfoUpdateRepository,
     ProjectInfoDeleteRepository,
-):
-    pass
-
-
-class ProjectGroupsRepository(
-    ProjectGroupsCreateRepository,
-    ProjectGroupsReadRepository,
-    ProjectGroupsUpdateRepository,
-    ProjectGroupsDeleteRepository,
 ):
     pass
 
