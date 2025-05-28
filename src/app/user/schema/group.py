@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -17,7 +17,7 @@ class MembershipResponse(MembershipBase):
 # --- GroupPosition Schemas ---
 class GroupPositionBase(BaseModel):
     name: str = Field(max_length=100)
-    description: Optional[str] = None
+    description: str | None = Field(default=None)
 
 
 class GroupPositionCreateRequest(GroupPositionBase):
@@ -25,8 +25,8 @@ class GroupPositionCreateRequest(GroupPositionBase):
 
 
 class GroupPositionUpdateRequest(BaseModel):  # 부분 업데이트
-    name: Optional[str] = Field(default=None, max_length=100)
-    description: Optional[str] = None
+    name: str | None = Field(default=None, max_length=100)
+    description: str | None = Field(default=None)
 
 
 class GroupPositionResponse(GroupPositionBase):
@@ -38,7 +38,7 @@ class GroupPositionResponse(GroupPositionBase):
 
 # --- GroupMembershipPositionLink Schemas (새로운 모델) ---
 class GroupMembershipPositionLinkBase(BaseModel):
-    position_id: Optional[int] = None
+    position_id: int | None = Field(default=None)
     role: int = Field(default=2)
 
 
@@ -48,8 +48,16 @@ class GroupMembershipPositionLinkCreateRequest(GroupMembershipPositionLinkBase):
 
 
 class GroupMembershipPositionLinkUpdateRequest(BaseModel):
-    position_id: Optional[int] = None
-    role: Optional[int] = None
+    position_id: int | None = Field(default=None)
+    role: int | None = None
+
+
+class KeycloakUserRepresentation(BaseModel):
+    username: str
+    email: str
+    firstName: str | None = Field(default=None)
+    lastName: str | None = Field(default=None)
+    attributes: dict[str, list[Any]] = Field(default_factory=dict)
 
 
 class GroupMembershipPositionLinkResponse(GroupMembershipPositionLinkBase):
@@ -57,15 +65,16 @@ class GroupMembershipPositionLinkResponse(GroupMembershipPositionLinkBase):
     group_id: str
     membership_sub: str
     joined_at: datetime
-    position: Optional[GroupPositionResponse] = None
+    position: GroupPositionResponse | None = Field(default=None)
+    userdata: KeycloakUserRepresentation | None = Field(default=None)
 
 
 # --- Group Schemas ---
 class GroupBase(BaseModel):
     name: str = Field(max_length=255)
-    description: Optional[str] = None
-    group_type: Optional[str] = Field(default=None, max_length=50)
-    parent_id: Optional[str] = None
+    description: str | None = None
+    group_type: str | None = Field(default=None, max_length=50)
+    parent_id: str | None = None
 
     # RBAC 설정 필드 (숫자 값)
     role_view_groups: int = Field(default=3)
@@ -79,43 +88,43 @@ class GroupCreateRequest(GroupBase):
 
 
 class GroupUpdateRequest(BaseModel):  # 그룹의 일부 정보만 업데이트
-    name: Optional[str] = Field(default=None, max_length=255)
-    description: Optional[str] = None
-    group_type: Optional[str] = Field(default=None, max_length=50)
-    parent_id: Optional[str] = None
-    role_view_groups: Optional[int] = None
-    role_edit_groups: Optional[int] = None
-    role_create_sub_groups: Optional[int] = None
-    role_invite_groups: Optional[int] = None
+    name: str | None = Field(default=None, max_length=255)
+    description: str | None = Field(default=None)
+    group_type: str | None = Field(default=None, max_length=50)
+    parent_id: str | None = Field(default=None)
+    role_view_groups: int | None = Field(default=None)
+    role_edit_groups: int | None = Field(default=None)
+    role_create_sub_groups: int | None = Field(default=None)
+    role_invite_groups: int | None = Field(default=None)
 
 
 class GroupOnlyResponse(GroupBase):  # 계층 구조에서 사용될 간단한 그룹 정보
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    created_by_sub: Optional[str] = None
+    created_by_sub: str | None = Field(default=None)
     created_at: datetime
     updated_at: datetime
-    memberships: List[GroupMembershipPositionLinkResponse] = Field(default_factory=list)
+    memberships: list[GroupMembershipPositionLinkResponse] = Field(default_factory=list)
 
 
 class GroupResponse(GroupBase):  # 단일 그룹 상세 조회 시 응답
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    created_by_sub: Optional[str] = None
+    created_by_sub: str | None = Field(default=None)
     created_at: datetime
     updated_at: datetime
-    memberships: List[GroupMembershipPositionLinkResponse] = Field(default_factory=list)
+    memberships: list[GroupMembershipPositionLinkResponse] = Field(default_factory=list)
 
-    parent: Optional[GroupOnlyResponse] = None
-    children: List[GroupOnlyResponse] = Field(default_factory=list)
+    parent: GroupOnlyResponse | None = Field(default=None)
+    children: list[GroupOnlyResponse] = Field(default_factory=list)
 
 
 class GroupsPaginatedResponse(BaseModel):  # 여러 그룹 목록 조회 시 응답
     model_config = ConfigDict(from_attributes=True)
     total: int
-    items: List[GroupOnlyResponse]  # 상세 멤버십 정보는 제외
+    items: list[GroupOnlyResponse]  # 상세 멤버십 정보는 제외
 
 
 # --- GroupInvitation Schemas ---
@@ -134,7 +143,7 @@ class GroupInvitationResponse(BaseModel):
     inviter_sub: str
     inviter_email: EmailStr  # 모델에 있으므로 Optional 아님
     invitee_email: EmailStr
-    role: Optional[int] = None  # 모델에 role이 int|None이므로 Optional[int]
+    role: int | None = Field(default=None)  # 모델에 role이 int|None이므로 Optional[int]
     token: str  # 응답에는 포함하되, 클라이언트가 저장/노출하지 않도록 주의
     created_at: datetime
 
@@ -143,7 +152,7 @@ class GroupInvitationsPaginatedResponse(BaseModel):
     total: int
     page: int
     size: int
-    items: List[GroupInvitationResponse]
+    items: list[GroupInvitationResponse]
 
 
 class GetInvitationsRequest(BaseModel):  # 페이징 요청 스키마
@@ -154,10 +163,10 @@ class GetInvitationsRequest(BaseModel):  # 페이징 요청 스키마
 # --- GroupSchedule Schemas (새로운 모델) ---
 class GroupScheduleBase(BaseModel):
     date: datetime  # 날짜 및 시간 정보
-    work_type: Optional[str] = Field(default=None, max_length=50)
+    work_type: str | None = Field(default=None, max_length=50)
     hours_planned: float = Field(default=0.0, ge=0)
     hours_actual: float = Field(default=0.0, ge=0)
-    note: Optional[str] = None
+    note: str | None = None
 
 
 class GroupScheduleCreateRequest(GroupScheduleBase):
@@ -167,11 +176,11 @@ class GroupScheduleCreateRequest(GroupScheduleBase):
 
 
 class GroupScheduleUpdateRequest(BaseModel):  # 부분 업데이트
-    date: Optional[datetime] = None
-    work_type: Optional[str] = Field(default=None, max_length=50)
-    hours_planned: Optional[float] = Field(default=None, ge=0)
-    hours_actual: Optional[float] = Field(default=None, ge=0)
-    note: Optional[str] = None
+    date: datetime | None = Field(default=None)
+    work_type: str | None = Field(default=None, max_length=50)
+    hours_planned: float | None = Field(default=None, ge=0)
+    hours_actual: float | None = Field(default=None, ge=0)
+    note: str | None = Field(default=None)
 
 
 class GroupScheduleResponse(GroupScheduleBase):

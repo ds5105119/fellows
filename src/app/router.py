@@ -5,7 +5,6 @@ from .map.api.endpoint.map import router as map_router
 from .open_api.api.endpoint.fiscal import router as fiscal_router
 from .open_api.api.endpoint.welfare import router as welfare_router
 from .user.api.endpoint.cloud import router as cloud_router
-from .user.api.endpoint.group import router as group_router
 from .user.api.endpoint.user_data import router as user_data_router
 from .user.api.endpoint.wakapi import router as wakapi_router
 
@@ -17,5 +16,4 @@ router.include_router(welfare_router, prefix="/welfare", tags=["welfare"])
 router.include_router(map_router, prefix="/map", tags=["map"])
 router.include_router(wakapi_router, prefix="/wakapi", tags=["wakapi"])
 router.include_router(project_router, prefix="/project", tags=["project"])
-router.include_router(group_router, prefix="/group", tags=["group"])
 router.include_router(cloud_router, prefix="/cloud", tags=["cloud"])

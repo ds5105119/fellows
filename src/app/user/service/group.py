@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import secrets
 import uuid
@@ -123,19 +124,31 @@ class GroupService:
 
         group_instance = await self.group_repo.get_instance(
             session,
-            filters=[Group.id == group_id],
+            filters=[self.group_repo.model.id == group_id],
             options=[
                 selectinload(self.group_repo.model.memberships).selectinload(self.link_repo.model.position),
                 selectinload(self.group_repo.model.memberships).selectinload(self.link_repo.model.membership),
-                selectinload(self.group_repo.model.children),
-                selectinload(self.group_repo.model.parent),
+                selectinload(self.group_repo.model.children).selectinload(self.group_repo.model.memberships),
+                selectinload(self.group_repo.model.parent).selectinload(self.group_repo.model.memberships),
             ],
         )
 
         group = group_instance.scalar_one_or_none()
-        group_response = GroupResponse.model_validate(group, from_attributes=True)
+        group_serialized = GroupResponse.model_validate(group, from_attributes=True)
+        group = group_serialized.model_dump()
 
-        return group_response
+        tasks = [self.keycloak_admin.a_get_user(member.membership_sub) for member in group_serialized.memberships]
+        users = await asyncio.gather(*tasks, return_exceptions=False)
+        user_map = {user["id"]: user for user in users}
+
+        group["memberships"] = [
+            {**membership, "userdata": user_map[membership["membership_sub"]]}
+            if membership["membership_sub"] in user_map
+            else membership
+            for membership in group["memberships"]
+        ]
+
+        return GroupResponse(**group)
 
     async def get_groups(
         self,
@@ -178,15 +191,15 @@ class GroupService:
         session: postgres_session,
         user: get_current_user,
         data: GroupUpdateRequest,
-        group: str = Path(),
+        group_id: str = Path(),
     ) -> GroupResponse:
-        db_group = await self._get_db_group_or_404(session, group)
-        user_role_in_group = await self._get_user_role_in_group(session, group, user.sub)
+        db_group = await self._get_db_group_or_404(session, group_id)
+        user_role_in_group = await self._get_user_role_in_group(session, group_id, user.sub)
         self._check_permission(user_role_in_group, db_group.role_edit_groups)
 
         update_payload = data.model_dump(exclude_unset=True)
         if not update_payload:
-            return await self.get_group_by_id(session, user, group)
+            return await self.get_group_by_id(session, user, group_id)
 
         # 부모 변경 시 권한 확인
         if data.parent_id and data.parent_id != db_group.parent_id:
@@ -199,8 +212,8 @@ class GroupService:
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
 
         try:
-            await self.group_repo.update(session, filters=[self.group_repo.model.id == group], **update_payload)
-            return await self.get_group_by_id(session, user, group)
+            await self.group_repo.update(session, filters=[self.group_repo.model.id == group_id], **update_payload)
+            return await self.get_group_by_id(session, user, group_id)
 
         except IntegrityError:
             await session.rollback()
@@ -208,7 +221,7 @@ class GroupService:
 
         except Exception as e:
             await session.rollback()
-            logger.error(f"Error updating group {group}: {e}", exc_info=True)
+            logger.error(f"Error updating group {group_id}: {e}", exc_info=True)
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     async def delete_group(
@@ -216,10 +229,10 @@ class GroupService:
         session: postgres_session,
         user: get_current_user,
         delete_children: bool = Query(False),
-        group: str = Path(),
+        group_id: str = Path(),
     ) -> None:
-        db_group = await self._get_db_group_or_404(session, group)
-        user_role_in_group = await self._get_user_role_in_group(session, group, user.sub)
+        db_group = await self._get_db_group_or_404(session, group_id)
+        user_role_in_group = await self._get_user_role_in_group(session, group_id, user.sub)
         if user_role_in_group != 0:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
@@ -227,16 +240,16 @@ class GroupService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
         try:
-            await self.group_repo.delete(session, id=group)
-            logger.info(f"Group {group} and related data deleted from DB by user {user.sub}.")
+            await self.group_repo.delete(session, id=group_id)
+            logger.info(f"Group {group_id} and related data deleted from DB by user {user.sub}.")
 
         except NoResultFound:
-            logger.warning(f"Group {group} not found during deletion by {user.sub}.")
+            logger.warning(f"Group {group_id} not found during deletion by {user.sub}.")
             pass
 
         except Exception as e:
             await session.rollback()
-            logger.error(f"Error deleting group {group} from DB: {e}", exc_info=True)
+            logger.error(f"Error deleting group {group_id} from DB: {e}", exc_info=True)
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # --- 멤버십 및 초대 관리 ---
@@ -245,16 +258,16 @@ class GroupService:
         session: postgres_session,
         user: get_current_user,
         data: GroupInvitationCreateRequest,
-        group: str = Path(),
+        group_id: str = Path(),
     ) -> GroupInvitationResponse:
-        db_group = await self._get_db_group_or_404(session, group)
-        user_role_in_group = await self._get_user_role_in_group(session, group, user.sub)
+        db_group = await self._get_db_group_or_404(session, group_id)
+        user_role_in_group = await self._get_user_role_in_group(session, group_id, user.sub)
         self._check_permission(user_role_in_group, db_group.role_invite_groups)
 
         existing_invitation_instance = await self.invitation_repo.get_instance(
             session,
             filters=[
-                self.invitation_repo.model.group_id == group,
+                self.invitation_repo.model.group_id == group_id,
                 self.invitation_repo.model.invitee_email == user.email,
             ],
         )
@@ -267,7 +280,7 @@ class GroupService:
         try:
             invitation = await self.invitation_repo.create(
                 session,
-                group_id=group,
+                group_id=group_id,
                 inviter_sub=user.sub,
                 inviter_email=user.email,
                 invitee_email=data.invitee_email,
@@ -333,17 +346,17 @@ class GroupService:
         session: postgres_session,
         user: get_current_user,
         data: GroupMembershipPositionLinkUpdateRequest,
-        group: str = Path(),
+        group_id: str = Path(),
         member: str = Path(),
     ) -> GroupResponse:
-        db_group = await self._get_db_group_or_404(session, group)
-        requester_link = await self.link_repo.get_group_link_or_none(session, group, user.sub)
+        db_group = await self._get_db_group_or_404(session, group_id)
+        requester_link = await self.link_repo.get_group_link_or_none(session, group_id, user.sub)
         requester_role = requester_link.role if requester_link else 4
 
         if not user.sub == member:
             self._check_permission(requester_role, 1)
 
-        target_membership = await self.link_repo.get_group_link_or_none(session, group, member)
+        target_membership = await self.link_repo.get_group_link_or_none(session, group_id, member)
         if not target_membership:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
@@ -362,13 +375,13 @@ class GroupService:
             await self.link_repo.update(
                 session,
                 [
-                    self.link_repo.model.group_id == group,
+                    self.link_repo.model.group_id == group_id,
                     self.link_repo.model.membership_sub == member,
                 ],
                 role=data.role,
             )
 
-            return await self.get_group_by_id(session, user, group)
+            return await self.get_group_by_id(session, user, group_id)
         except Exception:
             await session.rollback()
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -377,14 +390,14 @@ class GroupService:
         self,
         session: postgres_session,
         user: get_current_user,
-        group: str = Path(),
+        group_id: str = Path(),
         member: str = Path(),
     ):
-        db_group = await self._get_db_group_or_404(session, group)
-        requester_membership = await self._get_membership_or_none(session, group, user.sub)
+        db_group = await self._get_db_group_or_404(session, group_id)
+        requester_membership = await self._get_membership_or_none(session, group_id, user.sub)
         requester_role = requester_membership.role if requester_membership else 4
 
-        target_membership = await self._get_membership_or_none(session, group, member)
+        target_membership = await self._get_membership_or_none(session, group_id, member)
         if not target_membership:
             return
 
@@ -406,7 +419,7 @@ class GroupService:
 
         try:
             await self.membership_repo.delete(session, target_membership.id)
-            logger.info(f"Member {member} removed from group {group} by user {user.sub}.")
+            logger.info(f"Member {member} removed from group {group_id} by user {user.sub}.")
         except Exception:
             await session.rollback()
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

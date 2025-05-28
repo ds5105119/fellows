@@ -16,7 +16,7 @@ async def create_new_group(
     return created_group
 
 
-@router.get("/{group}", response_model=GroupResponse)
+@router.get("/{group_id}", response_model=GroupResponse)
 async def read_group(
     group: Annotated[GroupResponse, Depends(group_service.get_group_by_id)],
 ):
@@ -30,14 +30,14 @@ async def read_groups(
     return groups
 
 
-@router.put("/{group}", response_model=GroupResponse)
+@router.put("/{group_id}", response_model=GroupResponse)
 async def update_group(
     group: Annotated[GroupResponse, Depends(group_service.update_group)],
 ):
     return group
 
 
-@router.delete("/{group}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_group(
     _: Annotated[None, Depends(group_service.delete_group)],
 ):
@@ -47,7 +47,7 @@ async def remove_group(
 # --- Group Member & Role Management Endpoints ---
 
 
-@router.post("/{group}/invitations", response_model=GroupInvitationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{group_id}/invitations", response_model=GroupInvitationResponse, status_code=status.HTTP_201_CREATED)
 async def invite_user_to_group(
     invitation: Annotated[GroupInvitationResponse, Depends(group_service.invite_member_to_group)],
 ):
@@ -62,14 +62,14 @@ async def accept_group_invitation(
     return result
 
 
-@router.put("/{group}/member/{member}", response_model=GroupResponse)
+@router.put("/{group_id}/member/{member}", response_model=GroupResponse)
 async def update_group_member_details(
     result: Annotated[GroupResponse, Depends(group_service.update_group_member_details)],
 ):
     return result
 
 
-@router.delete("/{group}/member/{member}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{group_id}/member/{member}", status_code=status.HTTP_204_NO_CONTENT)
 async def update_group_member_details(
     _: Annotated[None, Depends(group_service.remove_member_from_group)],
 ):
