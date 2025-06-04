@@ -113,7 +113,10 @@ class ProjectService:
         if not project.custom_deletable:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-        await self.frappe_client.delete("Project", project.project_name)
+        tasks = await self.frappe_client.get_list("Task", fields=["name"], filters={"project": project_id})
+        await asyncio.gather(*[self.frappe_client.delete("Task", task["name"]) for task in tasks])
+
+        await self.frappe_client.delete("Project", project_id)
 
     async def submit_project(
         self,
@@ -132,7 +135,6 @@ class ProjectService:
                 "doctype": "Project",
                 "name": project.project_name,
                 "custom_project_status": "process:1",
-                "custom_deletable": False,
             }
         )
 
@@ -177,13 +179,23 @@ class ProjectService:
     async def cancel_submit_project(
         self,
         user: get_current_user,
-        session: postgres_session,
         project_id: str = Path(),
     ):
+        project = await self.get_project(user, project_id)
+
+        if project.custom_project_status != "process:1":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        updated_project = await self.frappe_client.update(
+            {
+                "doctype": "Project",
+                "name": project.project_name,
+                "custom_project_status": "draft",
+            }
+        )
+
         tasks = await self.frappe_client.get_list("Task", fields=["name"], filters={"project": project_id})
         await asyncio.gather(*[self.frappe_client.delete("Task", task["name"]) for task in tasks])
-
-        await self.frappe_client.delete("Project", project_id)
 
     async def get_project_tasks(
         self,

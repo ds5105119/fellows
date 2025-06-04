@@ -9,6 +9,7 @@ from src.app.user.service.user_data import UserDataService
 from src.app.user.service.wakapi import WakapiService
 from src.core.dependencies.auth import keycloak_admin
 from src.core.dependencies.db import r2
+from src.core.dependencies.infra import frappe_client
 
 user_data_repository = UserDataRepository(UserData)
 user_business_data_repository = UserBusinessDataRepository(UserBusinessData)
@@ -18,4 +19,4 @@ wakapi_repository = WakapiUserRepository(Users)
 wakapi_service = WakapiService(wakapi_repository)
 
 file_record_repository = FileRecordRepository(FileRecord)
-cloud_service = CloudService(file_record_repository, r2)
+cloud_service = CloudService(file_record_repository, frappe_client, r2)

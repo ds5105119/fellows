@@ -22,6 +22,7 @@ from src.app.user.schema.cloud import (
 from src.core.config import settings
 from src.core.dependencies.auth import get_current_user_without_error
 from src.core.dependencies.db import postgres_session
+from src.core.utils.frappeclient import AsyncFrappeClient
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +31,12 @@ class CloudService:
     def __init__(
         self,
         file_record_repository: FileRecordRepository,
-        client: S3Client,
+        frappe_client: AsyncFrappeClient,
+        s3_client: S3Client,
     ):
         self.file_record_repository = file_record_repository
-        self.client = client
+        self.frappe_client = frappe_client
+        self.s3_client = s3_client
 
     def generate_sse_c_headers(self):
         raw_key = os.urandom(32)
@@ -48,7 +51,7 @@ class CloudService:
 
     def get_presigned_url(self, method: str, key: str, expires: int, headers: dict[str, str]):
         try:
-            response = self.client.generate_presigned_url(
+            response = self.s3_client.generate_presigned_url(
                 method,
                 Params={
                     "Bucket": settings.cloudflare.storage_bucket_name,
@@ -142,7 +145,7 @@ class CloudService:
             raise HTTPException(status_code=403, detail="Invalid key")
 
         try:
-            self.client.delete_object(
+            self.s3_client.delete_object(
                 Bucket=settings.cloudflare.storage_bucket_name,
                 Key=data.key,
             )
@@ -155,3 +158,5 @@ class CloudService:
         except Exception as e:
             logger.error("Database Delete Error: %s", e)
             raise HTTPException(status_code=500, detail="Deletion failed")
+
+        await self.frappe_client.delete("Files", file_record.key)
