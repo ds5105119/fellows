@@ -1,12 +1,7 @@
-from typing import TYPE_CHECKING
-
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.models.base import Base
-
-if TYPE_CHECKING:
-    from src.app.fellows.model.project import ProjectInfoFileRecordLink
 
 
 class FileRecord(Base):
@@ -18,8 +13,3 @@ class FileRecord(Base):
     algorithm: Mapped[str] = mapped_column(String, nullable=False, default="AES256")
     sse_key: Mapped[str] = mapped_column(String, nullable=False)
     md5: Mapped[str] = mapped_column(String, nullable=False)
-
-    project_info: Mapped[list["ProjectInfoFileRecordLink"]] = relationship(
-        back_populates="file_record",
-        cascade="all, delete-orphan",
-    )

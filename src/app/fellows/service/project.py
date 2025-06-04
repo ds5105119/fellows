@@ -1,19 +1,13 @@
 import asyncio
-from datetime import timedelta
+from datetime import date, timedelta
 from logging import getLogger
-from sqlite3 import IntegrityError
 from typing import Annotated
 from uuid import uuid4
 
 import openai
 from fastapi import HTTPException, Path, Query, status
-from sqlalchemy import asc, cast, desc, exists, func, select
-from sqlalchemy.dialects.postgresql import TSVECTOR
-from sqlalchemy.orm import subqueryload
 
 from src.app.fellows.data.project import *
-from src.app.fellows.repository.project import ProjectInfoFileRecordRepository, ProjectInfoRepository, ProjectRepository
-from src.app.fellows.schema.erpnext import *
 from src.app.fellows.schema.project import *
 from src.core.dependencies.auth import get_current_user
 from src.core.dependencies.db import postgres_session
@@ -25,24 +19,11 @@ logger = getLogger(__name__)
 class ProjectService:
     def __init__(
         self,
-        project_repository: ProjectRepository,
-        project_info_repository: ProjectInfoRepository,
-        project_info_file_record_repository: ProjectInfoFileRecordRepository,
         openai_client: openai.AsyncOpenAI,
         frappe_client: AsyncFrappeClient,
     ):
-        self.project_repository = project_repository
-        self.project_info_repository = project_info_repository
-        self.project_info_file_record_repository = project_info_file_record_repository
         self.openai_client = openai_client
         self.frappe_client = frappe_client
-
-    def _keyword_to_project_filter(self, keyword: str):
-        tsv_name = func.to_tsvector("simple", self.project_info_repository.model.project_name)
-        tsv_summary = func.to_tsvector("simple", self.project_info_repository.model.project_summary)
-        tsv_concat = cast(tsv_name, TSVECTOR).op("||")(cast(tsv_summary, TSVECTOR))
-        ts_query = func.websearch_to_tsquery("simple", keyword)
-        return tsv_concat.op("@@")(ts_query)
 
     async def create_project(
         self,
@@ -71,6 +52,8 @@ class ProjectService:
         project = await self.frappe_client.get_doc("Project", project_id, filters={"custom_sub": user.sub})
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        print(project)
 
         return ERPNextProject(**project)
 
@@ -197,21 +180,6 @@ class ProjectService:
         session: postgres_session,
         project_id: str = Path(),
     ):
-        try:
-            await self.project_repository.update(
-                session,
-                filters=[
-                    self.project_repository.model.sub == user.sub,
-                    self.project_repository.model.project_id == project_id,
-                ],
-                status="draft",
-                deletable=True,
-            )
-        except Exception as e:
-            session.rollback()
-            logger.warning(f"Failed to cancel project {project_id}: {e}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
         tasks = await self.frappe_client.get_list("Task", fields=["name"], filters={"project": project_id})
         await asyncio.gather(*[self.frappe_client.delete("Task", task["name"]) for task in tasks])
 

@@ -20,7 +20,7 @@ from src.app.user.schema.cloud import (
     PresignedPutResponse,
 )
 from src.core.config import settings
-from src.core.dependencies.auth import get_current_user
+from src.core.dependencies.auth import get_current_user_without_error
 from src.core.dependencies.db import postgres_session
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ class CloudService:
     async def create_put_presigned_url(
         self,
         response: Response,
-        user: get_current_user,
+        user: get_current_user_without_error,
         session: postgres_session,
         data: Annotated[PresignedPutRequest, Query()],
     ) -> PresignedPutResponse:
@@ -79,7 +79,7 @@ class CloudService:
                 session,
                 key=key,
                 name=data.name,
-                sub=user.sub,
+                sub=user.sub if user else "",
                 sse_key=headers.get("SSECustomerKey"),
                 md5=headers.get("SSECustomerKeyMD5"),
             )

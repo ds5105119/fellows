@@ -5,10 +5,8 @@ from starlette.responses import StreamingResponse
 from webtool.throttle import limiter
 
 from src.app.fellows.api.dependencies import project_service
-from src.app.fellows.schema.erpnext import *
 from src.app.fellows.schema.project import *
 from src.core.dependencies.auth import get_current_user
-from src.core.dependencies.db import postgres_session
 from src.core.models.repository import PaginatedResult
 
 router = APIRouter()
@@ -38,9 +36,9 @@ async def get_projects(
     return projects
 
 
-@router.put("/{project_id}", response_model=ProjectSchema)
+@router.put("/{project_id}", response_model=ERPNextProject)
 async def update_project_info(
-    updated_project: Annotated[ProjectSchema, Depends(project_service.update_project_info)],
+    updated_project: Annotated[ERPNextProject, Depends(project_service.update_project_info)],
 ):
     """`project_id`로 프로젝트를 업데이트합니다"""
     return updated_project
