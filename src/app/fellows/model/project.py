@@ -34,14 +34,6 @@ class Project(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
     deletable: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    @property
-    def group_ids(self) -> list[str]:
-        return [link.group_id for link in self.groups]
-
-    def add_group_id(self, group_id: str):
-        if group_id not in self.group_ids:
-            self.groups.append(ProjectGroups(group_id=group_id))
-
 
 class ProjectInfo(Base):
     __tablename__ = "project_info"

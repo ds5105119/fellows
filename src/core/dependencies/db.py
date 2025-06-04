@@ -4,7 +4,7 @@ import boto3
 from fastapi import Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from webtool.cache import RedisCache
+from webtool.cache import RedisCache, RedisConfig
 from webtool.db import AsyncDB, SyncDB
 
 from src.core.config import settings
@@ -12,10 +12,19 @@ from src.core.config import settings
 Postgres = AsyncDB(settings.postgres_dsn.unicode_string())
 Postgres_sync = SyncDB(settings.sync_postgres_dsn.unicode_string())
 Wakapi_Postgres = AsyncDB(settings.wakapi_postgres_dsn.unicode_string())
-Redis = RedisCache(settings.redis_dsn.unicode_string())
 
 postgres_session = Annotated[AsyncSession, Depends(Postgres)]
 wakapi_postgres_session = Annotated[AsyncSession, Depends(Wakapi_Postgres)]
+
+
+Redis = RedisCache(
+    settings.redis_dsn.unicode_string(),
+    config=RedisConfig(
+        username=settings.redis.user,
+        password=settings.redis.password,
+    ),
+)
+
 
 r2 = boto3.client(
     service_name="s3",

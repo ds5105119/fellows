@@ -66,6 +66,11 @@ class ApiAdapter(BaseModel):
     key: str
 
 
+class FrappeApi(ApiAdapter):
+    url: str
+    secret: str
+
+
 class Settings(BaseSettings):
     base_dir: Path = Path(__file__).resolve().parent.parent.parent
 
@@ -95,6 +100,7 @@ class Settings(BaseSettings):
     gov_24_data_api: ApiAdapter
     kakao_api: ApiAdapter
     openai_api: ApiAdapter
+    frappe_api: FrappeApi
 
     @property
     def postgres_dsn(self) -> PostgresDsn:
@@ -110,7 +116,7 @@ class Settings(BaseSettings):
 
     @property
     def redis_dsn(self) -> RedisDsn:
-        return RedisDsn.build(scheme="redis", **self.redis.model_dump(by_alias=True))
+        return RedisDsn.build(scheme="redis", **self.redis.model_dump(by_alias=True, exclude={"user", "password"}))
 
     model_config = SettingsConfigDict(
         env_file=str(base_dir / ".env"),

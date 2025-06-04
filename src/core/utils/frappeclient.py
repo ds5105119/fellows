@@ -27,7 +27,7 @@ class AsyncFrappeClient(object):
         self.headers = dict(Accept="application/json")
         self.can_download = []
         self.url = url
-        self.session = httpx.AsyncClient(verify=verify, headers=self.headers)
+        self.session = httpx.AsyncClient(verify=verify, headers=self.headers, follow_redirects=True)
 
         try:
             self.authenticate(api_key, api_secret)
@@ -84,7 +84,7 @@ class AsyncFrappeClient(object):
         :param doc: A dict or Document object to be inserted remotely"""
         res = await self.session.post(
             self.url + "/api/resource/" + quote(doc.get("doctype")),
-            data={"data": json.dumps(doc)},
+            data={"data": json.dumps(doc, default=str)},
         )
         return self.post_process(res)
 
@@ -92,21 +92,21 @@ class AsyncFrappeClient(object):
         """Insert multiple documents to the remote server
 
         :param docs: List of dict or Document objects to be inserted in one request"""
-        return await self.post_request({"cmd": "frappe.client.insert_many", "docs": json.dumps(docs)})
+        return await self.post_request({"cmd": "frappe.client.insert_many", "docs": json.dumps(docs, default=str)})
 
     async def update(self, doc):
         """Update a remote document
 
         :param doc: dict or Document object to be updated remotely. `name` is mandatory for this"""
         url = self.url + "/api/resource/" + quote(doc.get("doctype")) + "/" + quote(doc.get("name"))
-        res = await self.session.put(url, data={"data": json.dumps(doc)})
+        res = await self.session.put(url, data={"data": json.dumps(doc, default=str)})
         return self.post_process(res)
 
     async def bulk_update(self, docs):
         """Bulk update documents remotely
 
         :param docs: List of dict or Document objects to be updated remotely (by `name`)"""
-        return await self.post_request({"cmd": "frappe.client.bulk_update", "docs": json.dumps(docs)})
+        return await self.post_request({"cmd": "frappe.client.bulk_update", "docs": json.dumps(docs, default=str)})
 
     async def delete(self, doctype, name):
         """Delete remote document by name
@@ -282,10 +282,3 @@ class AsyncFrappeClient(object):
                 return rjson["data"]
             else:
                 return None
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def main():
-        client = AsyncFrappeClient("https://erp.iihus.com")
