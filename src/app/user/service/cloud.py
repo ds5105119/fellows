@@ -41,7 +41,7 @@ class CloudService:
     def generate_sse_c_headers(self):
         raw_key = os.urandom(32)
         key = base64.b64encode(raw_key).decode("utf-8")
-        md5 = base64.b64encode(hashlib.md5(key.encode()).digest()).decode("utf-8")
+        md5 = base64.b64encode(hashlib.md5(raw_key).digest()).decode("utf-8")
 
         return {
             "SSECustomerAlgorithm": "AES256",
@@ -112,7 +112,7 @@ class CloudService:
         md5 = (
             data.md5
             or headers.x_amz_server_side_encryption_customer_key_MD5
-            or base64.b64encode(hashlib.md5(key.encode()).digest()).decode("utf-8")
+            or base64.b64encode(hashlib.md5(base64.b64decode(key)).digest()).decode("utf-8")
         )
 
         if not algorithm or not key:
@@ -123,8 +123,9 @@ class CloudService:
             "SSECustomerKey": key,
             "SSECustomerKeyMD5": md5,
         }
+        print(headers)
 
-        presigned_url = self.get_presigned_url("put_object", data.key, 3600, headers)
+        presigned_url = self.get_presigned_url("get_object", data.key, 3600, headers)
 
         return PresignedResponse(
             presigned_url=presigned_url,
