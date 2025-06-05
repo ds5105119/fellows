@@ -1,6 +1,5 @@
 import base64
 import hashlib
-import hmac
 import logging
 import os
 from typing import Annotated
@@ -9,9 +8,7 @@ from uuid import uuid4
 from botocore.client import ClientError
 from fastapi import Header, HTTPException, Query, Response, status
 from mypy_boto3_s3 import S3Client
-from sqlalchemy.exc import IntegrityError
 
-from src.app.user.repository.cloud import FileRecordRepository
 from src.app.user.schema.cloud import (
     PresignedDeleteRequest,
     PresignedGetRequest,
@@ -20,8 +17,7 @@ from src.app.user.schema.cloud import (
     PresignedResponse,
 )
 from src.core.config import settings
-from src.core.dependencies.auth import get_current_user_without_error
-from src.core.dependencies.db import postgres_session
+from src.core.dependencies.auth import get_current_user, get_current_user_without_error
 from src.core.utils.frappeclient import AsyncFrappeClient
 
 logger = logging.getLogger(__name__)
@@ -30,11 +26,9 @@ logger = logging.getLogger(__name__)
 class CloudService:
     def __init__(
         self,
-        file_record_repository: FileRecordRepository,
         frappe_client: AsyncFrappeClient,
         s3_client: S3Client,
     ):
-        self.file_record_repository = file_record_repository
         self.frappe_client = frappe_client
         self.s3_client = s3_client
 
@@ -70,25 +64,11 @@ class CloudService:
         self,
         response: Response,
         user: get_current_user_without_error,
-        session: postgres_session,
         data: Annotated[PresignedPutRequest, Query()],
     ) -> PresignedResponse:
         key = f"{data.suffix}_{uuid4()}"
         headers = self.generate_sse_c_headers()
         presigned_url = self.get_presigned_url("put_object", key, 600, headers)
-
-        try:
-            await self.file_record_repository.create(
-                session,
-                key=key,
-                name=data.name,
-                sub=user.sub if user else "",
-                sse_key=headers.get("SSECustomerKey"),
-                md5=headers.get("SSECustomerKeyMD5"),
-            )
-
-        except IntegrityError as e:
-            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Unknown error")
 
         response.headers["x-amz-server-side-encryption-customer-algorithm"] = headers.get("SSECustomerAlgorithm")
         response.headers["x-amz-server-side-encryption-customer-key"] = headers.get("SSECustomerKey")
@@ -123,7 +103,6 @@ class CloudService:
             "SSECustomerKey": key,
             "SSECustomerKeyMD5": md5,
         }
-        print(headers)
 
         presigned_url = self.get_presigned_url("get_object", data.key, 3600, headers)
 
@@ -137,21 +116,24 @@ class CloudService:
 
     async def delete_file(
         self,
-        session: postgres_session,
+        user: get_current_user,
         data: Annotated[PresignedDeleteRequest, Query()],
     ) -> None:
-        result = await self.file_record_repository.get_instance(
-            session,
-            filters=[self.file_record_repository.model.key == data.key],
+        file = await self.frappe_client.get_doc("Files", data.key)
+        if not file:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+        parent = file.get("parent")
+        if not parent:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+        sub = await self.frappe_client.get_value(
+            "Project",
+            "custom_sub",
+            filters={"project_name": parent},
         )
-
-        file_record = result.one_or_none()
-        if file_record is None:
-            raise HTTPException(status_code=404)
-        file_record = file_record[0]
-
-        if not hmac.compare_digest(file_record.sse_key, data.sse_key):
-            raise HTTPException(status_code=403, detail="Invalid key")
+        if sub.get("custom_sub") != user.sub:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         try:
             self.s3_client.delete_object(
@@ -162,10 +144,4 @@ class CloudService:
             logger.error("Cloudflare delete error: %s", e)
             raise HTTPException(status_code=500, detail="Deletion failed")
 
-        try:
-            await self.file_record_repository.delete_by_key(session, key=file_record.key)
-        except Exception as e:
-            logger.error("Database Delete Error: %s", e)
-            raise HTTPException(status_code=500, detail="Deletion failed")
-
-        await self.frappe_client.delete("Files", file_record.key)
+        await self.frappe_client.delete("Files", data.key)

@@ -10,7 +10,6 @@ from fastapi import HTTPException, Path, Query, status
 from src.app.fellows.data.project import *
 from src.app.fellows.schema.project import *
 from src.core.dependencies.auth import get_current_user
-from src.core.dependencies.db import postgres_session
 from src.core.utils.frappeclient import AsyncFrappeClient
 
 logger = getLogger(__name__)
@@ -30,7 +29,7 @@ class ProjectService:
         data: UserERPNextProject,
         user: get_current_user,
     ) -> ERPNextProject:
-        payload = data.model_dump(exclude={"files"}, by_alias=True) | {
+        payload = data.model_dump(by_alias=True) | {
             "doctype": "Project",
             "custom_sub": user.sub,
             "project_name": str(uuid4()),
@@ -38,6 +37,7 @@ class ProjectService:
             "custom_project_status": "draft",
             "project_type": "External",
             "company": "Fellows",
+            "is_active": "No",
         }
 
         project = await self.frappe_client.insert(payload)
@@ -102,6 +102,35 @@ class ProjectService:
 
         return ERPNextProject(**updated_project)
 
+    async def add_files(
+        self,
+        user: get_current_user,
+        data: ERPNextProjectFileRow,
+        project_id: str = Path(),
+    ):
+        project = await self.get_project(user, project_id)
+        project_dict = project.model_dump(include={"custom_files"})
+
+        custom_files = project_dict.get("custom_files", [])
+        custom_files.append(
+            {
+                "doctype": "Files",
+                "algorithm": data.algorithm,
+                "file_name": data.file_name,
+                "key": data.key,
+                "sse_key": data.sse_key,
+                "uploader": data.uploader,
+            }
+        )
+
+        await self.frappe_client.update(
+            {
+                "doctype": "Project",
+                "name": project.project_name,
+                "custom_files": custom_files,
+            }
+        )
+
     async def delete_project(
         self,
         user: get_current_user,
@@ -142,6 +171,7 @@ class ProjectService:
                 "doctype": "Project",
                 "name": project.project_name,
                 "custom_project_status": "process:1",
+                "is_active": "Yes",
             }
         )
 
@@ -198,6 +228,7 @@ class ProjectService:
                 "doctype": "Project",
                 "name": project.project_name,
                 "custom_project_status": "draft",
+                "is_active": "No",
             }
         )
 

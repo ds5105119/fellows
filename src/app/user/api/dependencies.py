@@ -1,7 +1,5 @@
-from src.app.user.model.cloud import FileRecord
 from src.app.user.model.user_data import UserBusinessData, UserData
 from src.app.user.model.wakapi import Users
-from src.app.user.repository.cloud import FileRecordRepository
 from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
 from src.app.user.repository.wakapi import WakapiUserRepository
 from src.app.user.service.cloud import CloudService
@@ -18,5 +16,4 @@ user_data_service = UserDataService(user_data_repository, user_business_data_rep
 wakapi_repository = WakapiUserRepository(Users)
 wakapi_service = WakapiService(wakapi_repository)
 
-file_record_repository = FileRecordRepository(FileRecord)
-cloud_service = CloudService(file_record_repository, frappe_client, r2)
+cloud_service = CloudService(frappe_client, r2)

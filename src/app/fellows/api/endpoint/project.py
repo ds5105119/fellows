@@ -44,6 +44,13 @@ async def update_project_info(
     return updated_project
 
 
+@router.put("/{project_id}/files", status_code=status.HTTP_204_NO_CONTENT)
+async def add_files(
+    _: Annotated[None, Depends(project_service.add_files)],
+):
+    pass
+
+
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
     _: Annotated[None, Depends(project_service.delete_project)],
@@ -52,6 +59,7 @@ async def delete_project(
     pass
 
 
+@limiter(1, 2)
 @router.post("/{project_id}/submit")
 async def submit_project(
     _: Annotated[None, Depends(project_service.submit_project)],
