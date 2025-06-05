@@ -66,8 +66,7 @@ class ProjectService:
         if data.status:
             filters["custom_project_status"] = ["like", f"%{data.status}%"]
         if data.keyword:
-            filters["custom_project_title"] = ["like", f"%{data.status}%"]
-            filters["custom_project_summary"] = ["like", f"%{data.status}%"]
+            filters["custom_project_title"] = ["like", f"%{data.keyword}%"]
 
         order_by = None
         if data.order_by:
@@ -89,7 +88,6 @@ class ProjectService:
         self,
         data: UserERPNextProject,
         user: get_current_user,
-        session: postgres_session,
         project_id: str = Path(),
     ) -> ERPNextProject:
         project = await self.get_project(user, project_id)
@@ -123,6 +121,15 @@ class ProjectService:
         user: get_current_user,
         project_id: str = Path(),
     ) -> None:
+        result = await self.frappe_client.get_list(
+            "Project",
+            fields=["project_name"],
+            filters={"custom_sub": user.sub, "custom_project_status": ["like", "%process%"]},
+        )
+
+        if len(result) >= 15:
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
+
         project = await self.get_project(user, project_id)
 
         if project.custom_project_status != "draft":
@@ -154,7 +161,7 @@ class ProjectService:
             expected_time=4.0,
             duration=3,
             is_milestone=True,
-            description="프로젝트 요구사항 전달 및 견적 내부 검토후 실제 Task 분할 예정입니다.",
+            description="프로젝트 요구사항 분석 및 견적 내부 검토 후 실제 견적가를 알려드릴께요.",
             department="Management",
             company="Fellows",
         )

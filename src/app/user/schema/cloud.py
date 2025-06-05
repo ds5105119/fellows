@@ -24,7 +24,7 @@ class PresignedPutRequest(BaseModel):
     suffix: str
 
 
-class PresignedPutResponse(BaseModel):
+class PresignedResponse(BaseModel):
     presigned_url: str
     key: str
     algorithm: str = Field(default="AES256")

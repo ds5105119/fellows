@@ -115,6 +115,7 @@ class ERPNextProjectFileRow(BaseModel):
 
     file_name: str
     key: str
+    uploader: str
     algorithm: str = Field(default="AES256")
     sse_key: str | None = Field(default=None)
 

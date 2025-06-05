@@ -17,7 +17,7 @@ from src.app.user.schema.cloud import (
     PresignedGetRequest,
     PresignedHeader,
     PresignedPutRequest,
-    PresignedPutResponse,
+    PresignedResponse,
 )
 from src.core.config import settings
 from src.core.dependencies.auth import get_current_user_without_error
@@ -41,7 +41,7 @@ class CloudService:
     def generate_sse_c_headers(self):
         raw_key = os.urandom(32)
         key = base64.b64encode(raw_key).decode("utf-8")
-        md5 = base64.b64encode(hashlib.md5(raw_key).digest()).decode("utf-8")
+        md5 = base64.b64encode(hashlib.md5(key.encode()).digest()).decode("utf-8")
 
         return {
             "SSECustomerAlgorithm": "AES256",
@@ -72,7 +72,7 @@ class CloudService:
         user: get_current_user_without_error,
         session: postgres_session,
         data: Annotated[PresignedPutRequest, Query()],
-    ) -> PresignedPutResponse:
+    ) -> PresignedResponse:
         key = f"{data.suffix}_{uuid4()}"
         headers = self.generate_sse_c_headers()
         presigned_url = self.get_presigned_url("put_object", key, 600, headers)
@@ -94,7 +94,7 @@ class CloudService:
         response.headers["x-amz-server-side-encryption-customer-key"] = headers.get("SSECustomerKey")
         response.headers["x-amz-server-side-encryption-customer-key-md5"] = headers.get("SSECustomerKeyMD5")
 
-        return PresignedPutResponse(
+        return PresignedResponse(
             presigned_url=presigned_url,
             algorithm="AES256",
             key=key,
@@ -106,7 +106,7 @@ class CloudService:
         self,
         data: Annotated[PresignedGetRequest, Query()],
         headers: Annotated[PresignedHeader, Header()],
-    ) -> str:
+    ) -> PresignedResponse:
         algorithm = data.algorithm or headers.x_amz_server_side_encryption_customer_algorithm
         key = data.sse_key or headers.x_amz_server_side_encryption_customer_key
         md5 = (
@@ -124,7 +124,15 @@ class CloudService:
             "SSECustomerKeyMD5": md5,
         }
 
-        return self.get_presigned_url("put_object", data.key, 3600, headers)
+        presigned_url = self.get_presigned_url("put_object", data.key, 3600, headers)
+
+        return PresignedResponse(
+            presigned_url=presigned_url,
+            algorithm=algorithm,
+            key=data.key,
+            sse_key=data.sse_key,
+            md5=md5,
+        )
 
     async def delete_file(
         self,
