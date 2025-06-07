@@ -96,8 +96,6 @@ class Settings(BaseSettings):
     keycloak: KeycloakOpenIDClientConfig
     keycloak_admin: KeycloakAdminClientConfig
 
-    open_fiscal_data_api: ApiAdapter
-    gov_24_data_api: ApiAdapter
     kakao_api: ApiAdapter
     openai_api: ApiAdapter
     frappe_api: FrappeApi
@@ -109,10 +107,6 @@ class Settings(BaseSettings):
     @property
     def wakapi_postgres_dsn(self) -> PostgresDsn:
         return PostgresDsn.build(scheme="postgresql+asyncpg", **self.wakapi_postgres.model_dump(by_alias=True))
-
-    @property
-    def sync_postgres_dsn(self) -> PostgresDsn:
-        return PostgresDsn.build(scheme="postgresql+psycopg", **self.postgres.model_dump(by_alias=True))
 
     @property
     def redis_dsn(self) -> RedisDsn:

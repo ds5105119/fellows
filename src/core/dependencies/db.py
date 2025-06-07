@@ -5,12 +5,11 @@ from fastapi import Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from webtool.cache import RedisCache, RedisConfig
-from webtool.db import AsyncDB, SyncDB
+from webtool.db import AsyncDB
 
 from src.core.config import settings
 
 Postgres = AsyncDB(settings.postgres_dsn.unicode_string())
-Postgres_sync = SyncDB(settings.sync_postgres_dsn.unicode_string())
 Wakapi_Postgres = AsyncDB(settings.wakapi_postgres_dsn.unicode_string())
 
 postgres_session = Annotated[AsyncSession, Depends(Postgres)]
