@@ -326,31 +326,45 @@ class GovWelfareService:
             user_true_ja_attributes = {
                 name
                 for name in business_data.__table__.columns.keys()
-                if name.startswith("JA") and getattr(business_data, name, False)
+                if name.startswith("ja") and getattr(business_data, name, False)
             }
+
+            print(user_true_ja_attributes)
 
             if user_true_ja_attributes:
                 condition_groups = {
                     "status": {"JA1101", "JA1102", "JA1103"},
-                    "industry": {"JA1201", "JA1202", "JA1299", "JA2201", "JA2202", "JA2203", "JA2299"},
+                    "industry": {"JA1201", "JA1202", "JA1299"},
+                    "first_industry": {"JA2201", "JA2202", "JA2203", "JA2299"},
                     "org_type": {"JA2101", "JA2102", "JA2103"},
                 }
 
                 required_group_checks = []
 
                 for group_name, group_codes in condition_groups.items():
-                    # 하나라도 True를 요구하는 그룹이 있습니까?
-                    service_requires_group = or_(*[getattr(self.repository.model, ja) == True for ja in group_codes])
+                    # 그룹과 일치하는 항목이 하나도 없습니가?
+                    if {code.lower() for code in group_codes}.isdisjoint(user_true_ja_attributes):
+                        continue
 
-                    # 그렇다면 하나라도 일치하는 정보가 있습니까?
-                    user_matches_group_requirement = or_(
+                    # 전부 True 혹은 False 입니까?
+                    all_for_business = and_(
                         *[
-                            and_(getattr(self.repository.model, ja) == True, ja in user_true_ja_attributes)
-                            for ja in group_codes
+                            getattr(self.repository.model, list(group_codes)[i])
+                            == getattr(self.repository.model, list(group_codes)[i + 1])
+                            for i in range(len(group_codes) - 1)
                         ]
                     )
 
-                    group_check_clause = or_(~service_requires_group, user_matches_group_requirement)
+                    # 그것도 아니라면 하나라도 일치하는 정보가 있습니까?
+                    user_matches_group_requirement = or_(
+                        *[
+                            getattr(self.repository.model, code) == True
+                            for code in group_codes
+                            if code.lower() in user_true_ja_attributes
+                        ]
+                    )
+
+                    group_check_clause = or_(all_for_business, user_matches_group_requirement)
                     required_group_checks.append(group_check_clause)
 
                 if required_group_checks:
