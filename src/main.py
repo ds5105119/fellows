@@ -43,6 +43,7 @@ def create_application(debug=False) -> FastAPI:
         lifespan=lifespan,
         middleware=middleware,
         default_response_class=ORJSONResponse,
+        redirect_slashes=False,
     )
 
     application.include_router(router, prefix=settings.api_url)
