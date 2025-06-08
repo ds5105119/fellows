@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from starlette.middleware import Middleware
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette.requests import Request
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from webtool.auth import AnnoSessionBackend, KeycloakBackend
 from webtool.throttle import LimitMiddleware
@@ -15,32 +13,8 @@ from src.core.dependencies.db import Redis
 from src.core.lifespan import lifespan
 
 
-class DebugHeaderMiddleware(BaseHTTPMiddleware):
-    """요청‑응답 전체 헤더를 stdout 으로 덤프"""
-
-    async def dispatch(self, request: Request, call_next):
-        # ─── Request 헤더 ──────────────────────────────
-        print("▼▼▼ REQUEST HEADERS ▼▼▼")
-        for k, v in request.headers.items():
-            print(f"{k}: {v}")
-        print("▲▲▲ END REQUEST HEADERS ▲▲▲\n")
-
-        response = await call_next(request)
-
-        # ─── Response 헤더 ─────────────────────────────
-        print("▼▼▼ RESPONSE HEADERS ▼▼▼")
-        for k, v in response.headers.items():
-            print(f"{k}: {v}")
-        print("▲▲▲ END RESPONSE HEADERS ▲▲▲\n")
-
-        return response
-
-
 def create_application(debug=False) -> FastAPI:
     middleware = [
-        Middleware(
-            DebugHeaderMiddleware,  # type: ignore
-        ),
         Middleware(
             CORSMiddleware,  # type: ignore
             allow_origins=settings.cors_allow_origin if not debug else ["*"],
