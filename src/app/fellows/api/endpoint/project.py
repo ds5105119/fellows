@@ -12,7 +12,7 @@ from src.core.models.repository import PaginatedResult
 router = APIRouter()
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_new_project(
     project: Annotated[ERPNextProject, Depends(project_service.create_project)],
 ):
@@ -20,7 +20,7 @@ async def create_new_project(
     return project
 
 
-@router.get("/", response_model=ProjectsPaginatedResponse)
+@router.get("", response_model=ProjectsPaginatedResponse)
 async def get_projects(
     projects: Annotated[PaginatedResult, Depends(project_service.get_projects)],
 ):
