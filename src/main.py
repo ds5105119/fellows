@@ -23,10 +23,6 @@ def create_application(debug=False) -> FastAPI:
             allow_headers=["*"],
         ),
         Middleware(
-            ProxyHeadersMiddleware,  # type: ignore
-            trusted_hosts=settings.allowed_hosts if not debug else ["*"],
-        ),
-        Middleware(
             LimitMiddleware,  # type: ignore
             cache=Redis,
             auth_backend=KeycloakBackend(keycloak_openid),
