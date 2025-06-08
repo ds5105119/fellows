@@ -18,13 +18,13 @@ def create_application(debug=False) -> FastAPI:
         Middleware(
             CORSMiddleware,  # type: ignore
             allow_origins=settings.cors_allow_origin if not debug else ["*"],
-            allow_credentials=False,
+            allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
         ),
         Middleware(
             ProxyHeadersMiddleware,  # type: ignore
-            trusted_hosts=["*"],
+            trusted_hosts=settings.allowed_hosts if not debug else ["*"],
         ),
         Middleware(
             LimitMiddleware,  # type: ignore
