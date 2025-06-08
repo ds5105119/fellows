@@ -1,4 +1,5 @@
 import asyncio
+from collections import defaultdict
 from datetime import date, timedelta
 from logging import getLogger
 from typing import Annotated
@@ -75,14 +76,27 @@ class ProjectService:
             else:
                 order_by = data.order_by
 
-        result = await self.frappe_client.get_list(
+        projects = await self.frappe_client.get_list(
             "Project",
             filters=filters,
             limit_start=data.page * data.size,
             limit_page_length=data.size,
             order_by=order_by,
         )
-        return ProjectsPaginatedResponse.model_validate({"items": result}, from_attributes=True)
+
+        tasks = await self.frappe_client.get_list(
+            "Task",
+            filters={
+                "project": ["in", [p["project_name"] for p in projects]],
+                "custom_is_user_visible": True,
+            },
+        )
+
+        bucket = defaultdict(list)
+        [bucket[t["project"]].append(t) for t in tasks]
+        projects_with_tasks = [{**p, "tasks": bucket.get(p["project_name"], [])} for p in projects]
+
+        return ProjectsPaginatedResponse.model_validate({"items": projects_with_tasks}, from_attributes=True)
 
     async def update_project_info(
         self,
@@ -179,6 +193,7 @@ class ProjectService:
             doctype="Task",
             subject="Initial Planning and Vendor Quotation Review",
             project=project_id,
+            custom_sub=user.sub,
             color="#FF4500",
             is_group=False,
             is_template=False,

@@ -325,6 +325,7 @@ class ERPNextTask(BaseModel):
     is_group: bool = Field(default=False)
     is_template: bool = Field(default=False)
     custom_is_user_visible: bool = Field(default=False)
+    custom_sub: str | None = Field(default=None)
 
     status: ERPNextTaskStatus | None = Field(None)
     priority: ERPNextTaskPriority | None = Field(None)
