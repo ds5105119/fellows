@@ -309,7 +309,7 @@ class ProjectService:
     ):
         project = await self.get_project(user, project_id)
 
-        if project.custom_project_status != "draft" or project.custom_project_status != "process:1":
+        if project.custom_project_status != "draft" and project.custom_project_status != "process:1":
             return
 
         payload = project.model_dump_json(
