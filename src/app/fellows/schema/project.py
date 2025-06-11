@@ -160,7 +160,6 @@ class ERPNextProject(BaseModel):
     custom_project_status: CustomProjectStatus | None = Field(default=CustomProjectStatus.DRAFT)
     custom_ai_estimate: str | None = Field(default=None)
     custom_emoji: str | None = Field(default=None)
-    custom_design_requirements: str | None = Field(default=None)
     custom_readiness_level: str | None = Field(default=None)  # ReadinessLevel Enum 사용 가능
     custom_content_pages: int | None = Field(default=None)
     custom_maintenance_required: bool | None = Field(default=False)
@@ -237,7 +236,6 @@ class UserERPNextProject(BaseModel):
     expected_start_date: datetime.date | None = Field(default=None)
     expected_end_date: datetime.date | None = Field(default=None)
 
-    custom_design_requirements: str | None = Field(default=None)
     custom_content_pages: int | None = Field(default=None)
     custom_maintenance_required: bool | None = Field(default=False)
 

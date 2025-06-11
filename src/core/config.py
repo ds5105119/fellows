@@ -105,6 +105,10 @@ class Settings(BaseSettings):
         return PostgresDsn.build(scheme="postgresql+asyncpg", **self.postgres.model_dump(by_alias=True))
 
     @property
+    def sync_postgres_dsn(self) -> PostgresDsn:
+        return PostgresDsn.build(scheme="postgresql+psycopg", **self.postgres.model_dump(by_alias=True))
+
+    @property
     def wakapi_postgres_dsn(self) -> PostgresDsn:
         return PostgresDsn.build(scheme="postgresql+asyncpg", **self.wakapi_postgres.model_dump(by_alias=True))
 

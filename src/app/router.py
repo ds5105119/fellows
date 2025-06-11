@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from .blog.api.endpoint.blog import router as blog_router
 from .fellows.api.endpoint.project import router as project_router
 from .map.api.endpoint.map import router as map_router
 from .open_api.api.endpoint.fiscal import router as fiscal_router
@@ -17,3 +18,4 @@ router.include_router(map_router, prefix="/map", tags=["map"])
 router.include_router(wakapi_router, prefix="/wakapi", tags=["wakapi"])
 router.include_router(project_router, prefix="/project", tags=["project"])
 router.include_router(cloud_router, prefix="/cloud", tags=["cloud"])
+router.include_router(blog_router, prefix="/blog", tags=["blog"])
