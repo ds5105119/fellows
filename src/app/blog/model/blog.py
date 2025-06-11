@@ -56,7 +56,7 @@ class BlogPost(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC))
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    author_id: Mapped[int] = mapped_column(ForeignKey("author.id"), nullable=False)
+    author_sub: Mapped[int] = mapped_column(ForeignKey("author.sub"), nullable=False)
     category_id: Mapped[int] = mapped_column(ForeignKey("category.id"), nullable=True)
 
     author: Mapped["Author"] = relationship(back_populates="posts")
