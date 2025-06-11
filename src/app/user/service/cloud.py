@@ -43,7 +43,10 @@ class CloudService:
             "SSECustomerKeyMD5": md5,
         }
 
-    def get_presigned_url(self, method: str, key: str, expires: int, headers: dict[str, str]):
+    def get_presigned_url(self, method: str, key: str, expires: int, headers: dict[str, str] | None = None):
+        if headers is None:
+            headers = {}
+
         try:
             response = self.s3_client.generate_presigned_url(
                 method,
@@ -62,8 +65,18 @@ class CloudService:
 
     async def create_put_presigned_url(
         self,
+        user: get_current_user,
+        data: Annotated[PresignedPutRequest, Query()],
+    ) -> str:
+        key = f"{data.suffix}_{uuid4()}"
+        presigned_url = self.get_presigned_url("put_object", key, 600)
+
+        return presigned_url
+
+    async def create_sse_c_put_presigned_url(
+        self,
         response: Response,
-        user: get_current_user_without_error,
+        user: get_current_user,
         data: Annotated[PresignedPutRequest, Query()],
     ) -> PresignedResponse:
         key = f"{data.suffix}_{uuid4()}"
@@ -83,6 +96,16 @@ class CloudService:
         )
 
     async def create_get_presigned_url(
+        self,
+        user: get_current_user,
+        data: Annotated[PresignedPutRequest, Query()],
+    ) -> str:
+        key = f"{data.suffix}_{uuid4()}"
+        presigned_url = self.get_presigned_url("get_object", key, 600)
+
+        return presigned_url
+
+    async def create_sse_c_get_presigned_url(
         self,
         data: Annotated[PresignedGetRequest, Query()],
         headers: Annotated[PresignedHeader, Header()],

@@ -8,16 +8,30 @@ from src.app.user.schema.cloud import PresignedResponse
 router = APIRouter()
 
 
-@router.get("/object/presigned/get", response_model=PresignedResponse)
+@router.get("/object/presigned/get", response_model=str)
 async def create_presigned_get_request(
-    url: Annotated[PresignedResponse, Depends(cloud_service.create_get_presigned_url)],
+    url: Annotated[str, Depends(cloud_service.create_get_presigned_url)],
 ):
     return url
 
 
-@router.get("/object/presigned/put", response_model=PresignedResponse)
+@router.get("/object/presigned/put", response_model=str)
 async def create_presigned_put_request(
-    url: Annotated[PresignedResponse, Depends(cloud_service.create_put_presigned_url)],
+    url: Annotated[str, Depends(cloud_service.create_put_presigned_url)],
+):
+    return url
+
+
+@router.get("/object/presigned/get/sse/c", response_model=PresignedResponse)
+async def create_sse_c_presigned_get_request(
+    url: Annotated[PresignedResponse, Depends(cloud_service.create_sse_c_get_presigned_url)],
+):
+    return url
+
+
+@router.get("/object/presigned/put/sse/c", response_model=PresignedResponse)
+async def create_sse_c_presigned_put_request(
+    url: Annotated[PresignedResponse, Depends(cloud_service.create_sse_c_put_presigned_url)],
 ):
     return url
 
