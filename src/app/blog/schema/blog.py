@@ -3,12 +3,6 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class AuthorInlineDto(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    name: str
-    bio: str | None = Field(None)
-
-
 class CategoryInlineDto(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     name: str
@@ -24,13 +18,13 @@ class BlogPostWithNestedDto(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     title: str
+    title_image: str
     content: str
     summary: str | None = Field(None)
     is_published: bool = Field(False)
     published_at: datetime | None = Field(None)
 
-    author: AuthorInlineDto
-    category: CategoryInlineDto
+    category: CategoryInlineDto | None = Field(None)
     tags: list[TagInlineDto] = Field(default_factory=list)
 
 

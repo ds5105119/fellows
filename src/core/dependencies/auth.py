@@ -26,6 +26,7 @@ class User(BaseModel):
     birthdate: str | date
     access_token: str
     location: list[int] | None = Field(default_factory=list)
+    bio: str | None = Field(default=None)
 
     # 확장 필드들
     name: str | None = Field(default=None)
@@ -56,8 +57,6 @@ http_bearer = ExtendHTTPBearer()
 async def _get_current_user(
     data: Annotated[dict, Depends(http_bearer, use_cache=False)],
 ) -> User:
-    print(data)
-
     try:
         return User(**data)
     except (ValidationError, TypeError):

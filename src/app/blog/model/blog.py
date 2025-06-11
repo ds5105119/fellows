@@ -9,9 +9,9 @@ from src.core.models.base import Base
 class Author(Base):
     __tablename__ = "author"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    sub: Mapped[str] = mapped_column(String(200), unique=True, nullable=False, primary_key=True, autoincrement=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    sub: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
+    bio: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     posts: Mapped[list["BlogPost"]] = relationship(back_populates="author")
 
@@ -50,6 +50,7 @@ class BlogPost(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
+    title_image: Mapped[str] = mapped_column(String(200), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC))

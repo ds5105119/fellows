@@ -1,4 +1,3 @@
-from datetime import datetime
 from secrets import randbelow
 
 from fastapi import HTTPException, Path, status
@@ -57,8 +56,19 @@ class BlogService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         author = await self.author_repo.get_by_sub(session, user.sub)
+        updated_author = {}
         if not author:
-            author = await self.author_repo.create(session, **data.author.model_dump(), sub=user.sub)
+            await self.author_repo.create(session, sub=user.sub, name=user.name, bio=user.bio)
+        if author.name != user.name:
+            updated_author.name = user.name
+        if author.bio != user.bio:
+            updated_author.bio = user.bio
+        if updated_author:
+            await self.author_repo.update(
+                session,
+                [self.author_repo.model.sub == user.sub],
+                **updated_author,
+            )
 
         category = await self.category_repo.get_by_name(session, data.category.name)
         if not category:
@@ -70,7 +80,7 @@ class BlogService:
             post = await self.blog_post_repo.create(
                 session,
                 id=post_id,
-                author_id=author.id,
+                author_id=user.sub,
                 category_id=category.id,
                 title=data.title,
                 content=data.content,
