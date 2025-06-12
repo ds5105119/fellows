@@ -1,6 +1,7 @@
 from secrets import randbelow
+from typing import Annotated
 
-from fastapi import HTTPException, Path, status
+from fastapi import HTTPException, Path, Query, status
 from sqlalchemy.exc import IntegrityError
 
 from src.app.blog.repository.blog import (
@@ -48,7 +49,7 @@ class BlogService:
 
     async def create_blog_post(
         self,
-        data: BlogPostWithNestedDto,
+        data: BlogPostDto,
         session: postgres_session,
         user: get_current_user,
     ):
@@ -102,19 +103,24 @@ class BlogService:
             post_tag_objects = [{"post_id": post.id, "tag_id": tag_id} for tag_id in tag_ids]
             await self.post_tag_repo.bulk_create(session, post_tag_objects)
 
-        return post
+        return await self.get_post_by_id(session, post.id)
 
     async def get_post_by_id(
         self,
         session: postgres_session,
-        post_id: str = Path(),
+        post_id: int = Path(),
     ):
         result = await self.blog_post_repo.get_by_id(session, post_id)
-        return result.mappings().first()
+        post = result.scalars().one_or_none()
+
+        if not post:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+        return BlogPostDto.model_validate(post, from_attributes=True)
 
     async def get_posts(
         self,
-        data: BlogPostListQueryDto,
+        data: Annotated[BlogPostListQueryDto, Query()],
         session: postgres_session,
         user: get_current_user_without_error,
     ):
@@ -126,6 +132,9 @@ class BlogService:
             filters.append(self.category_repo.model.name == data.category)
         if data.tag:
             filters.append(self.tag_repo.model.name == data.tag)
+        if data.keyword:
+            filters.append(self.blog_post_repo.model.content.contains(data.keyword))
+            filters.append(self.blog_post_repo.model.title.contains(data.keyword))
 
         order_column = getattr(self.blog_post_repo.model, data.order_by or "published_at")
 
@@ -142,19 +151,55 @@ class BlogService:
 
     async def update_post(
         self,
-        data: BlogPostWithNestedDto,
+        user: get_current_user,
+        data: UpdateBlogPostDto,
         session: postgres_session,
-        post_id: str = Path(),
+        post_id: int,
     ):
+        # 포스트 불러오기
+        post = await self.get_post_by_id(session, post_id)
+        if not post:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        if post.author.sub != user.sub:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        update_data = data.model_dump(exclude_unset=True, exclude={"category", "tags"})
+
+        # 2. 카테고리 처리
+        if "category" in data.model_fields_set:
+            if data.category:
+                category = await self.category_repo.get_by_name(session, data.category.name)
+                if not category:
+                    category = await self.category_repo.create(session, **data.category.model_dump())
+                update_data["category_id"] = category.id
+            else:
+                update_data["category_id"] = None
+
+        # 3. 포스트 기본 필드 업데이트
         await self.blog_post_repo.update(
             session,
             filters=[self.blog_post_repo.model.id == post_id],
-            **data.model_dump(exclude_unset=True),
+            **update_data,
         )
+
+        # 4. 태그 처리
+        if "tags" in data.model_fields_set:
+            # 새 태그 연결
+            tag_ids = []
+            for tag_dto in data.tags:
+                tag = await self.tag_repo.get_by_name(session, tag_dto.name)
+                if not tag:
+                    tag = await self.tag_repo.create(session, **tag_dto.model_dump())
+                tag_ids.append(tag.id)
+
+            if tag_ids:
+                post_tag_objects = [{"post_id": post_id, "tag_id": tag_id} for tag_id in tag_ids]
+                await self.post_tag_repo.bulk_create(session, post_tag_objects)
 
     async def delete_post(
         self,
+        user: get_current_user,
         session: postgres_session,
-        post_id: str = Path(),
+        post_id: int = Path(),
     ):
         await self.blog_post_repo.delete(session, post_id)

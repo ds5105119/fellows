@@ -10,14 +10,14 @@ router = APIRouter()
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_post(
-    post: Annotated[BlogPostWithNestedDto, Depends(blog_service.create_blog_post)],
+    post: Annotated[BlogPostDto, Depends(blog_service.create_blog_post)],
 ):
     return post
 
 
-@router.get("/{post_id}", response_model=BlogPostWithNestedDto)
+@router.get("/{post_id}", response_model=BlogPostDto)
 async def get_post(
-    posts: Annotated[BlogPostWithNestedDto, Depends(blog_service.get_post_by_id)],
+    posts: Annotated[BlogPostDto, Depends(blog_service.get_post_by_id)],
 ):
     return posts
 

@@ -19,12 +19,21 @@ class FileRecordResponseOnly(BaseModel):
     sse_key: str | None = Field(default=None)
 
 
-class PresignedPutRequest(BaseModel):
+class PresignedGetRequest(BaseModel):
+    key: str
+
+
+class PresignedPutResponse(BaseModel):
+    key: str
+    presigned_url: str
+
+
+class PresignedSSECPutRequest(BaseModel):
     name: str
     suffix: str
 
 
-class PresignedResponse(BaseModel):
+class SSECPresignedResponse(BaseModel):
     presigned_url: str
     key: str
     algorithm: str = Field(default="AES256")
@@ -32,7 +41,7 @@ class PresignedResponse(BaseModel):
     md5: str
 
 
-class PresignedGetRequest(BaseModel):
+class PresignedSSECGetRequest(BaseModel):
     algorithm: str = Field(default="AES256")
     key: str
     sse_key: str | None = Field(default=None)

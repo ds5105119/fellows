@@ -12,6 +12,7 @@ class Author(Base):
     sub: Mapped[str] = mapped_column(String(200), unique=True, nullable=False, primary_key=True, autoincrement=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     bio: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    picture: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     posts: Mapped[list["BlogPost"]] = relationship(back_populates="author")
 
