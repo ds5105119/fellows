@@ -13,7 +13,6 @@ class AuthorInlineDto(BaseModel):
 class CategoryInlineDto(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     name: str
-    description: str | None = Field(None)
 
 
 class TagInlineDto(BaseModel):
@@ -24,6 +23,7 @@ class TagInlineDto(BaseModel):
 class BlogPostDto(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    id: str
     title: str
     title_image: str
     content: str
@@ -36,7 +36,7 @@ class BlogPostDto(BaseModel):
     tags: list[TagInlineDto] = Field(default_factory=list)
 
 
-class UpdateBlogPostDto(BaseModel):
+class UpsertBlogPostDto(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     title: str | None = Field(None)
@@ -62,5 +62,7 @@ class BlogPostListQueryDto(BaseModel):
 
 
 class BlogPostPaginatedResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     total: int
     items: list[BlogPostDto]

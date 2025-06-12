@@ -17,7 +17,7 @@ class AuthorCreateRepository(ABaseCreateRepository[Author]):
 class AuthorReadRepository(ABaseReadRepository[Author]):
     async def get_by_sub(self, session: AsyncSession, sub: str):
         result = await self.get(session, filters=[self.model.sub == sub])
-        return result.scalars().one_or_none()
+        return result.one_or_none()
 
 
 class AuthorUpdateRepository(ABaseUpdateRepository[Author]):
@@ -51,7 +51,7 @@ class CategoryCreateRepository(ABaseCreateRepository[Category]):
 class CategoryReadRepository(ABaseReadRepository[Category]):
     async def get_by_name(self, session: AsyncSession, name: str):
         result = await self.get(session, filters=[self.model.name == name])
-        return result.scalars().one_or_none()
+        return result.one_or_none()
 
 
 class CategoryUpdateRepository(ABaseUpdateRepository[Category]):
@@ -85,7 +85,7 @@ class TagCreateRepository(ABaseCreateRepository[Tag]):
 class TagReadRepository(ABaseReadRepository[Tag]):
     async def get_by_name(self, session: AsyncSession, name: str):
         result = await self.get(session, filters=[self.model.name == name])
-        return result.scalars().one_or_none()
+        return result.one_or_none()
 
 
 class TagUpdateRepository(ABaseUpdateRepository[Tag]):

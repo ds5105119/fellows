@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -49,12 +49,14 @@ class PostTag(Base):
 class BlogPost(Base):
     __tablename__ = "blog_post"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    id: Mapped[int] = mapped_column(String(100), primary_key=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     title_image: Mapped[str] = mapped_column(String(200), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC))
+    summary: Mapped[str] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
+    published_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
 
     author_sub: Mapped[int] = mapped_column(ForeignKey("author.sub"), nullable=False)

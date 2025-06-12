@@ -215,7 +215,8 @@ class ABaseReadRepository[T](ABaseRepository[T]):
         if stmt is None:
             stmt = select(self.model.__table__)
         if join:
-            stmt = stmt.join(*join)
+            for t in join:
+                stmt = stmt.join(t)
         if filters:
             stmt = stmt.where(*filters)
         if orderby:
@@ -295,6 +296,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
             return PaginatedResult(total, [])
 
         items = await self.get_page(session, page, size, filters, columns, orderby, options, join)
+        items = items.scalars().all()
 
         return PaginatedResult(total, items)
 

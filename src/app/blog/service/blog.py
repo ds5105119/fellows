@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import HTTPException, Path, Query, status
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from src.app.blog.repository.blog import (
     AuthorRepository,
@@ -16,10 +17,10 @@ from src.core.dependencies.auth import get_current_user, get_current_user_withou
 from src.core.dependencies.db import postgres_session
 
 
-def generate_date_based_12_digit_id() -> int:
+def generate_date_based_12_digit_id() -> str:
     date_part = datetime.now().strftime("%Y%m%d")
     random_part = f"{randbelow(10000):04}"
-    return int(date_part + random_part)
+    return date_part + random_part
 
 
 class BlogService:
@@ -41,7 +42,7 @@ class BlogService:
         for _ in range(max_tries):
             new_id = generate_date_based_12_digit_id()
             existing = await self.blog_post_repo.get_by_id(session, new_id)
-            if not existing:
+            if not existing.one_or_none():
                 return new_id
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate unique blog post ID."
@@ -49,13 +50,12 @@ class BlogService:
 
     async def create_blog_post(
         self,
-        data: BlogPostDto,
+        data: UpsertBlogPostDto,
         session: postgres_session,
         user: get_current_user,
     ):
-        if "manager" not in user.grouops:
+        if "/manager" not in user.groups:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
         author = await self.author_repo.get_by_sub(session, user.sub)
         updated_author = {}
         if not author:
@@ -81,9 +81,10 @@ class BlogService:
             post = await self.blog_post_repo.create(
                 session,
                 id=post_id,
-                author_id=user.sub,
+                author_sub=user.sub,
                 category_id=category.id,
                 title=data.title,
+                title_image=data.title_image,
                 content=data.content,
                 summary=data.summary,
                 is_published=data.is_published,
@@ -110,7 +111,15 @@ class BlogService:
         session: postgres_session,
         post_id: int = Path(),
     ):
-        result = await self.blog_post_repo.get_by_id(session, post_id)
+        result = await self.blog_post_repo.get_instance(
+            session,
+            filters=[self.blog_post_repo.model.id == post_id],
+            options=[
+                selectinload(self.blog_post_repo.model.author),
+                selectinload(self.blog_post_repo.model.category),
+                selectinload(self.blog_post_repo.model.tags),
+            ],
+        )
         post = result.scalars().one_or_none()
 
         if not post:
@@ -126,7 +135,7 @@ class BlogService:
     ):
         filters = []
 
-        if not user or (user and "manager" not in user.groups):
+        if not user or (user and "/manager" not in user.groups):
             filters.append(self.blog_post_repo.model.is_published == True)
         if data.category:
             filters.append(self.category_repo.model.name == data.category)
@@ -138,13 +147,18 @@ class BlogService:
 
         order_column = getattr(self.blog_post_repo.model, data.order_by or "published_at")
 
-        result = self.blog_post_repo.get_page_with_total(
+        result = await self.blog_post_repo.get_page_with_total(
             session,
             page=data.page,
             size=data.size,
             filters=filters,
-            orderby=[order_column.desc if data.descending else order_column],
+            orderby=[order_column.desc() if data.descending else order_column],
             join=[self.blog_post_repo.model.tags],
+            options=[
+                selectinload(self.blog_post_repo.model.tags),
+                selectinload(self.blog_post_repo.model.author),
+                selectinload(self.blog_post_repo.model.category),
+            ],
         )
 
         return BlogPostPaginatedResponse.model_validate(result, from_attributes=True)
@@ -152,7 +166,7 @@ class BlogService:
     async def update_post(
         self,
         user: get_current_user,
-        data: UpdateBlogPostDto,
+        data: UpsertBlogPostDto,
         session: postgres_session,
         post_id: int,
     ):
