@@ -1,4 +1,3 @@
-from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.blog.model.blog import Author, BlogPost, Category, PostTag, Tag

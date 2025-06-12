@@ -1,3 +1,4 @@
+from datetime import datetime
 from secrets import randbelow
 from typing import Annotated
 
@@ -76,6 +77,7 @@ class BlogService:
             category = await self.category_repo.create(session, **data.category.model_dump())
 
         post_id = await self.generate_unique_post_id(session)
+        extra_payload = {"published_at": datetime.now()} if data.is_published else {}
 
         try:
             post = await self.blog_post_repo.create(
@@ -88,7 +90,7 @@ class BlogService:
                 content=data.content,
                 summary=data.summary,
                 is_published=data.is_published,
-                published_at=data.published_at,
+                **extra_payload,
             )
         except IntegrityError:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Post creation failed.")
