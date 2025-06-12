@@ -49,7 +49,7 @@ class PostTag(Base):
 class BlogPost(Base):
     __tablename__ = "blog_post"
 
-    id: Mapped[int] = mapped_column(String(100), primary_key=True)
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     title_image: Mapped[str] = mapped_column(String(200), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)

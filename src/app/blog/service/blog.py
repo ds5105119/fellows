@@ -39,7 +39,7 @@ class BlogService:
         self.post_tag_repo = post_tag_repo
         self.tag_repo = tag_repo
 
-    async def generate_unique_post_id(self, session, max_tries: int = 10) -> int:
+    async def generate_unique_post_id(self, session, max_tries: int = 10) -> str:
         for _ in range(max_tries):
             new_id = generate_date_based_12_digit_id()
             existing = await self.blog_post_repo.get_by_id(session, new_id)
@@ -111,7 +111,7 @@ class BlogService:
     async def get_post_by_id(
         self,
         session: postgres_session,
-        post_id: int = Path(),
+        post_id: str = Path(),
     ):
         result = await self.blog_post_repo.get_instance(
             session,
@@ -165,12 +165,24 @@ class BlogService:
 
         return BlogPostPaginatedResponse.model_validate(result, from_attributes=True)
 
+    async def post_paths(
+        self,
+        session: postgres_session,
+    ):
+        result = await self.blog_post_repo.get(
+            session,
+            filters=[self.blog_post_repo.model.is_published == True],
+            columns=[self.blog_post_repo.model.id],
+        )
+
+        return result.scalars().all()
+
     async def update_post(
         self,
         user: get_current_user,
         data: UpsertBlogPostDto,
         session: postgres_session,
-        post_id: int,
+        post_id: str = Path(),
     ):
         # 포스트 불러오기
         post = await self.get_post_by_id(session, post_id)
@@ -216,6 +228,6 @@ class BlogService:
         self,
         user: get_current_user,
         session: postgres_session,
-        post_id: int = Path(),
+        post_id: str = Path(),
     ):
         await self.blog_post_repo.delete(session, post_id)

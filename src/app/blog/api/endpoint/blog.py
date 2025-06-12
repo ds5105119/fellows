@@ -15,6 +15,13 @@ async def create_post(
     return post
 
 
+@router.get("/path", response_model=list[str])
+async def post_paths(
+    paths: Annotated[list[str], Depends(blog_service.post_paths)],
+):
+    return paths
+
+
 @router.get("/{post_id}", response_model=BlogPostDto)
 async def get_post(
     posts: Annotated[BlogPostDto, Depends(blog_service.get_post_by_id)],
