@@ -60,11 +60,13 @@ class BlogService:
         author = await self.author_repo.get_by_sub(session, user.sub)
         updated_author = {}
         if not author:
-            await self.author_repo.create(session, sub=user.sub, name=user.name, bio=user.bio)
+            await self.author_repo.create(session, sub=user.sub, name=user.name, bio=user.bio, picture=user.picture)
         if author.name != user.name:
             updated_author.name = user.name
         if author.bio != user.bio:
             updated_author.bio = user.bio
+        if author.picture != user.picture:
+            updated_author.picture = user.picture
         if updated_author:
             await self.author_repo.update(
                 session,
