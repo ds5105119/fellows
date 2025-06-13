@@ -62,11 +62,11 @@ class BlogService:
         if not author:
             await self.author_repo.create(session, sub=user.sub, name=user.name, bio=user.bio, picture=user.picture)
         if author.name != user.name:
-            updated_author.name = user.name
+            updated_author["name"] = user.name
         if author.bio != user.bio:
-            updated_author.bio = user.bio
+            updated_author["bio"] = user.bio
         if author.picture != user.picture:
-            updated_author.picture = user.picture
+            updated_author["picture"] = user.picture
         if updated_author:
             await self.author_repo.update(
                 session,
@@ -218,7 +218,6 @@ class BlogService:
             tag_ids = []
             for tag_dto in data.tags:
                 tag = await self.tag_repo.get_by_name(session, tag_dto.name)
-                print(tag_dto, tag, data)
                 if not tag:
                     tag_ids.append(tag.id)
 

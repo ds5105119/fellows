@@ -25,6 +25,7 @@ class User(BaseModel):
     gender: str
     birthdate: str | date
     access_token: str
+    picture: str | None = Field(default=None)
     location: list[int] | None = Field(default_factory=list)
     bio: str | None = Field(default=None)
 
