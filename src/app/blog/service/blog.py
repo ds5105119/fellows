@@ -1,10 +1,10 @@
-from datetime import datetime
 from secrets import randbelow
 from typing import Annotated
 
 from fastapi import HTTPException, Path, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
+from sqlalchemy import and_
 
 from src.app.blog.repository.blog import (
     AuthorRepository,
@@ -142,12 +142,14 @@ class BlogService:
         if not user or (user and "/manager" not in user.groups):
             filters.append(self.blog_post_repo.model.is_published == True)
         if data.category:
-            filters.append(self.category_repo.model.name == data.category)
+            filters.append(self.blog_post_repo.model.category.has(name=data.category))
         if data.tag:
-            filters.append(self.tag_repo.model.name == data.tag)
+            filters.append(self.blog_post_repo.model.tags.any(name=data.tag))
         if data.keyword:
             filters.append(self.blog_post_repo.model.content.contains(data.keyword))
             filters.append(self.blog_post_repo.model.title.contains(data.keyword))
+
+        filters = [and_(*filters)] if filters else filters
 
         order_column = getattr(self.blog_post_repo.model, data.order_by or "published_at")
         order_column = order_column if data.order_by else order_column.desc()
