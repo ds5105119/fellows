@@ -39,7 +39,7 @@ class Tag(Base):
 class PostTag(Base):
     __tablename__ = "post_tag"
 
-    post_id: Mapped[int] = mapped_column(ForeignKey("blog_post.id"), primary_key=True)
+    post_id: Mapped[int] = mapped_column(ForeignKey("blog_post.id", ondelete="CASCADE"), primary_key=True)
     tag_id: Mapped[int] = mapped_column(ForeignKey("tag.id"), primary_key=True)
 
     post: Mapped["BlogPost"] = relationship(back_populates="post_tags")
@@ -66,4 +66,9 @@ class BlogPost(Base):
     category: Mapped["Category"] = relationship(back_populates="posts")
 
     post_tags: Mapped[list["PostTag"]] = relationship(back_populates="post", cascade="all, delete-orphan")
-    tags: Mapped[list["Tag"]] = relationship(secondary="post_tag", back_populates="posts", viewonly=True)
+    tags: Mapped[list["Tag"]] = relationship(
+        secondary="post_tag",
+        back_populates="posts",
+        viewonly=True,
+        cascade="all, delete-orphan",
+    )

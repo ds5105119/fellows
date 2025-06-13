@@ -36,7 +36,21 @@ class BlogPostDto(BaseModel):
     tags: list[TagInlineDto] = Field(default_factory=list)
 
 
-class UpsertBlogPostDto(BaseModel):
+class CreateBlogPostDto(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    title: str
+    title_image: str
+    content: str
+    summary: str
+    is_published: bool = Field(False)
+    published_at: datetime | None = Field(None)
+
+    category: CategoryInlineDto | None = Field(None)
+    tags: list[TagInlineDto] = Field(default_factory=list)
+
+
+class UpdateBlogPostDto(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     title: str | None = Field(None)

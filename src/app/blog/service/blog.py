@@ -51,7 +51,7 @@ class BlogService:
 
     async def create_blog_post(
         self,
-        data: UpsertBlogPostDto,
+        data: CreateBlogPostDto,
         session: postgres_session,
         user: get_current_user,
     ):
@@ -182,7 +182,7 @@ class BlogService:
     async def update_post(
         self,
         user: get_current_user,
-        data: UpsertBlogPostDto,
+        data: UpdateBlogPostDto,
         session: postgres_session,
         post_id: str = Path(),
     ):
@@ -218,9 +218,9 @@ class BlogService:
             tag_ids = []
             for tag_dto in data.tags:
                 tag = await self.tag_repo.get_by_name(session, tag_dto.name)
+                print(tag_dto, tag, data)
                 if not tag:
-                    tag = await self.tag_repo.create(session, **tag_dto.model_dump())
-                tag_ids.append(tag.id)
+                    tag_ids.append(tag.id)
 
             if tag_ids:
                 post_tag_objects = [{"post_id": post_id, "tag_id": tag_id} for tag_id in tag_ids]
