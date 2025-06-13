@@ -150,6 +150,7 @@ class BlogService:
             filters.append(self.blog_post_repo.model.title.contains(data.keyword))
 
         order_column = getattr(self.blog_post_repo.model, data.order_by or "published_at")
+        order_column = order_column if data.order_by else order_column.desc()
 
         result = await self.blog_post_repo.get_page_with_total(
             session,
@@ -157,7 +158,6 @@ class BlogService:
             size=data.size,
             filters=filters,
             orderby=[order_column.desc() if data.descending else order_column],
-            join=[self.blog_post_repo.model.tags],
             options=[
                 selectinload(self.blog_post_repo.model.tags),
                 selectinload(self.blog_post_repo.model.author),

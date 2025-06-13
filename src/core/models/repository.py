@@ -296,7 +296,7 @@ class ABaseReadRepository[T](ABaseRepository[T]):
             return PaginatedResult(total, [])
 
         items = await self.get_page(session, page, size, filters, columns, orderby, options, join)
-        items = items.scalars().unique().all()
+        items = items.scalars().all()
 
         return PaginatedResult(total, items)
 
