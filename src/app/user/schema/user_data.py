@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_serializer
 
 from src.app.map.schema.map import Coord2AddrResponse
 from src.app.user.model.user_data import AcademicStatus
@@ -82,3 +84,39 @@ class OIDCAddressDto(LocationDto):
 
 class KakaoAddressDto(LocationDto, Coord2AddrResponse):
     pass
+
+
+class UserAttributes(OIDCAddressDto):
+    username: str = Field(min_length=3, max_length=255, description="Username of the user")
+    email: EmailStr = Field(max_length=255, description="Email address of the user")
+    name: str
+    birthdate: str
+    gender: Literal["male", "female"]
+
+    firstName: str | None = Field(default=None)
+    lastName: str | None = Field(default=None)
+
+    phoneNumber: str | None = Field(default=None)
+    phoneNumberVerified: bool | None = Field(default=None)
+
+    picture: str | None = Field(default=None)
+    bio: str | None = Field(default=None, min_length=0, max_length=100)
+    link: list[str] | None = Field(default=None, description="List of up to 4 personal links")
+
+
+class UpdateUserAttributes(OIDCAddressDto):
+    username: str | None = Field(default=None, min_length=3, max_length=255, description="Username of the user")
+    email: EmailStr | None = Field(default=None, max_length=255, description="Email address of the user")
+    name: str | None = Field(default=None)
+    birthdate: str | None = Field(default=None)
+    gender: Literal["male", "female"] | None = Field(default=None)
+
+    firstName: str | None = Field(default=None)
+    lastName: str | None = Field(default=None)
+
+    phoneNumber: str | None = Field(default=None)
+    phoneNumberVerified: bool | None = Field(default=None)
+
+    picture: str | None = Field(default=None)
+    bio: str | None = Field(default=None, min_length=0, max_length=100)
+    link: list[str] | None = Field(default=None, description="List of up to 4 personal links")

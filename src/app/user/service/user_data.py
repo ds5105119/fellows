@@ -7,6 +7,7 @@ from src.app.user.schema.user_data import (
     KakaoAddressDto,
     OIDCAddressDto,
     PartialUserDataDto,
+    UpdateUserAttributes,
     UserBusinessDataDto,
     UserDataDto,
 )
@@ -116,13 +117,13 @@ class UserDataService:
             **data.model_dump(),
         )
 
-    async def update_address_oidc(
+    async def update_user(
         self,
-        data: OIDCAddressDto,
+        data: UpdateUserAttributes,
         user: get_current_user,
     ):
         payload = await keycloak_admin.a_get_user(user.sub)
-        payload["attributes"].update(data.model_dump())
+        payload["attributes"].update(data.model_dump(exclude_unset=True))
 
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload={"attributes": payload})
 
