@@ -172,7 +172,6 @@ class BlogService:
     ):
         result = await self.blog_post_repo.get(
             session,
-            filters=[self.blog_post_repo.model.is_published == True],
             columns=[self.blog_post_repo.model.id],
         )
 

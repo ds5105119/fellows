@@ -123,6 +123,17 @@ class UserDataService:
         user: get_current_user,
     ):
         payload = await keycloak_admin.a_get_user(user.sub)
+
+        if payload.username:
+            exist = await keycloak_admin.a_get_user(user.sub)
+            if exist:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+        if payload.email:
+            exist = await keycloak_admin.a_get_users(({"email": payload.email}))
+            if exist:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
         payload["attributes"].update(data.model_dump(exclude_unset=True))
 
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload={"attributes": payload})
