@@ -1,4 +1,5 @@
 import asyncio
+import json
 from collections import defaultdict
 from datetime import date, timedelta
 from logging import getLogger
@@ -312,18 +313,17 @@ class ProjectService:
         if project.custom_project_status != "draft" and project.custom_project_status != "process:1":
             return
 
-        payload = project.model_dump_json(
-            include={
-                "custom_project_title",
-                "custom_project_summary",
-                "custom_readiness_level",
-                "expected_start_date",
-                "custom_design_requirements",
-                "custom_content_pages",
-                "custom_maintenance_required",
-                "custom_platforms",
-                "custom_features",
-                "custom_preferred_tech_stacks",
+        payload = json.dumps(
+            {
+                "project_name": project.custom_project_title,
+                "project_summary": project.custom_project_summary,
+                "platforms": project.custom_platforms,
+                "readiness_level": project.custom_readiness_level,
+                "start_date": project.expected_start_date,
+                "desired_deadline": project.expected_end_date,
+                "maintenance_required": project.custom_maintenance_required,
+                "content_pages": project.custom_content_pages,
+                "features": project.custom_features,
             }
         )
 
