@@ -309,21 +309,22 @@ class ProjectService:
         project_id: str = Path(),
     ):
         project = await self.get_project(user, project_id)
+        project = project.model_dump(exclude_unset=True)
 
         if project.custom_project_status != "draft" and project.custom_project_status != "process:1":
             return
 
         payload = json.dumps(
             {
-                "project_name": project.custom_project_title,
-                "project_summary": project.custom_project_summary,
-                "platforms": project.custom_platforms,
-                "readiness_level": project.custom_readiness_level,
-                "start_date": project.expected_start_date,
-                "desired_deadline": project.expected_end_date,
-                "maintenance_required": project.custom_maintenance_required,
-                "content_pages": project.custom_content_pages,
-                "features": project.custom_features,
+                "project_name": project.get("custom_project_title"),
+                "project_summary": project.get("custom_project_summary"),
+                "platforms": project.get("custom_platforms"),
+                "readiness_level": project.get("custom_readiness_level"),
+                "start_date": project.get("expected_start_date"),
+                "desired_deadline": project.get("expected_end_date"),
+                "maintenance_required": project.get("custom_maintenance_required"),
+                "content_pages": project.get("custom_content_pages"),
+                "features": project.get("custom_features"),
             }
         )
 
