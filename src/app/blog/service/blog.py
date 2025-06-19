@@ -218,12 +218,12 @@ class BlogService:
             for tag_dto in data.tags:
                 tag = await self.tag_repo.get_by_name(session, tag_dto.name)
                 if not tag:
+                    tag = await self.tag_repo.create(session, **tag_dto.model_dump())
                     tag_ids.append(tag.id)
 
             if tag_ids:
-                post_tag_objects = [{"post_id": post_id, "tag_id": tag_id} for tag_id in tag_ids]
+                post_tag_objects = [{"post_id": post.id, "tag_id": tag_id} for tag_id in tag_ids]
                 await self.post_tag_repo.bulk_create(session, post_tag_objects)
-                update_data["tags"] = tag_ids
 
     async def delete_post(
         self,
