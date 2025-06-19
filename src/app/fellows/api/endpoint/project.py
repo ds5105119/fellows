@@ -12,11 +12,20 @@ from src.core.models.repository import PaginatedResult
 router = APIRouter()
 
 
+@limiter(1, 2)
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_new_project(
+async def create_project(
     project: Annotated[ERPNextProject, Depends(project_service.create_project)],
 ):
     """새로운 프로젝트를 생성합니다."""
+    return project
+
+
+@router.get("/{project_id}", response_model=ERPNextProject)
+async def get_project(
+    project: Annotated[ERPNextProject, Depends(project_service.get_project)],
+):
+    """`project_id`로 프로젝트를 조회합니다"""
     return project
 
 
@@ -28,29 +37,16 @@ async def get_projects(
     return projects
 
 
-@router.get("/{project_id}", response_model=ERPNextProject)
-async def get_project(
-    project: Annotated[ERPNextProject, Depends(project_service.get_project)],
+@limiter(1, 2)
+@router.put("/{project_id}", response_model=ERPNextProject)
+async def update_project(
+    project: Annotated[ERPNextProject, Depends(project_service.update_project_info)],
 ):
-    """`project_id`로 프로젝트를 조회합니다"""
+    """`project_id`로 프로젝트를 업데이트합니다"""
     return project
 
 
-@router.put("/{project_id}", response_model=ERPNextProject)
-async def update_project_info(
-    updated_project: Annotated[ERPNextProject, Depends(project_service.update_project_info)],
-):
-    """`project_id`로 프로젝트를 업데이트합니다"""
-    return updated_project
-
-
-@router.put("/{project_id}/files", status_code=status.HTTP_204_NO_CONTENT)
-async def add_files(
-    _: Annotated[None, Depends(project_service.add_files)],
-):
-    pass
-
-
+@limiter(1, 2)
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
     _: Annotated[None, Depends(project_service.delete_project)],
@@ -74,9 +70,39 @@ async def cancel_submit_project(
     pass
 
 
+@limiter(1, 2)
+@router.put("/{project_id}/files", status_code=status.HTTP_204_NO_CONTENT)
+async def create_files(
+    _: Annotated[None, Depends(project_service.create_file)],
+):
+    pass
+
+
+@router.get("/{project_id}/files/{key}", response_model=ERPNextFile)
+async def get_file(
+    file: Annotated[ERPNextFile, Depends(project_service.read_file)],
+):
+    return file
+
+
+@router.get("/{project_id}/files", response_model=ERPNextFilesResponse)
+async def get_files(
+    files: Annotated[ERPNextFilesResponse, Depends(project_service.read_files)],
+):
+    return files
+
+
+@limiter(1, 2)
+@router.delete("/{project_id}/files/{key}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_files(
+    _: Annotated[None, Depends(project_service.delete_file)],
+):
+    pass
+
+
 @router.get("/{project_id}/tasks", response_model=ERPNextTaskPaginatedResponse)
 async def get_tasks(
-    tasks: Annotated[None, Depends(project_service.get_project_tasks)],
+    tasks: Annotated[None, Depends(project_service.read_tasks)],
 ):
     return tasks
 

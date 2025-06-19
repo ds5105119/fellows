@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field
 
 # --- Enums ---
 
@@ -106,20 +106,6 @@ class ERPNextProjectDesignUrlRow(BaseModel):
     url: str
 
 
-class ERPNextProjectFileRow(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    doctype: str | None = Field(default="Files")
-
-    creation: datetime.datetime | None = Field(default=None)
-    modified: datetime.datetime | None = Field(default=None)
-
-    file_name: str
-    key: str
-    uploader: str
-    algorithm: str = Field(default="AES256")
-    sse_key: str | None = Field(default=None)
-
-
 class ERPNextProjectUserRow(BaseModel):
     model_config = ConfigDict(extra="allow")
     doctype: str | None = Field(default="Project User")
@@ -166,7 +152,6 @@ class ERPNextProject(BaseModel):
 
     custom_sub: str | None = Field(default=None)
     custom_platforms: list[ERPNextProjectPlatformRow] | None = Field(default_factory=list)
-    custom_files: list[ERPNextProjectFileRow] | None = Field(default_factory=list)
     custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
     custom_preferred_tech_stacks: list[ERPNextProjectPreferredTechStackRow] | None = Field(default_factory=list)
     custom_design_urls: list[ERPNextProjectDesignUrlRow] | None = Field(default_factory=list)
@@ -188,44 +173,6 @@ class ERPNextProject(BaseModel):
 
     users: list[ERPNextProjectUserRow] | None = Field(default_factory=list)
 
-    @field_serializer("users", when_used="json-unless-none")
-    def serialize_users(self, users_list: list[ERPNextProjectUserRow] | None, _info):
-        if users_list is None:
-            return None
-        return [user.model_dump(exclude_none=True) for user in users_list]
-
-    @field_serializer("custom_platforms", when_used="json-unless-none")
-    def serialize_custom_platforms(self, platforms_list: list[ERPNextProjectPlatformRow] | None, _info):
-        if platforms_list is None:
-            return None
-        return [platform.model_dump(exclude_none=True) for platform in platforms_list]
-
-    @field_serializer("custom_files", when_used="json-unless-none")
-    def serialize_custom_files(self, files_list: list[ERPNextProjectFileRow] | None, _info):
-        if files_list is None:
-            return None
-        return [file_item.model_dump(exclude_none=True) for file_item in files_list]
-
-    @field_serializer("custom_features", when_used="json-unless-none")
-    def serialize_custom_features(self, features_list: list[ERPNextProjectFeatureRow] | None, _info):
-        if features_list is None:
-            return None
-        return [feature.model_dump(exclude_none=True) for feature in features_list]
-
-    @field_serializer("custom_preferred_tech_stacks", when_used="json-unless-none")
-    def serialize_custom_preferred_tech_stacks(
-        self, stacks_list: list[ERPNextProjectPreferredTechStackRow] | None, _info
-    ):
-        if stacks_list is None:
-            return None
-        return [stack.model_dump(exclude_none=True) for stack in stacks_list]
-
-    @field_serializer("custom_design_urls", when_used="json-unless-none")
-    def serialize_custom_design_urls(self, urls_list: list[ERPNextProjectDesignUrlRow] | None, _info):
-        if urls_list is None:
-            return None
-        return [url_item.model_dump(exclude_none=True, by_alias=False) for url_item in urls_list]
-
 
 class UserERPNextProject(BaseModel):
     model_config = ConfigDict(extra="allow", use_enum_values=True)
@@ -239,43 +186,31 @@ class UserERPNextProject(BaseModel):
     custom_content_pages: int | None = Field(default=None)
     custom_maintenance_required: bool | None = Field(default=False)
 
+    custom_project_status: CustomProjectStatus | None = Field(default=CustomProjectStatus.DRAFT)
     custom_platforms: list[ERPNextProjectPlatformRow] = Field(default_factory=list)
-    custom_files: list[ERPNextProjectFileRow] | None = Field(default_factory=list)
     custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
     custom_preferred_tech_stacks: list[ERPNextProjectPreferredTechStackRow] | None = Field(default_factory=list)
     custom_design_urls: list[ERPNextProjectDesignUrlRow] | None = Field(default_factory=list)
 
-    @field_serializer("custom_platforms", when_used="json-unless-none")
-    def serialize_custom_platforms(self, platforms_list: list[ERPNextProjectPlatformRow] | None, _info):
-        if platforms_list is None:
-            return None
-        return [platform.model_dump(exclude_none=True) for platform in platforms_list]
 
-    @field_serializer("custom_files", when_used="json-unless-none")
-    def serialize_custom_files(self, files_list: list[ERPNextProjectFileRow] | None, _info):
-        if files_list is None:
-            return None
-        return [file_item.model_dump(exclude_none=True) for file_item in files_list]
+class UpdateERPNextProject(BaseModel):
+    model_config = ConfigDict(extra="allow", use_enum_values=True)
+    custom_project_title: str | None = Field(default=None)
+    custom_project_summary: str | None = Field(default=None)
+    custom_readiness_level: str | None = Field(default=None)
+    is_active: IsActive | None = Field(default=None)
 
-    @field_serializer("custom_features", when_used="json-unless-none")
-    def serialize_custom_features(self, features_list: list[ERPNextProjectFeatureRow] | None, _info):
-        if features_list is None:
-            return None
-        return [feature.model_dump(exclude_none=True) for feature in features_list]
+    expected_start_date: datetime.date | None = Field(default=None)
+    expected_end_date: datetime.date | None = Field(default=None)
 
-    @field_serializer("custom_preferred_tech_stacks", when_used="json-unless-none")
-    def serialize_custom_preferred_tech_stacks(
-        self, stacks_list: list[ERPNextProjectPreferredTechStackRow] | None, _info
-    ):
-        if stacks_list is None:
-            return None
-        return [stack.model_dump(exclude_none=True) for stack in stacks_list]
+    custom_content_pages: int | None = Field(default=None)
+    custom_maintenance_required: bool | None = Field(default=False)
 
-    @field_serializer("custom_design_urls", when_used="json-unless-none")
-    def serialize_custom_design_urls(self, urls_list: list[ERPNextProjectDesignUrlRow] | None, _info):
-        if urls_list is None:
-            return None
-        return [url_item.model_dump(exclude_none=True, by_alias=False) for url_item in urls_list]
+    custom_project_status: CustomProjectStatus | None = Field(default=None)
+    custom_platforms: list[ERPNextProjectPlatformRow] = Field(default_factory=list)
+    custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
+    custom_preferred_tech_stacks: list[ERPNextProjectPreferredTechStackRow] | None = Field(default_factory=list)
+    custom_design_urls: list[ERPNextProjectDesignUrlRow] | None = Field(default_factory=list)
 
 
 class ERPNextProjectsRequest(BaseModel):
@@ -305,12 +240,6 @@ class ERPNextTaskRequest(BaseModel):
     subject: str
     project: str | None = Field(default=None)
     depends_on: list[ERPNextTaskDependsOnRow] | None = Field(default_factory=list)
-
-    @field_serializer("depends_on", when_used="json-unless-none")
-    def serialize_depends_on(self, depends_on_list: list[ERPNextTaskDependsOnRow] | None, _info):
-        if depends_on_list is None:
-            return None
-        return [item.model_dump(exclude_none=True) for item in depends_on_list]
 
 
 class ERPNextTask(BaseModel):
@@ -354,6 +283,7 @@ class ERPNextTask(BaseModel):
 
 class ERPNextTaskForUser(BaseModel):
     model_config = ConfigDict(extra="allow", use_enum_values=True)
+    name: str
     subject: str
     project: str
     color: str | None = Field(None)
@@ -371,6 +301,7 @@ class ERPNextTaskForUser(BaseModel):
 class ProjectTaskRequest(BaseModel):
     page: int = Field(default=0, ge=0)
     size: int = Field(default=20, ge=0, le=100)
+    order_by: str = Field(default="modified")
 
 
 class ERPNextTaskPaginatedResponse(BaseModel):
@@ -389,6 +320,37 @@ class ERPNextToDo(BaseModel):
     reference_name: str | None = Field(default=None)
     role: str | None = Field(default=None)
     assigned_by: str | None = Field(default=None)
+
+
+class ERPNextFile(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    doctype: str | None = Field(default="Files")
+
+    creation: datetime.datetime | None = Field(default=None)
+    modified: datetime.datetime | None = Field(default=None)
+
+    file_name: str
+    key: str
+    uploader: str
+    algorithm: str = Field(default="AES256")
+    sse_key: str | None = Field(default=None)
+
+    project: str | None = Field(default=None)
+    task: str | None = Field(default=None)
+    issue: str | None = Field(default=None)
+
+
+class ERPNextFileRequest(BaseModel):
+    page: int = Field(default=0, ge=0)
+    size: int = Field(default=20, ge=0, le=100)
+    order_by: str = Field(default="modified")
+
+    task: str | None = Field(default=None)
+    issue: str | None = Field(default=None)
+
+
+class ERPNextFilesResponse(BaseModel):
+    items: list[ERPNextFileRequest]
 
 
 class ProjectFeatureEstimateRequest(BaseModel):

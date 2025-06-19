@@ -1,16 +1,16 @@
 import asyncio
 import json
-from collections import defaultdict
 from datetime import date, timedelta
 from logging import getLogger
 from typing import Annotated
-from uuid import uuid4
 
 import openai
 from fastapi import HTTPException, Path, Query, status
 
 from src.app.fellows.data.project import *
+from src.app.fellows.repository.frappe import FrappeRepository
 from src.app.fellows.schema.project import *
+from src.app.user.schema.user_data import UpdateUserAttributes
 from src.core.dependencies.auth import get_current_user
 from src.core.utils.frappeclient import AsyncFrappeClient
 
@@ -22,143 +22,52 @@ class ProjectService:
         self,
         openai_client: openai.AsyncOpenAI,
         frappe_client: AsyncFrappeClient,
+        frappe_repository: FrappeRepository,
     ):
         self.openai_client = openai_client
         self.frappe_client = frappe_client
+        self.frappe_repository = frappe_repository
 
     async def create_project(
         self,
         data: UserERPNextProject,
         user: get_current_user,
     ) -> ERPNextProject:
-        payload = data.model_dump(by_alias=True) | {
-            "doctype": "Project",
-            "custom_sub": user.sub,
-            "project_name": str(uuid4()),
-            "custom_deletable": True,
-            "custom_project_status": "draft",
-            "project_type": "External",
-            "company": "Fellows",
-            "is_active": "No",
-        }
-
-        project = await self.frappe_client.insert(payload)
-
-        return ERPNextProject(**project)
+        return await self.frappe_repository.create_project(data, user.sub)
 
     async def get_project(
         self,
         user: get_current_user,
         project_id: str = Path(),
     ) -> ERPNextProject:
-        project = await self.frappe_client.get_doc("Project", project_id, filters={"custom_sub": user.sub})
-        if not project:
-            raise HTTPException(status_code=404, detail="Project not found")
-
-        print(project)
-
-        return ERPNextProject(**project)
+        return await self.frappe_repository.get_project_by_id(project_id, user.sub)
 
     async def get_projects(
         self,
         data: Annotated[ERPNextProjectsRequest, Query()],
         user: get_current_user,
     ) -> ProjectsPaginatedResponse:
-        filters = {"custom_sub": user.sub}
-        if data.status:
-            filters["custom_project_status"] = ["like", f"%{data.status}%"]
-        if data.keyword:
-            filters["custom_project_title"] = ["like", f"%{data.keyword}%"]
-
-        order_by = None
-        if data.order_by:
-            if data.order_by.split(".")[-1] == "desc":
-                order_by = f"{data.order_by.split('.')[0]} desc"
-            else:
-                order_by = data.order_by
-
-        projects = await self.frappe_client.get_list(
-            "Project",
-            filters=filters,
-            limit_start=data.page * data.size,
-            limit_page_length=data.size,
-            order_by=order_by,
-        )
-
-        tasks = await self.frappe_client.get_list(
-            "Task",
-            filters={
-                "project": ["in", [p["project_name"] for p in projects]],
-                "custom_is_user_visible": True,
-            },
-        )
-
-        bucket = defaultdict(list)
-        [bucket[t["project"]].append(t) for t in tasks]
-        projects_with_tasks = [{**p, "tasks": bucket.get(p["project_name"], [])} for p in projects]
-
-        return ProjectsPaginatedResponse.model_validate({"items": projects_with_tasks}, from_attributes=True)
+        return await self.frappe_repository.get_projects(data, user.sub)
 
     async def update_project_info(
         self,
-        data: UserERPNextProject,
+        data: UpdateUserAttributes,
         user: get_current_user,
         project_id: str = Path(),
     ) -> ERPNextProject:
-        project = await self.get_project(user, project_id)
-
-        updated_project = await self.frappe_client.update(
-            {
-                "doctype": "Project",
-                "name": project.project_name,
-                **data.model_dump(exclude={"custom_files"}, by_alias=True),
-            }
-        )
-
-        return ERPNextProject(**updated_project)
-
-    async def add_files(
-        self,
-        user: get_current_user,
-        data: ERPNextProjectFileRow,
-        project_id: str = Path(),
-    ):
-        project = await self.get_project(user, project_id)
-        project_dict = project.model_dump(include={"custom_files"})
-
-        custom_files = project_dict.get("custom_files", [])
-        custom_files.append(
-            {
-                "doctype": "Files",
-                "algorithm": data.algorithm,
-                "file_name": data.file_name,
-                "key": data.key,
-                "sse_key": data.sse_key,
-                "uploader": data.uploader,
-            }
-        )
-
-        await self.frappe_client.update(
-            {
-                "doctype": "Project",
-                "name": project.project_name,
-                "custom_files": custom_files,
-            }
-        )
+        await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        return await self.frappe_repository.update_project_by_id(project_id, data)
 
     async def delete_project(
         self,
         user: get_current_user,
         project_id: str = Path(),
     ):
-        project = await self.get_project(user, project_id)
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
         if not project.custom_deletable:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-        tasks = await self.frappe_client.get_list("Task", fields=["name"], filters={"project": project_id})
-        await asyncio.gather(*[self.frappe_client.delete("Task", task["name"]) for task in tasks])
-
-        await self.frappe_client.delete("Project", project_id)
+        return await self.frappe_repository.delete_project_by_id(project_id)
 
     async def submit_project(
         self,
@@ -174,114 +83,123 @@ class ProjectService:
         if len(result) >= 15:
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
 
-        project = await self.get_project(user, project_id)
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        managers = await self.frappe_client.get_doc("User Group", "Managers")
 
         if project.custom_project_status != "draft":
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
-        managers = await self.frappe_client.get_doc("User Group", "Managers")
-
-        updated_project = await self.frappe_client.update(
-            {
-                "doctype": "Project",
-                "name": project.project_name,
-                "custom_project_status": "process:1",
-                "is_active": "Yes",
-            }
+        await self.frappe_repository.update_project_by_id(
+            project_id,
+            UpdateERPNextProject(
+                custom_project_status=CustomProjectStatus.PROCESS_1,
+                is_active=IsActive.YES,
+            ),
         )
 
-        erp_next_task = ERPNextTask(
-            doctype="Task",
-            subject="Initial Planning and Vendor Quotation Review",
-            project=project_id,
-            custom_sub=user.sub,
-            color="#FF4500",
-            is_group=False,
-            is_template=False,
-            custom_is_user_visible=True,
-            status="Open",
-            priority="High",
-            task_weight=1.0,
-            exp_start_date=date.today(),
-            exp_end_date=date.today() + timedelta(days=1),
-            expected_time=4.0,
-            duration=3,
-            is_milestone=True,
-            description="프로젝트 요구사항 분석 및 견적 내부 검토 후 실제 견적가를 알려드릴께요.",
-            department="Management",
-            company="Fellows",
-        )
-
-        task = await self.frappe_client.insert(erp_next_task.model_dump(exclude_unset=True))
-
-        erp_next_todos = [
-            ERPNextToDo(
-                doctype="ToDo",
-                priority=ERPNextToDoPriority.HIGH,
+        task = await self.frappe_repository.create_task(
+            ERPNextTask(
+                subject="Initial Planning and Vendor Quotation Review",
+                project=project_id,
+                custom_sub=user.sub,
                 color="#FF4500",
-                allocated_to=manager["user"],
-                description=f"Allocated Initial Planning and Vendor Quotation Review Task for {project_id}",
-                reference_type="Task",
-                reference_name=task.get("name"),
-            ).model_dump(exclude_unset=True)
-            for manager in managers["user_group_members"]
-        ]
+                is_group=False,
+                is_template=False,
+                custom_is_user_visible=True,
+                status="Open",
+                priority="High",
+                task_weight=1.0,
+                exp_start_date=date.today(),
+                exp_end_date=date.today() + timedelta(days=1),
+                expected_time=4.0,
+                duration=3,
+                is_milestone=True,
+                description="프로젝트 요구사항 분석 및 견적 내부 검토 후 실제 견적가를 알려드릴께요.",
+                department="Management",
+                company="Fellows",
+            )
+        )
 
-        await self.frappe_client.insert_many(erp_next_todos)
+        await self.frappe_repository.create_todo_many(
+            [
+                ERPNextToDo(
+                    priority=ERPNextToDoPriority.HIGH,
+                    color="#FF4500",
+                    allocated_to=manager["user"],
+                    description=f"Allocated Initial Planning and Vendor Quotation Review Task for {project_id}",
+                    reference_type="Task",
+                    reference_name=task.get("name"),
+                ).model_dump(exclude_unset=True)
+                for manager in managers["user_group_members"]
+            ]
+        )
 
     async def cancel_submit_project(
         self,
         user: get_current_user,
         project_id: str = Path(),
     ):
-        project = await self.get_project(user, project_id)
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
 
         if project.custom_project_status != "process:1":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-        updated_project = await self.frappe_client.update(
-            {
-                "doctype": "Project",
-                "name": project.project_name,
-                "custom_project_status": "draft",
-                "is_active": "No",
-            }
+        await self.frappe_repository.update_project_by_id(
+            project_id,
+            UpdateERPNextProject(
+                custom_project_status=CustomProjectStatus.DRAFT,
+                is_active=IsActive.NO,
+            ),
         )
 
-        tasks = await self.frappe_client.get_list("Task", fields=["name"], filters={"project": project_id})
-        await asyncio.gather(*[self.frappe_client.delete("Task", task["name"]) for task in tasks])
+        tasks = await self.frappe_repository.get_tasks(project.project_name)
+        await asyncio.gather(*[self.frappe_repository.delete_task_by_id(task.name) for task in tasks.items])
 
-    async def get_project_tasks(
+    async def create_file(
+        self,
+        user: get_current_user,
+        data: ERPNextFile,
+        project_id: str = Path(),
+    ) -> ERPNextFile:
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        payload = ERPNextFile(**data.model_dump(exclude={"project"}), project=project.project_name)
+        return await self.frappe_repository.create_file(payload)
+
+    async def read_file(
+        self,
+        user: get_current_user,
+        project_id: str = Path(),
+        key: str = Path(),
+    ) -> ERPNextFile:
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        return await self.frappe_repository.get_file(project.project_name, key)
+
+    async def read_files(
+        self,
+        user: get_current_user,
+        data: Annotated[ERPNextFileRequest, Query()],
+        project_id: str = Path(),
+    ) -> ERPNextFilesResponse:
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        return await self.frappe_repository.get_files(project.project_name, data)
+
+    async def delete_file(
+        self,
+        user: get_current_user,
+        project_id: str = Path(),
+        key: str = Path(),
+    ):
+        await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        await self.frappe_repository.delete_file(key)
+
+    async def read_tasks(
         self,
         user: get_current_user,
         data: Annotated[ProjectTaskRequest, Query()],
         project_id: str = Path(),
-    ):
-        project = await self.get_project(user, project_id)
-
-        if user.sub != project.custom_sub:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
-        tasks = await self.frappe_client.get_list(
-            "Task",
-            fields=[
-                "subject",
-                "project",
-                "color",
-                "status",
-                "exp_start_date",
-                "expected_time",
-                "exp_end_date",
-                "progress",
-                "description",
-                "closing_date",
-            ],
-            filters={"project": project_id, "custom_is_user_visible": True},
-            limit_start=data.page,
-            limit_page_length=data.size,
-        )
-
-        return ERPNextTaskPaginatedResponse(items=tasks)
+    ) -> ERPNextTaskPaginatedResponse:
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        return await self.frappe_repository.get_tasks(project.project_name, data)
 
     async def get_project_feature_estimate(
         self,
@@ -308,7 +226,7 @@ class ProjectService:
         user: get_current_user,
         project_id: str = Path(),
     ):
-        project = await self.get_project(user, project_id)
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
         project_dict = project.model_dump(exclude_unset=True)
 
         if project.custom_project_status != "draft" and project.custom_project_status != "process:1":
