@@ -45,7 +45,7 @@ class FrappCreateRepository:
         return ERPNextTask(**task)
 
     async def create_todo_many(self, data: list[ERPNextToDo]):
-        await self.frappe_client.insert_many(d.model_dump(exclude_unset=True) | {"doctype": "ToDo"} for d in data)
+        await self.frappe_client.insert_many([d.model_dump(exclude_unset=True) | {"doctype": "ToDo"} for d in data])
 
     async def create_file(self, data: ERPNextFile):
         file = await self.frappe_client.insert(data.model_dump(exclude_unset=True) | {"doctype": "Files"})

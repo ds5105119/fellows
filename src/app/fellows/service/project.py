@@ -129,8 +129,8 @@ class ProjectService:
                     allocated_to=manager["user"],
                     description=f"Allocated Initial Planning and Vendor Quotation Review Task for {project_id}",
                     reference_type="Task",
-                    reference_name=task.get("name"),
-                ).model_dump(exclude_unset=True)
+                    reference_name=task.name,
+                )
                 for manager in managers["user_group_members"]
             ]
         )
@@ -142,7 +142,7 @@ class ProjectService:
     ):
         project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
 
-        if project.custom_project_status != "process:1":
+        if project.custom_project_status != CustomProjectStatus.PROCESS_1:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         await self.frappe_repository.update_project_by_id(
@@ -153,8 +153,8 @@ class ProjectService:
             ),
         )
 
-        tasks = await self.frappe_repository.get_tasks(project.project_name)
-        await asyncio.gather(*[self.frappe_repository.delete_task_by_id(task.name) for task in tasks.items])
+        tasks = await self.frappe_client.get_list("Task", ["name"], {"project": project_id})
+        await asyncio.gather(*[self.frappe_repository.delete_task_by_id(task.get("name")) for task in tasks])
 
     async def create_file(
         self,
