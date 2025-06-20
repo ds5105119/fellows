@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import random
 import string
-from pprint import pprint
 
 from fastapi import HTTPException
 
@@ -11,10 +10,10 @@ from src.app.fellows.schema.project import UserERPNextProject
 from src.core.utils.frappeclient import AsyncFrappeClient
 
 
-def generate_date_based_random_string(length=8):
-    date_part = datetime.datetime.now().strftime("%Y%m%d")
+def generate_date_based_random_string(length=12):
+    date_part = datetime.datetime.now().strftime("%Y")
     characters = string.ascii_lowercase + string.digits
-    return date_part + "".join(random.choices(characters, k=length))
+    return date_part + "".join(random.choices(characters, k=length)).upper()
 
 
 class FrappCreateRepository:

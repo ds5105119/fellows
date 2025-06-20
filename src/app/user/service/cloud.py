@@ -138,14 +138,14 @@ class CloudService:
         if not file:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-        parent = file.get("parent")
-        if not parent:
+        project = file.get("project")
+        if not project:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
         sub = await self.frappe_client.get_value(
             "Project",
             "custom_sub",
-            filters={"project_name": parent},
+            filters={"project_name": project},
         )
         if sub.get("custom_sub") != user.sub:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)

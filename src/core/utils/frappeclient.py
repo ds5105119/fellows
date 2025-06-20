@@ -27,7 +27,7 @@ class AsyncFrappeClient(object):
         self.headers = dict(Accept="application/json")
         self.can_download = []
         self.url = url
-        self.session = httpx.AsyncClient(verify=verify, headers=self.headers, follow_redirects=True)
+        self.session = httpx.AsyncClient(verify=verify, headers=self.headers, follow_redirects=True, timeout=10)
 
         try:
             self.authenticate(api_key, api_secret)
