@@ -67,7 +67,7 @@ class ProjectService:
         if not project.custom_deletable:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-        return await self.frappe_repository.delete_project_by_id(project_id)
+        return await self.frappe_repository.delete_project_by_id(project.project_name)
 
     async def submit_project(
         self,

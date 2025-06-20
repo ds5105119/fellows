@@ -350,7 +350,7 @@ class ERPNextFileRequest(BaseModel):
 
 
 class ERPNextFilesResponse(BaseModel):
-    items: list[ERPNextFileRequest]
+    items: list[ERPNextFile]
 
 
 class ProjectFeatureEstimateRequest(BaseModel):

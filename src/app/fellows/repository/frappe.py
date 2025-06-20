@@ -1,7 +1,8 @@
 import asyncio
+import datetime
 import random
 import string
-from datetime import datetime
+from pprint import pprint
 
 from fastapi import HTTPException
 
@@ -11,7 +12,7 @@ from src.core.utils.frappeclient import AsyncFrappeClient
 
 
 def generate_date_based_random_string(length=8):
-    date_part = datetime.now().strftime("%Y%m%d")
+    date_part = datetime.datetime.now().strftime("%Y%m%d")
     characters = string.ascii_lowercase + string.digits
     return date_part + "".join(random.choices(characters, k=length))
 
@@ -120,8 +121,12 @@ class FrappReadRepository:
 
         return ERPNextTaskPaginatedResponse.model_validate({"items": tasks}, from_attributes=True)
 
-    async def get_file(self, project_id: str, key: str) -> ERPNextFile:
-        data = await self.frappe_client.get_doc("Files", key, filters={"project": project_id})
+    async def get_file(self, project_id: str, key: str, task_id: str | None = None) -> ERPNextFile:
+        filters = {"project": project_id}
+        if task_id:
+            filters["task"] = task_id
+
+        data = await self.frappe_client.get_doc("Files", key, filters)
         return ERPNextFile(**data)
 
     async def get_files(self, project_id: str, data: ERPNextFileRequest):

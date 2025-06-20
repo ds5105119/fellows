@@ -71,7 +71,7 @@ async def cancel_submit_project(
 
 
 @limiter(1, 2)
-@router.put("/{project_id}/files", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{project_id}/files", status_code=status.HTTP_204_NO_CONTENT)
 async def create_files(
     _: Annotated[None, Depends(project_service.create_file)],
 ):
