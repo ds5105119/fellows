@@ -64,7 +64,6 @@ class ProjectService:
         project_id: str = Path(),
     ):
         project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
-        print(project)
         if not project.custom_deletable:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
