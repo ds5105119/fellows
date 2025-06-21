@@ -218,7 +218,7 @@ class BlogService:
             for tag_dto in data.tags:
                 tag = await self.tag_repo.get_by_name(session, tag_dto.name)
                 if not tag:
-                    tag = await self.tag_repo.create(session, **tag_dto.model_dump())
+                    tag = await self.tag_repo.create(session, name=tag_dto.name)
                     tag_ids.append(tag.id)
 
             if tag_ids:
