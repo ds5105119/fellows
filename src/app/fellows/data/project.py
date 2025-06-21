@@ -22,6 +22,7 @@ feature_estimate_instruction = """AI 역할: SI 컨설턴트
 - platforms 리스트가 ["web"]이 아닌 경우 노코드 웹 기능 선택 불가, ["web"]인 경우에도 복잡도에 따라 선택하지 말아야 함
 
 출력:
+- 정확히 기능 목록에 있는 이름과 일치하여야 함
 - 의미 있는 프로젝트 설명인 경우: 기능 title만 쉼표로 구분하여 한 줄로 출력
 - project_name 또는 project_summary이 의미 없는 입력일 경우: false 한 단어만 출력
 
