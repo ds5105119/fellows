@@ -1,3 +1,4 @@
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.blog.model.blog import Author, BlogPost, Category, PostTag, Tag
@@ -74,7 +75,10 @@ class PostTagUpdateRepository(ABaseUpdateRepository[PostTag]):
 
 
 class PostTagDeleteRepository(ABaseDeleteRepository[PostTag]):
-    pass
+    async def delete_by_post(self, session: AsyncSession, post_id: str):
+        stmt = delete(self.model).where(self.model.post_id == post_id)
+        await session.execute(stmt)
+        await session.commit()
 
 
 class TagCreateRepository(ABaseCreateRepository[Tag]):

@@ -213,17 +213,22 @@ class BlogService:
 
         # 4. 태그 처리
         if "tags" in data.model_fields_set:
-            # 새 태그 연결
+            # 기존 연결 삭제
+            await self.post_tag_repo.delete_by_post(session, post.id)
+
+            # 새 태그 생성
             tag_ids = []
             for tag_dto in data.tags:
                 tag = await self.tag_repo.get_by_name(session, tag_dto.name)
                 if not tag:
                     tag = await self.tag_repo.create(session, name=tag_dto.name)
                     tag_ids.append(tag.id)
+                else:
+                    tag_ids.append(tag.id)
 
-            if tag_ids:
-                post_tag_objects = [{"post_id": post.id, "tag_id": tag_id} for tag_id in tag_ids]
-                await self.post_tag_repo.bulk_create(session, post_tag_objects)
+            # 태그 연결
+            post_tag_objects = [{"post_id": post.id, "tag_id": tag_id} for tag_id in tag_ids]
+            await self.post_tag_repo.bulk_create(session, post_tag_objects)
 
     async def delete_post(
         self,
