@@ -10,7 +10,6 @@ from fastapi import HTTPException, Path, Query, status
 from src.app.fellows.data.project import *
 from src.app.fellows.repository.frappe import FrappeRepository
 from src.app.fellows.schema.project import *
-from src.app.user.schema.user_data import UpdateUserAttributes
 from src.core.dependencies.auth import get_current_user
 from src.core.utils.frappeclient import AsyncFrappeClient
 
@@ -51,7 +50,7 @@ class ProjectService:
 
     async def update_project_info(
         self,
-        data: UpdateUserAttributes,
+        data: UpdateERPNextProject,
         user: get_current_user,
         project_id: str = Path(),
     ) -> ERPNextProject:
