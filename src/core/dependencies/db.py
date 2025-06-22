@@ -1,40 +1,16 @@
 from typing import Annotated
-from uuid import uuid4
 
 import boto3
 from fastapi import Depends
-from sqlalchemy import NullPool, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from webtool.cache import RedisCache, RedisConfig
 from webtool.db import AsyncDB
 
 from src.core.config import settings
 
-## Webtool에서 session_args와 engine_args 반대로 적용함. 차후 수정 예정
-Postgres = AsyncDB(
-    settings.postgres_dsn.unicode_string(),
-    session_args={
-        "poolclass": NullPool,
-        "future": True,
-        "connect_args": {
-            "statement_cache_size": 0,
-            "prepared_statement_cache_size": 0,
-            "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
-        },
-    },
-)
-Wakapi_Postgres = AsyncDB(
-    settings.wakapi_postgres_dsn.unicode_string(),
-    session_args={
-        "poolclass": NullPool,
-        "future": True,
-        "connect_args": {
-            "statement_cache_size": 0,
-            "prepared_statement_cache_size": 0,
-            "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
-        },
-    },
-)
+Postgres = AsyncDB(settings.postgres_dsn.unicode_string())
+Wakapi_Postgres = AsyncDB(settings.wakapi_postgres_dsn.unicode_string())
 
 postgres_session = Annotated[AsyncSession, Depends(Postgres)]
 wakapi_postgres_session = Annotated[AsyncSession, Depends(Wakapi_Postgres)]
