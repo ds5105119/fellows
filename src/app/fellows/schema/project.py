@@ -289,6 +289,7 @@ class ERPNextTaskForUser(BaseModel):
     color: str | None = Field(None)
     status: ERPNextTaskStatus | None = Field(None)
 
+    parent_task: str | None = Field(None)
     exp_start_date: datetime.date | None = Field(None)
     expected_time: float | None = Field(default=0.0)
     exp_end_date: datetime.date | None = Field(None)
