@@ -99,20 +99,31 @@ class FrappReadRepository:
         data = await self.frappe_client.get_doc("Task", subject, filters={"project": project_id})
         return ERPNextTask(**data)
 
-    async def get_tasks(self, project_id: str, data: ProjectTaskRequest):
-        filters = {"project": project_id}
+    async def get_tasks(self, user_sub: str, data: ERPNextTasksRequest):
+        filters = {"custom_sub": user_sub, "custom_is_user_visible": True}
+        or_filters = {}
+
+        if data.start:
+            filters["exp_start_date"] = [">=", data.start]
+        if data.end:
+            filters["exp_end_date"] = ["<=", data.end]
+
+        if type(data.status) == str:
+            filters["custom_project_status"] = ["like", data.status]
+        elif type(data.status) == list:
+            or_filters["custom_project_status"] = ["like", data.status[0]]
 
         order_by = None
 
-        if data.order_by:
-            if data.order_by.split(".")[-1] == "desc":
-                order_by = f"{data.order_by.split('.')[0]} desc"
-            else:
-                order_by = data.order_by
+        if type(data.order_by) == str:
+            order_by = data.order_by
+        elif type(data.order_by) == list:
+            order_by = [f"{o.split('.')[0]} desc" if o.split(".")[-1] == "desc" else o for o in data.order_by]
 
         tasks = await self.frappe_client.get_list(
             "Task",
             filters=filters,
+            or_filters=or_filters,
             limit_start=data.page * data.size,
             limit_page_length=data.size,
             order_by=order_by,

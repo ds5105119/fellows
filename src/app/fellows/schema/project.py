@@ -242,6 +242,16 @@ class ERPNextTaskRequest(BaseModel):
     depends_on: list[ERPNextTaskDependsOnRow] | None = Field(default_factory=list)
 
 
+class ERPNextTasksRequest(BaseModel):
+    page: int = Field(default=0, ge=0)
+    size: int = Field(default=20, ge=0, le=100)
+    order_by: list[str] | str | None = Field(default="modified")
+    status: list[ERPNextTaskStatus] | ERPNextTaskStatus | None = Field(default=None)
+    project_id: str | None = Field(default=None)
+    start: datetime.date | None = Field(default=None)
+    end: datetime.date | None = Field(default=None)
+
+
 class ERPNextTask(BaseModel):
     model_config = ConfigDict(extra="allow", use_enum_values=True)
     subject: str
@@ -297,12 +307,6 @@ class ERPNextTaskForUser(BaseModel):
 
     description: str | None = Field(None)
     closing_date: datetime.date | None = Field(None)
-
-
-class ProjectTaskRequest(BaseModel):
-    page: int = Field(default=0, ge=0)
-    size: int = Field(default=20, ge=0, le=100)
-    order_by: str = Field(default="modified")
 
 
 class ERPNextTaskPaginatedResponse(BaseModel):

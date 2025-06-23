@@ -194,11 +194,9 @@ class ProjectService:
     async def read_tasks(
         self,
         user: get_current_user,
-        data: Annotated[ProjectTaskRequest, Query()],
-        project_id: str = Path(),
+        data: Annotated[ERPNextTasksRequest, Query()],
     ) -> ERPNextTaskPaginatedResponse:
-        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
-        return await self.frappe_repository.get_tasks(project.project_name, data)
+        return await self.frappe_repository.get_tasks(user.sub, data)
 
     async def get_project_feature_estimate(
         self,

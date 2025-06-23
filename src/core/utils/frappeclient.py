@@ -57,7 +57,16 @@ class AsyncFrappeClient(object):
             },
         )
 
-    async def get_list(self, doctype, fields=None, filters=None, limit_start=0, limit_page_length=0, order_by=None):
+    async def get_list(
+        self,
+        doctype,
+        fields=None,
+        filters=None,
+        limit_start=0,
+        limit_page_length=0,
+        order_by=None,
+        or_filters=None,
+    ):
         """Returns list of records of a particular type"""
         fields = fields or ["*"]
 
@@ -69,6 +78,8 @@ class AsyncFrappeClient(object):
         }
         if filters:
             params["filters"] = json.dumps(filters)
+        if or_filters:
+            params["or_filters"] = json.dumps(or_filters)
         if limit_page_length:
             params["limit_start"] = limit_start
             params["limit_page_length"] = limit_page_length

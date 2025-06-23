@@ -100,7 +100,7 @@ async def delete_files(
     pass
 
 
-@router.get("/{project_id}/tasks", response_model=ERPNextTaskPaginatedResponse)
+@router.get("/tasks", response_model=ERPNextTaskPaginatedResponse)
 async def get_tasks(
     tasks: Annotated[None, Depends(project_service.read_tasks)],
 ):
