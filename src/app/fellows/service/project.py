@@ -102,7 +102,7 @@ class ProjectService:
                 project=project_id,
                 custom_sub=user.sub,
                 color="#FF4500",
-                is_group=False,
+                is_group=True,
                 is_template=False,
                 custom_is_user_visible=True,
                 status="Open",
@@ -151,7 +151,26 @@ class ProjectService:
             ),
         )
 
-        tasks = await self.frappe_client.get_list("Task", ["name"], {"project": project_id})
+        tasks = await self.frappe_client.get_list(
+            "Task",
+            fields=["name"],
+            filters={"project": project_id},
+        )
+
+        # Dependencies 제거
+        await self.frappe_client.bulk_update(
+            [
+                {
+                    "doctype": "Task",
+                    "docname": task.get("name"),
+                    "parent_task": None,
+                    "depends_on": [],
+                    "depends_on_tasks": [],
+                }
+                for task in tasks
+            ]
+        )
+
         await asyncio.gather(*[self.frappe_repository.delete_task_by_id(task.get("name")) for task in tasks])
 
     async def create_file(
