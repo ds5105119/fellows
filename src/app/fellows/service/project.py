@@ -231,15 +231,15 @@ class ProjectService:
 
         payload = json.dumps(
             {
-                "project_name": project_dict.get("custom_project_title"),
-                "project_summary": project_dict.get("custom_project_summary"),
-                "platforms": project_dict.get("custom_platforms"),
-                "readiness_level": project_dict.get("custom_readiness_level"),
-                "start_date": project_dict.get("expected_start_date"),
-                "desired_deadline": project_dict.get("expected_end_date"),
-                "maintenance_required": project_dict.get("custom_maintenance_required"),
-                "content_pages": project_dict.get("custom_content_pages"),
-                "features": project_dict.get("custom_features"),
+                "프로젝트 이름": project_dict.get("custom_project_title"),
+                "프로젝트 설명": project_dict.get("custom_project_summary"),
+                "플랫폼": project_dict.get("custom_platforms"),
+                "준비 정도": project_dict.get("custom_readiness_level"),
+                "시작일": project_dict.get("expected_start_date"),
+                "종료일": project_dict.get("expected_end_date"),
+                "유지 보수 필요": project_dict.get("custom_maintenance_required"),
+                "예상 페이지 수": project_dict.get("custom_content_pages"),
+                "기능": project_dict.get("custom_features"),
             },
             default=str,
         )
