@@ -245,7 +245,7 @@ class ProjectService:
         )
 
         stream = await self.openai_client.responses.create(
-            model="ft:gpt-4.1-mini-2025-04-14:personal:fellows:BU1ht93V",
+            model="ft:gpt-4.1-mini-2025-04-14:personal:fellows:BicJxrWX",
             instructions=estimation_instruction,
             input=payload,
             max_output_tokens=2000,

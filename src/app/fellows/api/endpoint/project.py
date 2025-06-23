@@ -12,6 +12,13 @@ from src.core.models.repository import PaginatedResult
 router = APIRouter()
 
 
+@router.get("/tasks", response_model=ERPNextTaskPaginatedResponse)
+async def get_tasks(
+    tasks: Annotated[None, Depends(project_service.read_tasks)],
+):
+    return tasks
+
+
 @limiter(1, 2)
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_project(
@@ -98,13 +105,6 @@ async def delete_files(
     _: Annotated[None, Depends(project_service.delete_file)],
 ):
     pass
-
-
-@router.get("/tasks", response_model=ERPNextTaskPaginatedResponse)
-async def get_tasks(
-    tasks: Annotated[None, Depends(project_service.read_tasks)],
-):
-    return tasks
 
 
 @limiter(max_requests=100, interval=60 * 60 * 24)
