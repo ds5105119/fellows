@@ -98,7 +98,7 @@ class ProjectService:
 
         task = await self.frappe_repository.create_task(
             ERPNextTask(
-                subject="Initial Planning and Vendor Quotation Review",
+                subject="프로젝트 견적 확인",
                 project=project_id,
                 custom_sub=user.sub,
                 color="#FF4500",
@@ -109,11 +109,11 @@ class ProjectService:
                 priority="High",
                 task_weight=1.0,
                 exp_start_date=date.today(),
-                exp_end_date=date.today() + timedelta(days=1),
+                exp_end_date=date.today() + timedelta(days=3),
                 expected_time=4.0,
                 duration=3,
                 is_milestone=True,
-                description="프로젝트 요구사항 분석 및 견적 내부 검토 후 실제 견적가를 알려드릴께요.",
+                description="프로젝트 요구사항 분석 및 견적 내부 검토 후 실제 견적가를 알려드릴께요",
                 department="Management",
                 company="Fellows",
             )
