@@ -77,9 +77,9 @@ class AsyncFrappeClient(object):
             "fields": fields,
         }
         if filters:
-            params["filters"] = json.dumps(filters)
+            params["filters"] = json.dumps(filters, default=str)
         if or_filters:
-            params["or_filters"] = json.dumps(or_filters)
+            params["or_filters"] = json.dumps(or_filters, default=str)
         if limit_page_length:
             params["limit_start"] = limit_start
             params["limit_page_length"] = limit_page_length

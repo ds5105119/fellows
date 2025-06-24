@@ -243,7 +243,7 @@ class ERPNextTaskRequest(BaseModel):
 
 
 class ERPNextTasksRequest(BaseModel):
-    page: int = Field(default=0, ge=0)
+    page: int = Field(default=0)
     size: int = Field(default=20, ge=0, le=100)
     order_by: list[str] | str | None = Field(default="modified")
     status: list[ERPNextTaskStatus] | ERPNextTaskStatus | None = Field(default=None)
