@@ -103,15 +103,18 @@ class FrappReadRepository:
         filters = {"custom_sub": user_sub, "custom_is_user_visible": True}
         or_filters = {}
 
+        if data.keyword:
+            filters["subject"] = ["like", f"%{data.keyword}%"]
+
         if data.start:
             filters["exp_start_date"] = [">=", data.start]
         if data.end:
             filters["exp_end_date"] = ["<=", data.end]
 
         if type(data.status) == str:
-            filters["custom_project_status"] = ["like", data.status]
+            filters["status"] = ["like", data.status]
         elif type(data.status) == list:
-            or_filters["custom_project_status"] = ["like", data.status[0]]
+            or_filters["status"] = ["like", data.status[0]]
 
         order_by = None
 

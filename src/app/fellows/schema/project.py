@@ -250,6 +250,7 @@ class ERPNextTasksRequest(BaseModel):
     project_id: str | None = Field(default=None)
     start: datetime.date | None = Field(default=None)
     end: datetime.date | None = Field(default=None)
+    keyword: str | None = Field(default=None)
 
 
 class ERPNextTask(BaseModel):
