@@ -36,9 +36,11 @@ async def get_projects(
     return projects
 
 
-@router.get("/overview", response_model=ProjectsPaginatedResponse)
-async def get_project_overview():
-    pass
+@router.get("/overview", response_model=OverviewProjectsPaginatedResponse)
+async def get_project_overview(
+    projects: Annotated[OverviewProjectsPaginatedResponse, Depends(project_service.get_projects_overview)],
+):
+    return projects
 
 
 @router.get("/{project_id}", response_model=ERPNextProject)

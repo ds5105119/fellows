@@ -109,7 +109,7 @@ class FrappReadRepository:
             filters=filters,
         )
 
-        return ProjectsPaginatedResponse.model_validate({"items": projects}, from_attributes=True)
+        return OverviewProjectsPaginatedResponse.model_validate({"items": projects}, from_attributes=True)
 
     async def get_task(self, project_id: str, subject: str):
         data = await self.frappe_client.get_doc("Task", subject, filters={"project": project_id})
