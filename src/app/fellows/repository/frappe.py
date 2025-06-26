@@ -99,13 +99,13 @@ class FrappReadRepository:
 
         projects = await self.frappe_client.get_list(
             "Project",
-            fields={
+            fields=[
                 "project_name",
                 "custom_project_title",
                 "custom_project_status",
                 "creation",
                 "modified",
-            },
+            ],
             filters=filters,
         )
 
