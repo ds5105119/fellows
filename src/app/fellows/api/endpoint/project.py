@@ -28,20 +28,25 @@ async def create_project(
     return project
 
 
-@router.get("/{project_id}", response_model=ERPNextProject)
-async def get_project(
-    project: Annotated[ERPNextProject, Depends(project_service.get_project)],
-):
-    """`project_id`로 프로젝트를 조회합니다"""
-    return project
-
-
 @router.get("", response_model=ProjectsPaginatedResponse)
 async def get_projects(
     projects: Annotated[PaginatedResult, Depends(project_service.get_projects)],
 ):
     """자신의 프로젝트 전체를 조회합니다."""
     return projects
+
+
+@router.get("/overview", response_model=ProjectsPaginatedResponse)
+async def get_project_overview():
+    pass
+
+
+@router.get("/{project_id}", response_model=ERPNextProject)
+async def get_project(
+    project: Annotated[ERPNextProject, Depends(project_service.get_project)],
+):
+    """`project_id`로 프로젝트를 조회합니다"""
+    return project
 
 
 @limiter(1, 2)

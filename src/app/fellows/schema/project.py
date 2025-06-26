@@ -175,22 +175,50 @@ class ERPNextProject(BaseModel):
 
 
 class UserERPNextProject(BaseModel):
-    model_config = ConfigDict(extra="allow", use_enum_values=True)
-    custom_project_title: str
-    custom_project_summary: str
-    custom_readiness_level: str
+    model_config = ConfigDict(use_enum_values=True)
+
+    creation: datetime.datetime | None = Field(default=None)
+    modified: datetime.datetime | None = Field(default=None)
+
+    project_name: str
+    status: ERPNextProjectStatus | None = Field(default=ERPNextProjectStatus.OPEN)
+    is_active: IsActive | None = Field(default=None)
+    percent_complete: float | None = Field(default=None)
+    custom_deletable: bool | None = Field(default=True)
 
     expected_start_date: datetime.date | None = Field(default=None)
     expected_end_date: datetime.date | None = Field(default=None)
+    actual_start_date: datetime.date | None = Field(default=None)
+    actual_end_date: datetime.date | None = Field(default=None)
+    actual_time: float | None = Field(default=None)
 
+    custom_project_title: str
+    custom_project_summary: str
+    custom_project_status: CustomProjectStatus | None = Field(default=CustomProjectStatus.DRAFT)
+    custom_ai_estimate: str | None = Field(default=None)
+    custom_emoji: str | None = Field(default=None)
+    custom_readiness_level: str
     custom_content_pages: int | None = Field(default=None)
     custom_maintenance_required: bool | None = Field(default=False)
 
-    custom_project_status: CustomProjectStatus | None = Field(default=CustomProjectStatus.DRAFT)
-    custom_platforms: list[ERPNextProjectPlatformRow] = Field(default_factory=list)
+    custom_sub: str | None = Field(default=None)
+    custom_platforms: list[ERPNextProjectPlatformRow] | None = Field(default_factory=list)
     custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
     custom_preferred_tech_stacks: list[ERPNextProjectPreferredTechStackRow] | None = Field(default_factory=list)
     custom_design_urls: list[ERPNextProjectDesignUrlRow] | None = Field(default_factory=list)
+
+    estimated_costing: float | None = Field(default=None)
+
+
+class OverviewERPNextProject(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
+    creation: datetime.datetime | None = Field(default=None)
+    modified: datetime.datetime | None = Field(default=None)
+
+    project_name: str
+    custom_project_title: str
+    custom_project_status: CustomProjectStatus | None = Field(default=CustomProjectStatus.DRAFT)
 
 
 class UpdateERPNextProject(BaseModel):
@@ -223,7 +251,12 @@ class ERPNextProjectsRequest(BaseModel):
 
 class ProjectsPaginatedResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    items: list[ERPNextProject]
+    items: list[UserERPNextProject]
+
+
+class OverviewProjectsPaginatedResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    items: list[OverviewERPNextProject]
 
 
 # --- Task Models ---

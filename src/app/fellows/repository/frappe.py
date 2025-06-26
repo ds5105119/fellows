@@ -95,6 +95,23 @@ class FrappReadRepository:
 
         return ProjectsPaginatedResponse.model_validate({"items": projects}, from_attributes=True)
 
+    async def get_projects_overview(self, sub: str):
+        filters = {"custom_sub": sub}
+
+        projects = await self.frappe_client.get_list(
+            "Project",
+            fields={
+                "project_name",
+                "custom_project_title",
+                "custom_project_status",
+                "creation",
+                "modified",
+            },
+            filters=filters,
+        )
+
+        return ProjectsPaginatedResponse.model_validate({"items": projects}, from_attributes=True)
+
     async def get_task(self, project_id: str, subject: str):
         data = await self.frappe_client.get_doc("Task", subject, filters={"project": project_id})
         return ERPNextTask(**data)

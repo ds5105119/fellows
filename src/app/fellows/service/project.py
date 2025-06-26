@@ -48,6 +48,12 @@ class ProjectService:
     ) -> ProjectsPaginatedResponse:
         return await self.frappe_repository.get_projects(data, user.sub)
 
+    async def get_projects_overview(
+        self,
+        user: get_current_user,
+    ):
+        return await self.frappe_repository.get_projects_overview(user.sub)
+
     async def update_project_info(
         self,
         data: UpdateERPNextProject,
