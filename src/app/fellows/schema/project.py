@@ -295,7 +295,7 @@ class ERPNextTaskRequest(BaseModel):
 
 class ERPNextTasksRequest(BaseModel):
     page: int = Field(default=0)
-    size: int = Field(default=20, ge=0, le=100)
+    size: int = Field(default=20, ge=0, le=1000)
     order_by: list[str] | str | None = Field(default="modified")
     status: list[ERPNextTaskStatus] | ERPNextTaskStatus | None = Field(default=None)
     project_id: list[str] | str | None = Field(default=None)
