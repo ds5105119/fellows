@@ -29,16 +29,16 @@ class ProjectService:
 
     async def create_project(
         self,
-        data: UserERPNextProject,
+        data: CreateERPNextProject,
         user: get_current_user,
-    ) -> ERPNextProject:
+    ) -> UserERPNextProject:
         return await self.frappe_repository.create_project(data, user.sub)
 
     async def get_project(
         self,
         user: get_current_user,
         project_id: str = Path(),
-    ) -> ERPNextProject:
+    ) -> UserERPNextProject:
         return await self.frappe_repository.get_project_by_id(project_id, user.sub)
 
     async def get_projects(
@@ -59,7 +59,7 @@ class ProjectService:
         data: UpdateERPNextProject,
         user: get_current_user,
         project_id: str = Path(),
-    ) -> ERPNextProject:
+    ) -> UserERPNextProject:
         await self.frappe_repository.get_project_by_id(project_id, user.sub)
         return await self.frappe_repository.update_project_by_id(project_id, data)
 

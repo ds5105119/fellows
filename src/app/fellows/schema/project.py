@@ -221,6 +221,25 @@ class OverviewERPNextProject(BaseModel):
     custom_project_status: CustomProjectStatus | None = Field(default=CustomProjectStatus.DRAFT)
 
 
+class CreateERPNextProject(BaseModel):
+    model_config = ConfigDict(extra="allow", use_enum_values=True)
+
+    custom_project_title: str
+    custom_project_summary: str
+    custom_readiness_level: str
+
+    expected_start_date: datetime.date | None = Field(default=None)
+    expected_end_date: datetime.date | None = Field(default=None)
+
+    custom_content_pages: int | None = Field(default=None)
+    custom_maintenance_required: bool | None = Field(default=False)
+
+    custom_platforms: list[ERPNextProjectPlatformRow] = Field(default_factory=list)
+    custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
+    custom_preferred_tech_stacks: list[ERPNextProjectPreferredTechStackRow] | None = Field(default_factory=list)
+    custom_design_urls: list[ERPNextProjectDesignUrlRow] | None = Field(default_factory=list)
+
+
 class UpdateERPNextProject(BaseModel):
     model_config = ConfigDict(extra="allow", use_enum_values=True)
     custom_project_title: str | None = Field(default=None)
@@ -234,7 +253,6 @@ class UpdateERPNextProject(BaseModel):
     custom_content_pages: int | None = Field(default=None)
     custom_maintenance_required: bool | None = Field(default=False)
 
-    custom_project_status: CustomProjectStatus | None = Field(default=None)
     custom_platforms: list[ERPNextProjectPlatformRow] = Field(default_factory=list)
     custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
     custom_preferred_tech_stacks: list[ERPNextProjectPreferredTechStackRow] | None = Field(default_factory=list)

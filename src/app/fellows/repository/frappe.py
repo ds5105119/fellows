@@ -6,7 +6,6 @@ import string
 from fastapi import HTTPException
 
 from src.app.fellows.schema.project import *
-from src.app.fellows.schema.project import UserERPNextProject
 from src.core.utils.frappeclient import AsyncFrappeClient
 
 
@@ -38,7 +37,7 @@ class FrappCreateRepository:
             }
         )
 
-        return ERPNextProject(**project)
+        return UserERPNextProject(**project)
 
     async def create_task(self, data: ERPNextTask):
         task = await self.frappe_client.insert(data.model_dump(exclude_unset=True) | {"doctype": "Task"})
@@ -64,7 +63,7 @@ class FrappReadRepository:
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        return ERPNextProject(**project)
+        return UserERPNextProject(**project)
 
     async def get_projects(
         self,
@@ -211,7 +210,7 @@ class FrappUpdateRepository:
             }
         )
 
-        return ERPNextProject(**project)
+        return UserERPNextProject(**project)
 
 
 class FrappDeleteRepository:
