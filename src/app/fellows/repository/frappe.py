@@ -114,7 +114,12 @@ class FrappReadRepository:
         if type(data.status) == str:
             filters["status"] = ["like", data.status]
         elif type(data.status) == list:
-            or_filters["status"] = ["like", data.status[0]]
+            or_filters["status"] = [["like", status] for status in data.status]
+
+        if type(data.project_id) == str:
+            filters["project"] = ["like", data.project_id]
+        elif type(data.project_id) == list:
+            or_filters["project"] = [["like", project_id] for project_id in data.project_id]
 
         order_by = None
 

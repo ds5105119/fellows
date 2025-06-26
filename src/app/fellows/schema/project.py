@@ -247,7 +247,7 @@ class ERPNextTasksRequest(BaseModel):
     size: int = Field(default=20, ge=0, le=100)
     order_by: list[str] | str | None = Field(default="modified")
     status: list[ERPNextTaskStatus] | ERPNextTaskStatus | None = Field(default=None)
-    project_id: str | None = Field(default=None)
+    project_id: list[str] | str | None = Field(default=None)
     start: datetime.date | None = Field(default=None)
     end: datetime.date | None = Field(default=None)
     keyword: str | None = Field(default=None)
