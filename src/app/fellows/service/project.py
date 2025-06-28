@@ -277,6 +277,7 @@ class ProjectService:
             top_p=1.0,
             stream=True,
         )
+        yield "event: ping\n"
 
         async for event in stream:
             if event.type == "response.output_text.delta":
