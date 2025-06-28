@@ -249,32 +249,31 @@ class ProjectService:
         project_id: str = Path(),
     ):
         project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
-        project_dict = project.model_dump(exclude_unset=True)
 
         if project.custom_project_status != "draft" and project.custom_project_status != "process:1":
             return
 
         payload = json.dumps(
             {
-                "프로젝트 이름": project_dict.get("custom_project_title"),
-                "프로젝트 설명": project_dict.get("custom_project_summary"),
-                "플랫폼": project_dict.get("custom_platforms"),
-                "준비 정도": project_dict.get("custom_readiness_level"),
-                "시작일": project_dict.get("expected_start_date"),
-                "종료일": project_dict.get("expected_end_date"),
-                "유지 보수 필요": project_dict.get("custom_maintenance_required"),
-                "예상 페이지 수": project_dict.get("custom_content_pages"),
-                "기능": project_dict.get("custom_features"),
+                "프로젝트 이름": project.custom_project_title,
+                "프로젝트 설명": project.custom_project_summary,
+                "플랫폼": [item.platform for item in project.custom_platforms],
+                "준비 정도": project.custom_readiness_level,
+                "시작일": project.expected_start_date,
+                "종료일": project.expected_end_date,
+                "유지 보수 필요": project.custom_maintenance_required,
+                "예상 페이지 수": project.custom_content_pages,
+                "기능": [item.feature for item in project.custom_features],
             },
             default=str,
+            ensure_ascii=False,
         )
 
         stream = await self.openai_client.responses.create(
-            model="ft:gpt-4.1-mini-2025-04-14:personal:fellows:BicJxrWX",
+            model="o4-mini",
             instructions=estimation_instruction,
             input=payload,
-            max_output_tokens=2000,
-            temperature=0.0,
+            max_output_tokens=5000,
             top_p=1.0,
             stream=True,
         )
@@ -287,7 +286,7 @@ class ProjectService:
                     yield "data: \n"
                 yield "\n"
             elif event.type == "response.output_text.done":
-                yield "event: stream_done\n"  # 이벤트 타입 지정
+                yield "event: stream_done\n"
                 yield "data: \n\n"
             elif event.type == "response.completed":
                 ai_estimate = event.response.output_text
@@ -305,15 +304,15 @@ class ProjectService:
                         "estimated_costing": total_amount,
                     }
                 )
+
                 break
 
     async def project_estimate_after_job(self, ai_estimate: str):
         response = await self.openai_client.responses.create(
-            model="gpt-4.1-mini-2025-04-14",
+            model="gpt-4.1-mini",
             instructions=project_information_instruction,
             input=ai_estimate,
             max_output_tokens=100,
-            temperature=0.0,
             top_p=1.0,
         )
 
