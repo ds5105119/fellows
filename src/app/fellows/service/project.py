@@ -273,7 +273,7 @@ class ProjectService:
             model="o4-mini",
             instructions=estimation_instruction,
             input=payload,
-            max_output_tokens=5000,
+            max_output_tokens=10000,
             top_p=1.0,
             stream=True,
         )
