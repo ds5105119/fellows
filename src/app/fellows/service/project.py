@@ -138,10 +138,12 @@ class ProjectService:
                 task_weight=1.0,
                 exp_start_date=quote_date,
                 exp_end_date=quote_date + timedelta(days=3),
-                expected_time=4.0,
+                expected_time=8.0 if data.inbound else 4.0,
                 duration=3,
                 is_milestone=True,
-                description="프로젝트 요구사항 분석 및 견적 내부 검토 후 실제 견적가를 알려드릴께요",
+                description="프로젝트 요구사항 분석 및 견적 내부 검토 상담이 진행된 다음 견적가를 알려드릴께요"
+                if data.inbound
+                else "프로젝트 요구사항 분석 및 견적 내부 검토 후 실제 견적가를 알려드릴께요",
                 department="Management",
                 company="Fellows",
                 type="Quote Review",
