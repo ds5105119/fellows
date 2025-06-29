@@ -63,6 +63,8 @@ class FrappReadRepository:
         project = await self.frappe_client.get_doc("Project", project_id, filters={"custom_sub": sub})
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+        if project.get("custom_sub") != sub:
+            raise HTTPException(status_code=403)
 
         return UserERPNextProject(**project)
 
