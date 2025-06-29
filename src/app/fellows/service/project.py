@@ -83,6 +83,7 @@ class ProjectService:
     async def submit_project(
         self,
         user: get_current_user,
+        data: Annotated[Quote, Query()],
         project_id: str = Path(),
     ) -> None:
         result = await self.frappe_client.get_list(
@@ -91,7 +92,7 @@ class ProjectService:
             filters={"custom_sub": user.sub, "custom_project_status": ["like", "%process%"]},
         )
 
-        if len(result) >= 15:
+        if len(result) >= 10:
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
 
         project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
@@ -99,6 +100,21 @@ class ProjectService:
 
         if project.custom_project_status != "draft":
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+        quote_slots = await self.frappe_repository.get_slots(
+            ["Fellows Manager"],
+            ["Quote Review"],
+        )
+
+        if data.date:
+            vaild = list(filter(lambda d: d["date"] == data.date.strftime("%Y-%m-%d"), quote_slots))
+            if not vaild:
+                raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
+            quote_date = vaild[0]["date"]
+        else:
+            quote_date = sorted(quote_slots, key=lambda x: x["date"])[0]["date"]
+
+        quote_date = datetime.datetime.strptime(quote_date, "%Y-%m-%d").date()
 
         await self.frappe_repository.update_project_by_id(
             project_id,
@@ -120,8 +136,8 @@ class ProjectService:
                 status="Open",
                 priority="High",
                 task_weight=1.0,
-                exp_start_date=date.today(),
-                exp_end_date=date.today() + timedelta(days=3),
+                exp_start_date=quote_date,
+                exp_end_date=quote_date + timedelta(days=3),
                 expected_time=4.0,
                 duration=3,
                 is_milestone=True,

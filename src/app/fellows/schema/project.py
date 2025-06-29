@@ -282,6 +282,11 @@ class QuoteSlot(BaseModel):
     remaining: str
 
 
+class Quote(BaseModel):
+    date: datetime.date | None = Field(default=None)
+    inbound: bool | None = Field(default=False)
+
+
 # --- Task Models ---
 
 
