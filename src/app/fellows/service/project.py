@@ -74,6 +74,12 @@ class ProjectService:
 
         return await self.frappe_repository.delete_project_by_id(project.project_name)
 
+    async def get_quote_slots(self) -> list[QuoteSlot]:
+        return await self.frappe_repository.get_slots(
+            ["Fellows Manager"],
+            ["Quote Review"],
+        )
+
     async def submit_project(
         self,
         user: get_current_user,
@@ -122,6 +128,7 @@ class ProjectService:
                 description="프로젝트 요구사항 분석 및 견적 내부 검토 후 실제 견적가를 알려드릴께요",
                 department="Management",
                 company="Fellows",
+                type="Quote Review",
             )
         )
 

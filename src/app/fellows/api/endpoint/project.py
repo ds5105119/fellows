@@ -136,3 +136,10 @@ async def feature_estimate(
     features: Annotated[list[str], Depends(project_service.get_project_feature_estimate)],
 ):
     return ProjectFeatureEstimateResponse(feature_list=features)
+
+
+@router.get("/slots/quote", response_model=list[QuoteSlot])
+async def get_quote_slots(
+    slots: Annotated[None, Depends(project_service.get_quote_slots)],
+):
+    return slots

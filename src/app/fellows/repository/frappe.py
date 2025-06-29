@@ -1,7 +1,8 @@
 import asyncio
-import datetime
+import math
 import random
 import string
+from datetime import timedelta
 
 from fastapi import HTTPException
 
@@ -188,6 +189,110 @@ class FrappReadRepository:
         )
 
         return ERPNextFilesResponse.model_validate({"items": files}, from_attributes=True)
+
+    async def get_slots(self, shift_types: list[str], task_types: list[str]):
+        # ======================================================================
+        # 1. 데이터 사전 로딩 및 필터링
+        # ======================================================================
+        all_shift_types = await self.frappe_client.get_list(
+            "Shift Type",
+            fields=["name", "start_time", "end_time"],
+            filters={"name": ["in", shift_types]},
+        )
+
+        shift_type_map = {st["name"]: st for st in all_shift_types}
+
+        if not shift_type_map:
+            return []
+
+        eligible_assignments = await self.frappe_client.get_list(
+            "Shift Assignment",
+            fields=["shift_type", "start_date", "end_date"],
+            filters={"status": "Active", "shift_type": ["in", shift_types]},
+        )
+
+        if not eligible_assignments:
+            return []
+
+        parsed_assignments = [
+            {
+                "schedule": asn["shift_type"],
+                "start_date": datetime.datetime.strptime(asn["start_date"], "%Y-%m-%d").date(),
+                "end_date": datetime.datetime.strptime(asn["end_date"], "%Y-%m-%d").date(),
+            }
+            for asn in eligible_assignments
+        ]
+
+        # ======================================================================
+        # 2. 계산 기간(start_date, end_date) 동적 결정
+        # ======================================================================
+        start_date = min(asn["start_date"] for asn in parsed_assignments)
+        end_date = max(asn["end_date"] for asn in parsed_assignments)
+
+        tasks = await self.frappe_client.get_list(
+            "Task",
+            filters={"type": ["in", task_types], "exp_end_date": [">=", start_date.isoformat()]},
+            fields=["exp_start_date", "exp_end_date", "expected_time"],
+        )
+
+        # ======================================================================
+        # 3. 날짜별 총 가용 시간 (Capacity) 계산
+        # ======================================================================
+        daily_capacity_hours = {}
+        current_d = start_date
+        while current_d <= end_date:
+            daily_capacity_hours[current_d] = 0
+
+            # 모든 배정(Assignment)을 순회
+            for asn in parsed_assignments:
+                # 현재 날짜가 이 배정의 유효 기간 안에 있는지 확인
+                if asn["start_date"] <= current_d <= asn["end_date"]:
+                    # 배정에 연결된 Shift Type 정보를 가져옴
+                    shift_type_name = asn["schedule"]  # 사용자가 정의한 키 이름
+                    shift_type_details = shift_type_map.get(shift_type_name)
+
+                    if shift_type_details:
+                        # 해당 Shift Type의 근무 시간을 계산
+                        start_t = datetime.datetime.strptime(shift_type_details["start_time"], "%H:%M:%S").time()
+                        end_t = datetime.datetime.strptime(shift_type_details["end_time"], "%H:%M:%S").time()
+                        hours = (
+                            datetime.datetime.combine(datetime.date.min, end_t)
+                            - datetime.datetime.combine(datetime.date.min, start_t)
+                        ).total_seconds() / 3600
+
+                        # 그날의 총 가용 시간에 더함
+                        daily_capacity_hours[current_d] += hours
+            current_d += timedelta(days=1)
+
+        # ======================================================================
+        # 4. 예약된 Task 시간을 시작일에 모두 할당
+        # ======================================================================
+        booked_hours_by_day = {}
+        for task in tasks:
+            if not task.get("exp_start_date") or not task.get("expected_time") or task["expected_time"] == 0:
+                continue
+
+            task_start_dt = datetime.datetime.strptime(task["exp_start_date"], "%Y-%m-%d").date()
+            booked_hours_by_day[task_start_dt] = booked_hours_by_day.get(task_start_dt, 0) + task["expected_time"]
+
+        # ======================================================================
+        # 5. 최종 결과 계산
+        # ======================================================================
+        available_slots_info = []
+        current_date = start_date
+        while current_date <= end_date:
+            total_capacity = daily_capacity_hours.get(current_date, 0)
+            if total_capacity >= 1:
+                booked_hours = booked_hours_by_day.get(current_date, 0)
+                available_hours = total_capacity - booked_hours
+                if available_hours >= 1:
+                    remaining_percentage = (available_hours / total_capacity) * 100
+                    available_slots_info.append(
+                        {"date": current_date.isoformat(), "remaining": str(math.floor(remaining_percentage))}
+                    )
+            current_date += timedelta(days=1)
+
+        return available_slots_info
 
 
 class FrappUpdateRepository:

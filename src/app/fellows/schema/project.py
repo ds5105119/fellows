@@ -277,6 +277,11 @@ class OverviewProjectsPaginatedResponse(BaseModel):
     items: list[OverviewERPNextProject]
 
 
+class QuoteSlot(BaseModel):
+    date: str
+    remaining: str
+
+
 # --- Task Models ---
 
 
