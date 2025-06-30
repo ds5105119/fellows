@@ -444,7 +444,6 @@ class CreateERPNextIssue(BaseModel):
     description: str | None = Field(default=None)
 
     project: str | None = Field(default=None)
-    company: str | None = Field(default=None)
 
 
 class UpdateERPNextIssue(BaseModel):
