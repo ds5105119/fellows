@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from src.app.user.api.dependencies import user_data_service
+from src.core.dependencies.auth import User
 
 router = APIRouter()
 
@@ -35,6 +36,11 @@ async def read_business_data(business_data: Annotated[None, Depends(user_data_se
 @router.patch("/welfare/business", status_code=status.HTTP_200_OK)
 async def update_business_data(_: Annotated[None, Depends(user_data_service.update_business_data)]):
     pass
+
+
+@router.get("")
+async def read_user_data(user: Annotated[None, Depends(user_data_service.read_user)]):
+    return user
 
 
 @router.patch("", status_code=status.HTTP_200_OK)

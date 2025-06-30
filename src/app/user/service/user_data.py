@@ -117,6 +117,9 @@ class UserDataService:
             **data.model_dump(),
         )
 
+    async def read_user(self, user: get_current_user):
+        return await keycloak_admin.a_get_user(user.sub)
+
     async def update_user(
         self,
         data: UpdateUserAttributes,
