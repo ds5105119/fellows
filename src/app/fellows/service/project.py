@@ -60,8 +60,9 @@ class ProjectService:
         user: get_current_user,
         project_id: str = Path(),
     ) -> UserERPNextProject:
-        await self.frappe_repository.get_project_by_id(project_id, user.sub)
-        return await self.frappe_repository.update_project_by_id(project_id, data)
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
+
+        return await self.frappe_repository.update_project_by_id(project.project_name, data)
 
     async def delete_project(
         self,
@@ -128,7 +129,6 @@ class ProjectService:
             ERPNextTask(
                 subject="프로젝트 견적 확인",
                 project=project_id,
-                custom_sub=user.sub,
                 color="#FF4500",
                 is_group=True,
                 is_template=False,
@@ -147,7 +147,8 @@ class ProjectService:
                 department="Management",
                 company="Fellows",
                 type="Quote Review",
-            )
+            ),
+            user.sub,
         )
 
         await self.frappe_repository.create_todo_many(
@@ -246,7 +247,38 @@ class ProjectService:
         user: get_current_user,
         data: Annotated[ERPNextTasksRequest, Query()],
     ) -> ERPNextTaskPaginatedResponse:
-        return await self.frappe_repository.get_tasks(user.sub, data)
+        return await self.frappe_repository.get_tasks(data, user.sub)
+
+    async def create_issue(
+        self,
+        user: get_current_user,
+        data: Annotated[CreateERPNextIssue, Query()],
+    ):
+        return await self.frappe_repository.create_issue(data, user.sub)
+
+    async def read_issues(
+        self,
+        user: get_current_user,
+        data: Annotated[ERPNextIssuesRequest, Query()],
+    ):
+        return await self.frappe_repository.get_issues(data, user.sub)
+
+    async def update_issue(
+        self,
+        user: get_current_user,
+        data: Annotated[UpdateERPNextIssue, Query()],
+        name: str = Path(),
+    ):
+        issue = await self.frappe_repository.get_issue(name, user.sub)
+        return await self.frappe_repository.update_issue_by_id(issue.name, data)
+
+    async def delete_issue(
+        self,
+        user: get_current_user,
+        name: str = Path(),
+    ):
+        issue = await self.frappe_repository.get_issue(name, user.sub)
+        return await self.frappe_repository.delete_issue_by_id(issue.name)
 
     async def get_project_feature_estimate(
         self,
@@ -256,7 +288,7 @@ class ProjectService:
         payload = project_base.model_dump_json()
 
         response = await self.openai_client.responses.create(
-            model="gpt-4.1-mini-2025-04-14",
+            model="gpt-4.1-mini",
             instructions=feature_estimate_instruction,
             input=payload,
             max_output_tokens=1000,

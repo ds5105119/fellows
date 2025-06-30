@@ -12,11 +12,34 @@ from src.core.models.repository import PaginatedResult
 router = APIRouter()
 
 
-@router.get("/tasks", response_model=ERPNextTaskPaginatedResponse)
-async def get_tasks(
-    tasks: Annotated[None, Depends(project_service.read_tasks)],
-):
+@router.get("/task", response_model=ERPNextTaskPaginatedResponse)
+async def get_tasks(tasks: Annotated[ERPNextTaskPaginatedResponse, Depends(project_service.read_tasks)]):
     return tasks
+
+
+@limiter(1, 2)
+@router.post("/issue", response_model=ERPNextIssue)
+async def create_issue(issue: Annotated[ERPNextIssue, Depends(project_service.create_issue)]):
+    return issue
+
+
+@router.get("/issue", response_model=ERPNextIssuePaginatedResponse)
+async def get_issues(
+    issues: Annotated[ERPNextIssuePaginatedResponse, Depends(project_service.read_issues)],
+):
+    return issues
+
+
+@limiter(1, 2)
+@router.put("/issue/{name}", response_model=ERPNextIssue)
+async def update_issue(issue: Annotated[ERPNextIssue, Depends(project_service.update_issue)]):
+    return issue
+
+
+@limiter(1, 2)
+@router.delete("/issue/{name}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_issue(_: Annotated[None, Depends(project_service.delete_issue)]):
+    pass
 
 
 @limiter(1, 2)
@@ -86,31 +109,23 @@ async def cancel_submit_project(
 
 @limiter(1, 2)
 @router.post("/{project_id}/files", status_code=status.HTTP_204_NO_CONTENT)
-async def create_files(
-    _: Annotated[None, Depends(project_service.create_file)],
-):
+async def create_files(_: Annotated[None, Depends(project_service.create_file)]):
     pass
 
 
 @router.get("/{project_id}/files/{key}", response_model=ERPNextFile)
-async def get_file(
-    file: Annotated[ERPNextFile, Depends(project_service.read_file)],
-):
+async def get_file(file: Annotated[ERPNextFile, Depends(project_service.read_file)]):
     return file
 
 
 @router.get("/{project_id}/files", response_model=ERPNextFilesResponse)
-async def get_files(
-    files: Annotated[ERPNextFilesResponse, Depends(project_service.read_files)],
-):
+async def get_files(files: Annotated[ERPNextFilesResponse, Depends(project_service.read_files)]):
     return files
 
 
 @limiter(1, 2)
 @router.delete("/{project_id}/files/{key}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_files(
-    _: Annotated[None, Depends(project_service.delete_file)],
-):
+async def delete_files(_: Annotated[None, Depends(project_service.delete_file)]):
     pass
 
 

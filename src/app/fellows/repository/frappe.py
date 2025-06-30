@@ -23,7 +23,7 @@ class FrappCreateRepository:
     ):
         self.frappe_client = frappe_client
 
-    async def create_project(self, data: UserERPNextProject, sub: str):
+    async def create_project(self, data: CreateERPNextProject, sub: str):
         project = await self.frappe_client.insert(
             data.model_dump(by_alias=True)
             | {
@@ -40,9 +40,17 @@ class FrappCreateRepository:
 
         return UserERPNextProject(**project)
 
-    async def create_task(self, data: ERPNextTask):
-        task = await self.frappe_client.insert(data.model_dump(exclude_unset=True) | {"doctype": "Task"})
+    async def create_task(self, data: ERPNextTask, sub: str):
+        task = await self.frappe_client.insert(
+            data.model_dump(exclude_unset=True) | {"doctype": "Task", "custom_sub": sub}
+        )
         return ERPNextTask(**task)
+
+    async def create_issue(self, data: CreateERPNextIssue, sub: str):
+        issue = await self.frappe_client.insert(
+            data.model_dump(exclude_unset=True) | {"doctype": "Issue", "custom_sub": sub}
+        )
+        return ERPNextIssue(**issue)
 
     async def create_todo_many(self, data: list[ERPNextToDo]):
         await self.frappe_client.insert_many([d.model_dump(exclude_unset=True) | {"doctype": "ToDo"} for d in data])
@@ -60,11 +68,13 @@ class FrappReadRepository:
         self.frappe_client = frappe_client
 
     async def get_project_by_id(self, project_id: str, sub: str):
-        project = await self.frappe_client.get_doc("Project", project_id, filters={"custom_sub": sub})
+        project = await self.frappe_client.get_doc("Project", project_id, filters={"custom_Sub": ["=", sub]})
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         if project.get("custom_sub") != sub:
             raise HTTPException(status_code=403)
+
+        print(await self.frappe_client.get_list("Issue", filters={"custom_sub": sub}))
 
         return UserERPNextProject(**project)
 
@@ -114,12 +124,12 @@ class FrappReadRepository:
 
         return OverviewProjectsPaginatedResponse.model_validate({"items": projects}, from_attributes=True)
 
-    async def get_task(self, project_id: str, subject: str):
-        data = await self.frappe_client.get_doc("Task", subject, filters={"project": project_id})
+    async def get_task(self, subject: str):
+        data = await self.frappe_client.get_doc("Task", subject)
         return ERPNextTask(**data)
 
-    async def get_tasks(self, user_sub: str, data: ERPNextTasksRequest):
-        filters = {"custom_sub": user_sub, "custom_is_user_visible": True}
+    async def get_tasks(self, data: ERPNextTasksRequest, sub: str):
+        filters = {"custom_sub": sub, "custom_is_user_visible": True}
         or_filters = {}
 
         if data.keyword:
@@ -157,6 +167,54 @@ class FrappReadRepository:
         )
 
         return ERPNextTaskPaginatedResponse.model_validate({"items": tasks}, from_attributes=True)
+
+    async def get_issue(self, subject: str, sub: str):
+        data = await self.frappe_client.get_doc("Issue", subject)
+        data = ERPNextIssue(**data)
+        if data.custom_sub != sub:
+            raise HTTPException(status_code=403)
+
+        return data
+
+    async def get_issues(self, data: ERPNextIssuesRequest, sub: str):
+        filters = {"custom_sub": sub}
+        or_filters = {}
+
+        if data.keyword:
+            filters["subject"] = ["like", f"%{data.keyword}%"]
+
+        if data.start:
+            filters["creation"] = [">=", data.start]
+        if data.end:
+            filters["creation"] = ["<=", data.end]
+
+        if type(data.issue_type) == str:
+            filters["issue_type"] = ["like", data.issue_type]
+        elif type(data.issue_type) == list:
+            filters["status"] = ["in", data.issue_type]
+
+        if type(data.project_id) == str:
+            filters["project"] = ["=", data.project_id]
+        elif type(data.project_id) == list:
+            filters["project"] = ["in", data.project_id]
+
+        order_by = None
+
+        if type(data.order_by) == str:
+            order_by = data.order_by
+        elif type(data.order_by) == list:
+            order_by = [f"{o.split('.')[0]} desc" if o.split(".")[-1] == "desc" else o for o in data.order_by]
+
+        issues = await self.frappe_client.get_list(
+            "Issue",
+            filters=filters,
+            or_filters=or_filters,
+            limit_start=data.page * data.size,
+            limit_page_length=data.size,
+            order_by=order_by,
+        )
+
+        return ERPNextIssuePaginatedResponse.model_validate({"items": issues}, from_attributes=True)
 
     async def get_file(self, project_id: str, key: str, task_id: str | None = None) -> ERPNextFile:
         filters = {"project": project_id}
@@ -281,17 +339,21 @@ class FrappReadRepository:
         # 5. 최종 결과 계산
         # ======================================================================
         available_slots_info = []
+        today = datetime.date.today()
         current_date = start_date
         while current_date <= end_date:
             total_capacity = daily_capacity_hours.get(current_date, 0)
-            if total_capacity >= 1:
-                booked_hours = booked_hours_by_day.get(current_date, 0)
-                available_hours = total_capacity - booked_hours
-                if available_hours >= 1:
-                    remaining_percentage = (available_hours / total_capacity) * 100
-                    available_slots_info.append(
-                        {"date": current_date.isoformat(), "remaining": str(math.floor(remaining_percentage))}
-                    )
+            if current_date < today:
+                available_slots_info.append({"date": current_date.isoformat(), "remaining": "0"})
+            else:
+                if total_capacity >= 1:
+                    booked_hours = booked_hours_by_day.get(current_date, 0)
+                    available_hours = total_capacity - booked_hours
+                    if available_hours >= 1:
+                        remaining_percentage = (available_hours / total_capacity) * 100
+                        available_slots_info.append(
+                            {"date": current_date.isoformat(), "remaining": str(math.floor(remaining_percentage))}
+                        )
             current_date += timedelta(days=1)
 
         return available_slots_info
@@ -319,6 +381,17 @@ class FrappUpdateRepository:
 
         return UserERPNextProject(**project)
 
+    async def update_issue_by_id(self, name: str, data: UpdateERPNextIssue):
+        updated_issue = await self.frappe_client.update(
+            {
+                "doctype": "Issue",
+                "name": name,
+                **data.model_dump(by_alias=True, exclude_unset=True),
+            }
+        )
+
+        return ERPNextIssue(**updated_issue)
+
 
 class FrappDeleteRepository:
     def __init__(
@@ -342,6 +415,9 @@ class FrappDeleteRepository:
 
     async def delete_task_by_id(self, task_id: str):
         await self.frappe_client.delete("Task", task_id)
+
+    async def delete_issue_by_id(self, name: str):
+        await self.frappe_client.delete("Issue", name)
 
     async def delete_file(self, key: str):
         await self.frappe_client.delete("Files", key)

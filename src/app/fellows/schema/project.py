@@ -50,35 +50,6 @@ class Priority(str, Enum):
     HIGH = "High"
 
 
-class ERPNextTaskStatus(str, Enum):
-    OPEN = "Open"
-    WORKING = "Working"
-    PENDING_REVIEW = "Pending Review"
-    OVERDUE = "Overdue"
-    TEMPLATE = "Template"
-    COMPLETED = "Completed"
-    CANCELLED = "Cancelled"
-
-
-class ERPNextTaskPriority(str, Enum):
-    LOW = "Low"
-    MEDIUM = "Medium"
-    HIGH = "High"
-    URGENT = "Urgent"
-
-
-class ERPNextToDoStatus(str, Enum):
-    OPEN = "Open"
-    CLOSED = "Closed"
-    CANCELLED = "Cancelled"
-
-
-class ERPNextToDoPriority(str, Enum):
-    HIGH = "High"
-    MEDIUM = "Medium"
-    LOW = "Low"
-
-
 # --- Child Table Models for ERPNext ---
 
 
@@ -290,6 +261,35 @@ class Quote(BaseModel):
 # --- Task Models ---
 
 
+class ERPNextTaskStatus(str, Enum):
+    OPEN = "Open"
+    WORKING = "Working"
+    PENDING_REVIEW = "Pending Review"
+    OVERDUE = "Overdue"
+    TEMPLATE = "Template"
+    COMPLETED = "Completed"
+    CANCELLED = "Cancelled"
+
+
+class ERPNextTaskPriority(str, Enum):
+    LOW = "Low"
+    MEDIUM = "Medium"
+    HIGH = "High"
+    URGENT = "Urgent"
+
+
+class ERPNextToDoStatus(str, Enum):
+    OPEN = "Open"
+    CLOSED = "Closed"
+    CANCELLED = "Cancelled"
+
+
+class ERPNextToDoPriority(str, Enum):
+    HIGH = "High"
+    MEDIUM = "Medium"
+    LOW = "Low"
+
+
 class ERPNextTaskDependsOnRow(BaseModel):
     model_config = ConfigDict(extra="allow")
     doctype: str | None = Field(default="Task Depends On")
@@ -387,6 +387,81 @@ class ERPNextToDo(BaseModel):
     reference_name: str | None = Field(default=None)
     role: str | None = Field(default=None)
     assigned_by: str | None = Field(default=None)
+
+
+# --- Issue Models ---
+
+
+class IssueType(str, Enum):
+    design = "Design"
+    feature = "Feature"
+    etc = "ETC"
+
+
+class ERPNextIssue(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
+    name: str
+    subject: str
+    custom_sub: str
+
+    creation: datetime.datetime | None = Field(default=None)
+    modified: datetime.datetime | None = Field(default=None)
+    response_by: datetime.datetime | None = Field(default=None)
+    sla_resolution_by: datetime.datetime | None = Field(default=None)
+    first_response_time: float | None = Field(default=None)
+    first_responded_on: datetime.datetime | None = Field(default=None)
+
+    status: str | None = Field(default=None)
+    priority: str | None = Field(default=None)
+    issue_type: IssueType | None = Field(default=None)
+    description: str | None = Field(default=None)
+    on_hold_since: datetime.datetime | None = Field(default=None)
+    total_hold_time: float | None = Field(default=None)
+    avg_response_time: float | None = Field(default=None)
+
+    project: str | None = Field(default=None)
+    company: str | None = Field(default=None)
+
+
+class ERPNextIssuesRequest(BaseModel):
+    page: int = Field(default=0)
+    size: int = Field(default=20, ge=0, le=1000)
+    order_by: list[str] | str | None = Field(default="modified")
+    issue_type: list[IssueType] | IssueType | None = Field(default=None)
+    project_id: list[str] | str | None = Field(default=None)
+    start: datetime.date | None = Field(default=None)
+    end: datetime.date | None = Field(default=None)
+    keyword: str | None = Field(default=None)
+
+
+class CreateERPNextIssue(BaseModel):
+    subject: str
+    custom_sub: str
+
+    priority: str | None = Field(default=None)
+    issue_type: IssueType | None = Field(default=None)
+    description: str | None = Field(default=None)
+
+    project: str | None = Field(default=None)
+    company: str | None = Field(default=None)
+
+
+class UpdateERPNextIssue(BaseModel):
+    subject: str | None = Field(default=None)
+
+    priority: str | None = Field(default=None)
+    issue_type: IssueType | None = Field(default=None)
+    description: str | None = Field(default=None)
+
+    project: str | None = Field(default=None)
+
+
+class ERPNextIssuePaginatedResponse(BaseModel):
+    items: list[ERPNextIssue]
+
+
+# --- ETC Models ---
 
 
 class ERPNextFile(BaseModel):
