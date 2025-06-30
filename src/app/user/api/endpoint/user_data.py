@@ -38,8 +38,8 @@ async def update_business_data(_: Annotated[None, Depends(user_data_service.upda
 
 
 @router.patch("", status_code=status.HTTP_200_OK)
-async def update_user(_: Annotated[None, Depends(user_data_service.update_user)]):
-    pass
+async def update_user(user: Annotated[None, Depends(user_data_service.update_user)]):
+    return user
 
 
 @router.patch("/address/kakao", status_code=status.HTTP_200_OK)

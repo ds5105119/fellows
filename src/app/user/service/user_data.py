@@ -138,6 +138,8 @@ class UserDataService:
 
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
 
+        return await keycloak_admin.a_get_user(user.sub)
+
     async def update_address_kakao(
         self,
         data: KakaoAddressDto,
