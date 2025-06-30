@@ -427,7 +427,7 @@ class ERPNextIssue(BaseModel):
 class ERPNextIssuesRequest(BaseModel):
     page: int = Field(default=0)
     size: int = Field(default=20, ge=0, le=1000)
-    order_by: list[str] | str | None = Field(default="modified")
+    order_by: list[str] | str | None = Field(default="modified desc")
     issue_type: list[IssueType] | IssueType | None = Field(default=None)
     project_id: list[str] | str | None = Field(default=None)
     start: datetime.date | None = Field(default=None)

@@ -252,7 +252,7 @@ class ProjectService:
     async def create_issue(
         self,
         user: get_current_user,
-        data: Annotated[CreateERPNextIssue, Query()],
+        data: CreateERPNextIssue,
     ):
         return await self.frappe_repository.create_issue(data, user.sub)
 
@@ -266,7 +266,7 @@ class ProjectService:
     async def update_issue(
         self,
         user: get_current_user,
-        data: Annotated[UpdateERPNextIssue, Query()],
+        data: UpdateERPNextIssue,
         name: str = Path(),
     ):
         issue = await self.frappe_repository.get_issue(name, user.sub)
