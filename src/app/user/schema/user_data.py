@@ -73,13 +73,13 @@ class LocationDto(BaseModel):
 
 
 class OIDCAddressDto(LocationDto):
-    locality: str
-    sub_locality: str
-    region: str
-    postal_code: str
-    country: str
-    street: str
-    formatted: str = Field(default="")
+    locality: str | None = Field(default=None)
+    sub_locality: str | None = Field(default=None)
+    region: str | None = Field(default=None)
+    postal_code: str | None = Field(default=None)
+    country: str | None = Field(default=None)
+    street: str | None = Field(default=None)
+    formatted: str | None = Field(default=None)
 
 
 class KakaoAddressDto(LocationDto, Coord2AddrResponse):
