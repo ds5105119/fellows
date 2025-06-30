@@ -198,6 +198,11 @@ class FrappReadRepository:
         elif type(data.project_id) == list:
             filters["project"] = ["in", data.project_id]
 
+        if type(data.status) == str:
+            filters["status"] = ["=", data.status]
+        elif type(data.status) == list:
+            filters["status"] = ["in", data.status]
+
         order_by = None
 
         if type(data.order_by) == str:

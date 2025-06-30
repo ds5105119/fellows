@@ -102,6 +102,7 @@ class UserAttributes(OIDCAddressDto):
     picture: str | None = Field(default=None)
     bio: str | None = Field(default=None, min_length=0, max_length=100)
     link: list[str] | None = Field(default=None, description="List of up to 4 personal links")
+    userData: str | None = Field(default=None)
 
 
 class UpdateUserAttributes(OIDCAddressDto):
@@ -120,3 +121,4 @@ class UpdateUserAttributes(OIDCAddressDto):
     picture: str | None = Field(default=None)
     bio: str | None = Field(default=None, min_length=0, max_length=100)
     link: list[str] | None = Field(default=None, description="List of up to 4 personal links")
+    userData: str | None = Field(default=None)

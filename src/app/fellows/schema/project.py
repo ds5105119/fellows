@@ -433,6 +433,7 @@ class ERPNextIssuesRequest(BaseModel):
     start: datetime.date | None = Field(default=None)
     end: datetime.date | None = Field(default=None)
     keyword: str | None = Field(default=None)
+    status: list[str] | str | None = Field(default=None)
 
 
 class CreateERPNextIssue(BaseModel):

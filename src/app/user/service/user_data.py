@@ -125,7 +125,7 @@ class UserDataService:
         payload = await keycloak_admin.a_get_user(user.sub)
 
         if payload.username:
-            exist = await keycloak_admin.a_get_user(user.sub)
+            exist = await keycloak_admin.a_get_users(({"username": payload.username}))
             if exist:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
