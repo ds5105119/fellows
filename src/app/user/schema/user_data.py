@@ -65,7 +65,7 @@ class PartialUserDataDto(UserDataDto):
 
 
 class LocationDto(BaseModel):
-    location: list[float, float]
+    location: list[float, float] | None = Field(default=None)
 
     @field_serializer("location")
     def serialize_location(self, location, _info):

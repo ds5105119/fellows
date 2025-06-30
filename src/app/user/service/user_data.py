@@ -124,19 +124,19 @@ class UserDataService:
     ):
         payload = await keycloak_admin.a_get_user(user.sub)
 
-        if payload.username:
-            exist = await keycloak_admin.a_get_users(({"username": payload.username}))
+        if data.username:
+            exist = await keycloak_admin.a_get_users(({"username": data.username}))
             if exist:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
-        if payload.email:
-            exist = await keycloak_admin.a_get_users(({"email": payload.email}))
+        if data.email:
+            exist = await keycloak_admin.a_get_users(({"email": data.email}))
             if exist:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
         payload["attributes"].update(data.model_dump(exclude_unset=True))
 
-        await self.keycloak_admin.a_update_user(user_id=user.sub, payload={"attributes": payload})
+        await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
 
     async def update_address_kakao(
         self,

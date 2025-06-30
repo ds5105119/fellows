@@ -74,8 +74,6 @@ class FrappReadRepository:
         if project.get("custom_sub") != sub:
             raise HTTPException(status_code=403)
 
-        print(await self.frappe_client.get_list("Issue", filters={"custom_sub": sub}))
-
         return UserERPNextProject(**project)
 
     async def get_projects(
