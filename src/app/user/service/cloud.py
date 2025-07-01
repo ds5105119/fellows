@@ -61,7 +61,7 @@ class CloudService:
         self,
         user: get_current_user,
     ) -> PresignedPutResponse:
-        key = f"{uuid4()}"
+        key = f"{user.sub}_{uuid4()}"
         presigned_url = self.get_presigned_url("put_object", key, 600)
 
         return PresignedPutResponse(key=key, presigned_url=presigned_url)

@@ -3,14 +3,7 @@ from keycloak import KeycloakAdmin
 from sqlalchemy.exc import IntegrityError
 
 from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
-from src.app.user.schema.user_data import (
-    KakaoAddressDto,
-    OIDCAddressDto,
-    PartialUserDataDto,
-    UpdateUserAttributes,
-    UserBusinessDataDto,
-    UserDataDto,
-)
+from src.app.user.schema.user_data import *
 from src.core.dependencies.auth import get_current_user, keycloak_admin
 from src.core.dependencies.db import postgres_session
 
@@ -118,7 +111,11 @@ class UserDataService:
         )
 
     async def read_user(self, user: get_current_user):
-        return await keycloak_admin.a_get_user(user.sub)
+        from pprint import pprint
+
+        data = await keycloak_admin.a_get_user(user.sub)
+        pprint(data)
+        return UserAttributes.model_validate(data["attributes"])
 
     async def update_user(
         self,
@@ -126,21 +123,8 @@ class UserDataService:
         user: get_current_user,
     ):
         payload = await keycloak_admin.a_get_user(user.sub)
-
-        if data.username:
-            exist = await keycloak_admin.a_get_users(({"username": data.username}))
-            if exist:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT)
-
-        if data.email:
-            exist = await keycloak_admin.a_get_users(({"email": data.email}))
-            if exist:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT)
-
         payload["attributes"].update(data.model_dump(exclude_unset=True))
-
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
-
         return await keycloak_admin.a_get_user(user.sub)
 
     async def update_address_kakao(
