@@ -50,7 +50,7 @@ class PresignedSSECGetRequest(BaseModel):
 
 class PresignedDeleteRequest(BaseModel):
     key: str
-    sse_key: str
+    sse_key: str | None = Field(default=None)
 
 
 class PresignedHeader(BaseModel):
