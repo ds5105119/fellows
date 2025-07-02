@@ -123,7 +123,8 @@ class UserDataService:
         user: get_current_user,
     ):
         payload = await keycloak_admin.a_get_user(user.sub)
-        payload["attributes"].update(data.model_dump(exclude_unset=True))
+        attributes = data.model_dump(exclude_unset=True)
+        payload["attributes"].update(attributes)
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
         return await keycloak_admin.a_get_user(user.sub)
 
