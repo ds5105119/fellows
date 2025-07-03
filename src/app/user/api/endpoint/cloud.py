@@ -36,16 +36,16 @@ async def create_sse_c_presigned_get_request(
     return url
 
 
-@router.get("/object/presigned/get/sse/c/fellows", response_model=SSECPresignedResponse)
-async def create_sse_c_presigned_get_request_for_fellows(
-    url: Annotated[SSECPresignedResponse, Depends(cloud_service.create_sse_c_put_presigned_url_for_fellows)],
+@router.get("/object/presigned/put/sse/c", response_model=SSECPresignedResponse)
+async def create_sse_c_presigned_put_request(
+    url: Annotated[SSECPresignedResponse, Depends(cloud_service.create_sse_c_put_presigned_url)],
 ):
     return url
 
 
-@router.get("/object/presigned/put/sse/c", response_model=SSECPresignedResponse)
-async def create_sse_c_presigned_put_request(
-    url: Annotated[SSECPresignedResponse, Depends(cloud_service.create_sse_c_put_presigned_url)],
+@router.get("/object/presigned/put/sse/c/fellows", response_model=SSECPresignedResponse)
+async def create_sse_c_presigned_get_request_for_fellows(
+    url: Annotated[SSECPresignedResponse, Depends(cloud_service.create_sse_c_put_presigned_url_for_fellows)],
 ):
     return url
 
