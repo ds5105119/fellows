@@ -123,6 +123,51 @@ class CloudService:
             md5=headers.get("SSECustomerKeyMD5"),
         )
 
+    async def create_sse_c_put_presigned_url_for_fellows(
+        self,
+        response: Response,
+        request: Request,
+        data: Annotated[PresignedPutRequest, Query()],
+    ) -> SSECPresignedResponse:
+        allowed_domains = settings.allowed_hosts
+
+        def extract_domain(url: str) -> str:
+            try:
+                return urlparse(url).hostname or ""
+            except:
+                return ""
+
+        origin = request.headers.get("origin", "")
+        referer = request.headers.get("referer", "")
+        host = request.headers.get("host", "")
+
+        origin_host = extract_domain(origin)
+        referer_host = extract_domain(referer)
+        host_clean = host.split(":")[0]
+
+        if (
+            origin_host not in allowed_domains
+            and referer_host not in allowed_domains
+            and host_clean not in allowed_domains
+        ):
+            raise HTTPException(status_code=403, detail="Unauthorized domain")
+
+        key = f"/fellows/{data.suffix}/{data.name}_{uuid4()}"
+        headers = self.generate_sse_c_headers()
+        presigned_url = self.get_presigned_url("put_object", key, 600, headers)
+
+        response.headers["x-amz-server-side-encryption-customer-algorithm"] = headers.get("SSECustomerAlgorithm")
+        response.headers["x-amz-server-side-encryption-customer-key"] = headers.get("SSECustomerKey")
+        response.headers["x-amz-server-side-encryption-customer-key-md5"] = headers.get("SSECustomerKeyMD5")
+
+        return SSECPresignedResponse(
+            presigned_url=presigned_url,
+            algorithm="AES256",
+            key=key,
+            sse_key=headers.get("SSECustomerKey"),
+            md5=headers.get("SSECustomerKeyMD5"),
+        )
+
     async def create_get_presigned_url(
         self,
         user: get_current_user,
