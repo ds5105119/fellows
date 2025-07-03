@@ -12,7 +12,7 @@ from mypy_boto3_s3 import S3Client
 
 from src.app.user.schema.cloud import *
 from src.core.config import settings
-from src.core.dependencies.auth import get_current_user, get_current_user_without_error
+from src.core.dependencies.auth import get_current_user
 from src.core.utils.frappeclient import AsyncFrappeClient
 
 logger = logging.getLogger(__name__)
@@ -61,8 +61,9 @@ class CloudService:
     async def create_put_presigned_url(
         self,
         user: get_current_user,
+        data: Annotated[PresignedPutRequest, Query()],
     ) -> PresignedPutResponse:
-        key = f"{user.sub}_{uuid4()}"
+        key = f"{data.suffix}/{user.sub}/{data.name}_{uuid4()}"
         presigned_url = self.get_presigned_url("put_object", key, 600)
 
         return PresignedPutResponse(key=key, presigned_url=presigned_url)
@@ -70,6 +71,7 @@ class CloudService:
     async def create_put_presigned_url_for_fellows(
         self,
         request: Request,
+        data: Annotated[PresignedPutRequest, Query()],
     ) -> PresignedPutResponse:
         allowed_domains = settings.allowed_hosts
 
@@ -94,7 +96,7 @@ class CloudService:
         ):
             raise HTTPException(status_code=403, detail="Unauthorized domain")
 
-        key = f"fellows_{uuid4()}"
+        key = f"fellows/{data.suffix}/{data.name}_{uuid4()}"
         presigned_url = self.get_presigned_url("put_object", key, 600)
 
         return PresignedPutResponse(key=key, presigned_url=presigned_url)
@@ -103,9 +105,9 @@ class CloudService:
         self,
         response: Response,
         user: get_current_user,
-        data: Annotated[PresignedSSECPutRequest, Query()],
+        data: Annotated[PresignedPutRequest, Query()],
     ) -> SSECPresignedResponse:
-        key = f"{data.suffix}_{uuid4()}"
+        key = f"{data.suffix}/{user.sub}/{data.name}_{uuid4()}"
         headers = self.generate_sse_c_headers()
         presigned_url = self.get_presigned_url("put_object", key, 600, headers)
 

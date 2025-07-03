@@ -28,7 +28,7 @@ class PresignedPutResponse(BaseModel):
     presigned_url: str
 
 
-class PresignedSSECPutRequest(BaseModel):
+class PresignedPutRequest(BaseModel):
     name: str
     suffix: str
 
