@@ -6,7 +6,7 @@ from typing import Annotated
 from uuid import uuid4
 
 from botocore.client import ClientError
-from fastapi import Header, HTTPException, Query, Response, status
+from fastapi import Header, HTTPException, Query, Request, Response, status
 from mypy_boto3_s3 import S3Client
 
 from src.app.user.schema.cloud import *
@@ -59,9 +59,27 @@ class CloudService:
 
     async def create_put_presigned_url(
         self,
-        user: get_current_user_without_error,
+        user: get_current_user,
     ) -> PresignedPutResponse:
         key = f"{user.sub if user is not None else uuid4()}_{uuid4()}"
+        presigned_url = self.get_presigned_url("put_object", key, 600)
+
+        return PresignedPutResponse(key=key, presigned_url=presigned_url)
+
+    async def create_put_presigned_url_for_fellows(
+        self,
+        request: Request,
+    ) -> PresignedPutResponse:
+        allowed_domains = settings.allowed_hosts
+
+        origin = request.headers.get("origin", "")
+        referer = request.headers.get("referer", "")
+        host = request.headers.get("host", "")
+
+        if not any(domain in origin or domain in referer or domain in host for domain in allowed_domains):
+            raise HTTPException(status_code=403, detail="Unauthorized domain")
+
+        key = f"fellows_{uuid4()}"
         presigned_url = self.get_presigned_url("put_object", key, 600)
 
         return PresignedPutResponse(key=key, presigned_url=presigned_url)
