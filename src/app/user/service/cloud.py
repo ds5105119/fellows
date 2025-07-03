@@ -3,6 +3,7 @@ import hashlib
 import logging
 import os
 from typing import Annotated
+from urllib.parse import urlparse
 from uuid import uuid4
 
 from botocore.client import ClientError
@@ -61,7 +62,7 @@ class CloudService:
         self,
         user: get_current_user,
     ) -> PresignedPutResponse:
-        key = f"{user.sub if user is not None else uuid4()}_{uuid4()}"
+        key = f"{user.sub}_{uuid4()}"
         presigned_url = self.get_presigned_url("put_object", key, 600)
 
         return PresignedPutResponse(key=key, presigned_url=presigned_url)
@@ -72,11 +73,20 @@ class CloudService:
     ) -> PresignedPutResponse:
         allowed_domains = settings.allowed_hosts
 
+        def extract_domain(url: str) -> str:
+            try:
+                return urlparse(url).hostname or ""
+            except:
+                return ""
+
         origin = request.headers.get("origin", "")
         referer = request.headers.get("referer", "")
         host = request.headers.get("host", "")
 
-        if not any(domain in origin or domain in referer or domain in host for domain in allowed_domains):
+        origin_host = extract_domain(origin)
+        referer_host = extract_domain(referer)
+
+        if not any(domain in [origin_host, referer_host, host] for domain in allowed_domains):
             raise HTTPException(status_code=403, detail="Unauthorized domain")
 
         key = f"fellows_{uuid4()}"
