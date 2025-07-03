@@ -11,7 +11,7 @@ from mypy_boto3_s3 import S3Client
 
 from src.app.user.schema.cloud import *
 from src.core.config import settings
-from src.core.dependencies.auth import get_current_user
+from src.core.dependencies.auth import get_current_user, get_current_user_without_error
 from src.core.utils.frappeclient import AsyncFrappeClient
 
 logger = logging.getLogger(__name__)
@@ -59,9 +59,9 @@ class CloudService:
 
     async def create_put_presigned_url(
         self,
-        user: get_current_user,
+        user: get_current_user_without_error,
     ) -> PresignedPutResponse:
-        key = f"{user.sub}_{uuid4()}"
+        key = f"{user.sub if user is not None else uuid4()}_{uuid4()}"
         presigned_url = self.get_presigned_url("put_object", key, 600)
 
         return PresignedPutResponse(key=key, presigned_url=presigned_url)
