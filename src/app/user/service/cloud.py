@@ -85,8 +85,13 @@ class CloudService:
 
         origin_host = extract_domain(origin)
         referer_host = extract_domain(referer)
+        host_clean = host.split(":")[0]
 
-        if not any(domain in [origin_host, referer_host, host] for domain in allowed_domains):
+        if (
+            origin_host not in allowed_domains
+            and referer_host not in allowed_domains
+            and host_clean not in allowed_domains
+        ):
             raise HTTPException(status_code=403, detail="Unauthorized domain")
 
         key = f"fellows_{uuid4()}"

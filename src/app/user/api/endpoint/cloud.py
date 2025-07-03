@@ -24,7 +24,7 @@ async def create_presigned_put_request(
 
 @router.get("/object/presigned/put/fellows", response_model=PresignedPutResponse)
 async def create_presigned_put_request_for_fellows(
-    url: Annotated[PresignedPutResponse, Depends(cloud_service.create_put_presigned_url)],
+    url: Annotated[PresignedPutResponse, Depends(cloud_service.create_put_presigned_url_for_fellows)],
 ):
     return url
 
