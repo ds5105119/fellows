@@ -29,8 +29,8 @@ class PresignedPutResponse(BaseModel):
 
 
 class PresignedPutRequest(BaseModel):
-    name: str
-    suffix: str
+    name: str | None = Field(default="")
+    suffix: str | None = Field(default="")
 
 
 class SSECPresignedResponse(BaseModel):
