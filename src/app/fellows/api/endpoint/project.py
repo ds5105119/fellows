@@ -75,9 +75,18 @@ async def get_project(
 
 
 @limiter(1, 2)
-@router.put("/{project_id}/invite", response_model=ERPNextProject)
-async def update_project(
+@router.put("/{project_id}/group/invite", response_model=ERPNextProject)
+async def invite_user_to_project(
     project: Annotated[ERPNextProject, Depends(project_service.add_members_to_project)],
+):
+    """`project_id`로 팀원을 초대합니다"""
+    return project
+
+
+@limiter(1, 2)
+@router.put("/{project_id}/group", response_model=ERPNextProject)
+async def update_project_team(
+    project: Annotated[ERPNextProject, Depends(project_service.update_project_team)],
 ):
     """`project_id`로 팀원을 초대합니다"""
     return project

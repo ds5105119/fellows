@@ -85,21 +85,36 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         user = await self.keycloak_admin.a_get_users({"email": email})
-        return await self.frappe_repository.add_member_to_project(project, user[0]["id"], 4)
+        sub = user[0]["id"]
 
-    async def edit_project_team(
+        if any([t.member == sub for t in project.custom_team]):
+            return
+
+        return await self.frappe_repository.add_member_to_project(project, sub, 4)
+
+    async def update_project_team(
         self,
-        data: Annotated[list[ERPNextTeam], Query()],
+        data: list[ERPNextTeam],
         user: get_current_user,
         project_id: str = Path(),
     ):
         project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
         current_member = list(filter(lambda t: t.member == user.sub, project.custom_team))[0]
+        print(data)
 
         if current_member.level > 1:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-        return await self.frappe_repository.add_member_to_project(project, user.sub, 4)
+        if not any(member.member == project.customer for member in data):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        if any(member.member == project.customer and member.level != 0 for member in data):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        if any(member.member != project.customer and member.level < 1 for member in data):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        return await self.frappe_repository.edit_project_member(project.project_name, data)
 
     async def delete_project(
         self,

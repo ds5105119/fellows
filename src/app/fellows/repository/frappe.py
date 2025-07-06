@@ -416,6 +416,17 @@ class FrappUpdateRepository:
 
         return UserERPNextProject(**project)
 
+    async def edit_project_member(self, project_id: str, data: list[ERPNextTeam]):
+        project = await self.frappe_client.update(
+            {
+                "doctype": "Project",
+                "name": project_id,
+                "custom_team": json.dumps([d.model_dump() for d in data]),
+            }
+        )
+
+        return UserERPNextProject(**project)
+
     async def update_issue_by_id(self, name: str, data: UpdateERPNextIssue):
         updated_issue = await self.frappe_client.update(
             {
