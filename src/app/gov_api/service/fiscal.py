@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import Query
 from sqlalchemy import desc
 
-from src.app.open_api.repository.fiscal import FiscalByYearOffcRepository, FiscalByYearRepository, FiscalRepository
-from src.app.open_api.schema.fiscal import FiscalByYearDto, FiscalByYearOffcDto, FiscalDto
+from src.app.gov_api.repository.fiscal import FiscalByYearOffcRepository, FiscalByYearRepository, FiscalRepository
+from src.app.gov_api.schema.fiscal import FiscalByYearDto, FiscalByYearOffcDto, FiscalDto
 from src.core.dependencies.db import postgres_session
 
 

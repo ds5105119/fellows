@@ -71,6 +71,11 @@ class FrappeApi(ApiAdapter):
     secret: str
 
 
+class KCP(BaseModel):
+    site_id: str
+    cert_info: str
+
+
 class Settings(BaseSettings):
     base_dir: Path = Path(__file__).resolve().parent.parent.parent
 
@@ -91,7 +96,6 @@ class Settings(BaseSettings):
     redis: DataBaseConfig
     nats: NATS = Field(default_factory=NATS)
 
-    aws: AWS
     cloudflare: AWS
     keycloak: KeycloakOpenIDClientConfig
     keycloak_admin: KeycloakAdminClientConfig
@@ -99,6 +103,8 @@ class Settings(BaseSettings):
     kakao_api: ApiAdapter
     openai_api: ApiAdapter
     frappe_api: FrappeApi
+
+    kcp: KCP
 
     @property
     def postgres_dsn(self) -> PostgresDsn:

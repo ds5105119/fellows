@@ -28,6 +28,7 @@ class User(BaseModel):
     picture: str | None = Field(default=None)
     location: list[int] | None = Field(default_factory=list)
     bio: str | None = Field(default=None)
+    phone: str | None = Field(default=None)
 
     # 확장 필드들
     name: str | None = Field(default=None)

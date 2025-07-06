@@ -1,4 +1,4 @@
-from src.app.open_api.model.welfare import GovWelfare
+from src.app.gov_api.model.welfare import GovWelfare
 from src.core.models.repository import (
     ABaseCreateRepository,
     ABaseDeleteRepository,

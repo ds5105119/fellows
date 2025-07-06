@@ -1,7 +1,8 @@
 import datetime
+import json
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # --- Enums ---
 
@@ -84,6 +85,11 @@ class ERPNextProjectUserRow(BaseModel):
     welcome_email_sent: bool | None = Field(default=False)
 
 
+class ERPNextTeam(BaseModel):
+    member: str
+    level: int
+
+
 # --- Main Project Model (CSV 기반 업데이트) ---
 
 
@@ -121,7 +127,7 @@ class ERPNextProject(BaseModel):
     custom_content_pages: int | None = Field(default=None)
     custom_maintenance_required: bool | None = Field(default=False)
 
-    custom_sub: str | None = Field(default=None)
+    custom_team: list[ERPNextTeam] | None = Field(default=None)
     custom_platforms: list[ERPNextProjectPlatformRow] | None = Field(default_factory=list)
     custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
     custom_preferred_tech_stacks: list[ERPNextProjectPreferredTechStackRow] | None = Field(default_factory=list)
@@ -143,6 +149,17 @@ class ERPNextProject(BaseModel):
     per_gross_margin: float | None = Field(default=None)
 
     users: list[ERPNextProjectUserRow] | None = Field(default_factory=list)
+
+    @field_validator("custom_team", mode="before")
+    @classmethod
+    def parse_team(cls, v):
+        if isinstance(v, str):
+            try:
+                team = [ERPNextTeam(**item) for item in json.loads(v)]
+                return team
+            except Exception as e:
+                raise ValueError(f"Failed to parse team: {e}")
+        return v
 
 
 class UserERPNextProject(BaseModel):
@@ -172,13 +189,24 @@ class UserERPNextProject(BaseModel):
     custom_content_pages: int | None = Field(default=None)
     custom_maintenance_required: bool | None = Field(default=False)
 
-    custom_sub: str | None = Field(default=None)
+    custom_team: list[ERPNextTeam] | None = Field(default=None)
     custom_platforms: list[ERPNextProjectPlatformRow] | None = Field(default_factory=list)
     custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
     custom_preferred_tech_stacks: list[ERPNextProjectPreferredTechStackRow] | None = Field(default_factory=list)
     custom_design_urls: list[ERPNextProjectDesignUrlRow] | None = Field(default_factory=list)
 
     estimated_costing: float | None = Field(default=None)
+
+    @field_validator("custom_team", mode="before")
+    @classmethod
+    def parse_team(cls, v):
+        if isinstance(v, str):
+            try:
+                team = [ERPNextTeam(**item) for item in json.loads(v)]
+                return team
+            except Exception as e:
+                raise ValueError(f"Failed to parse team: {e}")
+        return v
 
 
 class OverviewERPNextProject(BaseModel):

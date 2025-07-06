@@ -5,8 +5,8 @@ from fastapi import HTTPException, Query
 from sqlalchemy import and_, cast, desc, func, or_
 from sqlalchemy.dialects.postgresql import TSVECTOR
 
-from src.app.open_api.repository.welfare import GovWelfareRepository
-from src.app.open_api.schema.welfare import WelfareDto
+from src.app.gov_api.repository.welfare import GovWelfareRepository
+from src.app.gov_api.schema.welfare import WelfareDto
 from src.app.user.model.user_data import AcademicStatus, UserBusinessData, UserData
 from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
 from src.core.dependencies.auth import User, get_current_user_without_error

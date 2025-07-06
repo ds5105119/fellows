@@ -105,6 +105,16 @@ class UserAttributes(BaseModel):
     userData: list[str] | None = Field(default=None)
 
 
+class ExternalUserAttributes(BaseModel):
+    bio: list[str] | None = Field(default=None)
+    birthdate: list[str] | None = Field(default=None)
+    country: list[str] | None = Field(default=None)
+    gender: list[str] | None = Field(default=None)
+    link: list[str] | None = Field(default=None)
+    name: list[str] | None = Field(default=None)
+    picture: list[str] | None = Field(default=None)
+
+
 class UpdateUserAttributes(BaseModel):
     bio: list[str] | None = Field(default=None)
     birthdate: list[str] | None = Field(default=None)

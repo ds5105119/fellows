@@ -3,7 +3,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends
 from webtool.throttle import limiter
 
-from src.app.open_api.api.dependencies import fiscal_service
+from src.app.gov_api.api.dependencies import fiscal_service
 
 router = APIRouter()
 

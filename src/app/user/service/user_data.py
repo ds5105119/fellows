@@ -1,4 +1,6 @@
-from fastapi import HTTPException, status
+import asyncio
+
+from fastapi import HTTPException, Path, status
 from keycloak import KeycloakAdmin
 from sqlalchemy.exc import IntegrityError
 
@@ -110,12 +112,17 @@ class UserDataService:
             **data.model_dump(),
         )
 
-    async def read_user(self, user: get_current_user):
-        from pprint import pprint
+    async def read_users(self, _: get_current_user, sub: list[str]):
+        users = await asyncio.gather(*[keycloak_admin.a_get_user(s) for s in sub])
 
-        data = await keycloak_admin.a_get_user(user.sub)
-        pprint(data)
-        return UserAttributes.model_validate(data["attributes"])
+        return [ExternalUserAttributes.model_validate(data["attributes"]) for data in users]
+
+    async def read_user(self, user: get_current_user, sub: str = Path()):
+        data = await keycloak_admin.a_get_user(sub)
+
+        if user.sub == sub:
+            return UserAttributes.model_validate(data["attributes"])
+        return ExternalUserAttributes.model_validate(data["attributes"])
 
     async def update_user(
         self,

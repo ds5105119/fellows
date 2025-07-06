@@ -40,7 +40,12 @@ async def update_business_data(_: Annotated[None, Depends(user_data_service.upda
 
 
 @router.get("")
-async def read_user_data(user: Annotated[UserAttributes, Depends(user_data_service.read_user)]):
+async def read_users(users: Annotated[UserAttributes, Depends(user_data_service.read_users)]):
+    return users
+
+
+@router.get("/{sub}")
+async def read_user(user: Annotated[UserAttributes, Depends(user_data_service.read_user)]):
     return user
 
 

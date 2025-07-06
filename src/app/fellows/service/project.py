@@ -32,6 +32,7 @@ class ProjectService:
         data: CreateERPNextProject,
         user: get_current_user,
     ) -> UserERPNextProject:
+        await self.frappe_repository.get_or_create_customer(user)
         return await self.frappe_repository.create_project(data, user.sub)
 
     async def get_project(

@@ -1,4 +1,4 @@
-from src.app.open_api.model.fiscal import Fiscal, FiscalByYear, FiscalByYearOffc
+from src.app.gov_api.model.fiscal import Fiscal, FiscalByYear, FiscalByYearOffc
 from src.core.models.repository import ABaseReadRepository
 
 

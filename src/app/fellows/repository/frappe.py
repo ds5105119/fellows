@@ -1,4 +1,5 @@
 import asyncio
+import json
 import math
 import random
 import string
@@ -7,6 +8,7 @@ from datetime import timedelta
 from fastapi import HTTPException
 
 from src.app.fellows.schema.project import *
+from src.core.dependencies.auth import get_current_user, keycloak_admin
 from src.core.utils.frappeclient import AsyncFrappeClient
 
 
@@ -28,13 +30,14 @@ class FrappCreateRepository:
             data.model_dump(by_alias=True)
             | {
                 "doctype": "Project",
-                "custom_sub": sub,
                 "project_name": generate_date_based_random_string(),
                 "custom_deletable": True,
                 "custom_project_status": "draft",
                 "project_type": "External",
                 "company": "Fellows",
                 "is_active": "No",
+                "customer": sub,
+                "custom_team": json.dumps([{"member": sub, "level": 0}]),
             }
         )
 
@@ -59,6 +62,20 @@ class FrappCreateRepository:
         file = await self.frappe_client.insert(data.model_dump(exclude_unset=True) | {"doctype": "Files"})
         return ERPNextFile(**file)
 
+    async def get_or_create_customer(self, user: get_current_user):
+        customer = await self.frappe_client.get_doc("Customer", user.sub)
+        if not customer:
+            await self.frappe_client.insert(
+                {
+                    "doctype": "Customer",
+                    "customer_name": user.sub,
+                    "custom_username": user.name,
+                    "customer_type": "Company",
+                    "mobile_no": user.phone,
+                    "email_id": user.email,
+                }
+            )
+
 
 class FrappReadRepository:
     def __init__(
@@ -68,20 +85,21 @@ class FrappReadRepository:
         self.frappe_client = frappe_client
 
     async def get_project_by_id(self, project_id: str, sub: str):
-        project = await self.frappe_client.get_doc("Project", project_id, filters={"custom_Sub": ["=", sub]})
+        project = await self.frappe_client.get_doc("Project", project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-        if project.get("custom_sub") != sub:
-            raise HTTPException(status_code=403)
 
-        return UserERPNextProject(**project)
+        user_project = UserERPNextProject(**project)
+
+        return user_project
 
     async def get_projects(
         self,
         data: ERPNextProjectsRequest,
         sub: str,
     ):
-        filters = {"custom_sub": sub}
+        filters = {}
+        or_filters = {"customer": sub, "custom_team": ["like", f"%{sub}%"]}
 
         if data.status:
             filters["custom_project_status"] = ["like", f"%{data.status}%"]
@@ -98,6 +116,7 @@ class FrappReadRepository:
         projects = await self.frappe_client.get_list(
             "Project",
             filters=filters,
+            or_filters=or_filters,
             limit_start=data.page * data.size,
             limit_page_length=data.size,
             order_by=order_by,
@@ -106,7 +125,7 @@ class FrappReadRepository:
         return ProjectsPaginatedResponse.model_validate({"items": projects}, from_attributes=True)
 
     async def get_projects_overview(self, sub: str):
-        filters = {"custom_sub": sub}
+        filters = {"customer": sub}
 
         projects = await self.frappe_client.get_list(
             "Project",
