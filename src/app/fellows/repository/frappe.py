@@ -408,7 +408,9 @@ class FrappUpdateRepository:
             {
                 "doctype": "Project",
                 "name": data.project_name,
-                "custom_team": json.dumps(data.custom_team + [{"member": sub, "level": level if level > 0 else 1}]),
+                "custom_team": json.dumps(
+                    [d.model_dump() for d in data.custom_team] + [{"member": sub, "level": level if level > 0 else 1}]
+                ),
             }
         )
 
