@@ -179,6 +179,7 @@ class UserERPNextProject(BaseModel):
     actual_start_date: datetime.date | None = Field(default=None)
     actual_end_date: datetime.date | None = Field(default=None)
     actual_time: float | None = Field(default=None)
+    customer: str
 
     custom_project_title: str
     custom_project_summary: str

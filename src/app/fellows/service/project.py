@@ -6,6 +6,7 @@ from typing import Annotated
 
 import openai
 from fastapi import HTTPException, Path, Query, status
+from keycloak import KeycloakAdmin
 
 from src.app.fellows.data.project import *
 from src.app.fellows.repository.frappe import FrappeRepository
@@ -22,10 +23,12 @@ class ProjectService:
         openai_client: openai.AsyncOpenAI,
         frappe_client: AsyncFrappeClient,
         frappe_repository: FrappeRepository,
+        keycloak_admin: KeycloakAdmin,
     ):
         self.openai_client = openai_client
         self.frappe_client = frappe_client
         self.frappe_repository = frappe_repository
+        self.keycloak_admin = keycloak_admin
 
     async def create_project(
         self,
@@ -68,6 +71,35 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         return await self.frappe_repository.update_project_by_id(project.project_name, data)
+
+    async def add_members_to_project(
+        self,
+        email: Annotated[str, Query()],
+        user: get_current_user,
+        project_id: str = Path(),
+    ):
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        current_member = list(filter(lambda t: t.member == user.sub, project.custom_team))[0]
+
+        if current_member.level > 1:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        user = await self.keycloak_admin.a_get_users({"email": email})
+        return await self.frappe_repository.add_member_to_project(project, user[0]["id"], 4)
+
+    async def edit_project_team(
+        self,
+        data: Annotated[list[ERPNextTeam], Query()],
+        user: get_current_user,
+        project_id: str = Path(),
+    ):
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        current_member = list(filter(lambda t: t.member == user.sub, project.custom_team))[0]
+
+        if current_member.level > 1:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        return await self.frappe_repository.add_member_to_project(project, user.sub, 4)
 
     async def delete_project(
         self,

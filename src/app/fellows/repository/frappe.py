@@ -403,6 +403,17 @@ class FrappUpdateRepository:
 
         return UserERPNextProject(**project)
 
+    async def add_member_to_project(self, data: UserERPNextProject, sub: str, level: int):
+        project = await self.frappe_client.update(
+            {
+                "doctype": "Project",
+                "name": data.project_name,
+                "custom_team": json.dumps(data.custom_team + [{"member": sub, "level": level if level > 0 else 1}]),
+            }
+        )
+
+        return UserERPNextProject(**project)
+
     async def update_issue_by_id(self, name: str, data: UpdateERPNextIssue):
         updated_issue = await self.frappe_client.update(
             {
