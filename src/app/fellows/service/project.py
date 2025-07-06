@@ -62,6 +62,10 @@ class ProjectService:
         project_id: str = Path(),
     ) -> UserERPNextProject:
         project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        current_member = list(filter(lambda t: t.member == user.sub, project.custom_team))[0]
+
+        if current_member.level > 2:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         return await self.frappe_repository.update_project_by_id(project.project_name, data)
 
@@ -72,6 +76,11 @@ class ProjectService:
     ):
         project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
         if not project.custom_deletable:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        current_member = list(filter(lambda t: t.member == user.sub, project.custom_team))[0]
+
+        if current_member.level != 0:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         return await self.frappe_repository.delete_project_by_id(project.project_name)

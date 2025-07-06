@@ -53,7 +53,6 @@ class UserData(Base):
 class UserBusinessData(Base):
     __tablename__ = "user_business_data"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    sub: Mapped[int] = mapped_column(String, unique=True, nullable=False)
 
     ja1101: Mapped[bool] = mapped_column(Boolean, default=False)  # 예비창업자
     ja1102: Mapped[bool] = mapped_column(Boolean, default=False)  # 영업중
