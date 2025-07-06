@@ -147,7 +147,7 @@ class ProjectService:
         result = await self.frappe_client.get_list(
             "Project",
             fields=["project_name"],
-            filters={"custom_sub": user.sub, "custom_project_status": ["like", "%process%"]},
+            filters={"customer": user.sub, "custom_project_status": ["like", "%process%"]},
         )
 
         if len(result) >= 10:

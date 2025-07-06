@@ -135,6 +135,7 @@ class FrappReadRepository:
                 "custom_project_status",
                 "creation",
                 "modified",
+                "custom_team",
             ],
             filters=filters,
         )
@@ -146,7 +147,15 @@ class FrappReadRepository:
         return ERPNextTask(**data)
 
     async def get_tasks(self, data: ERPNextTasksRequest, sub: str):
-        filters = {"custom_sub": sub, "custom_is_user_visible": True}
+        projects = await self.frappe_client.get_list(
+            "Project",
+            fields=[
+                "project_name",
+            ],
+            filters={"custom_team": ["like", f"%{sub}%"]},
+        )
+
+        filters = {"project": ["in", [project["project_name"] for project in projects]], "custom_is_user_visible": True}
         or_filters = {}
 
         if data.keyword:
