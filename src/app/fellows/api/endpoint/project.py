@@ -75,7 +75,7 @@ async def get_project(
 
 
 @limiter(1, 2)
-@router.put("/{project_id}/group/invite", response_model=ERPNextProject)
+@router.post("/{project_id}/group/invite", response_model=ERPNextProject)
 async def invite_user_to_project(
     project: Annotated[ERPNextProject, Depends(project_service.add_members_to_project)],
 ):
