@@ -353,7 +353,6 @@ class ERPNextTask(BaseModel):
     is_group: bool = Field(default=False)
     is_template: bool = Field(default=False)
     custom_is_user_visible: bool = Field(default=False)
-    custom_sub: str | None = Field(default=None)
 
     status: ERPNextTaskStatus | None = Field(None)
     priority: ERPNextTaskPriority | None = Field(None)
@@ -432,7 +431,7 @@ class ERPNextIssue(BaseModel):
 
     name: str
     subject: str
-    custom_sub: str
+    customer: str
 
     creation: datetime.datetime | None = Field(default=None)
     modified: datetime.datetime | None = Field(default=None)
@@ -467,13 +466,11 @@ class ERPNextIssuesRequest(BaseModel):
 
 class CreateERPNextIssue(BaseModel):
     subject: str
-    custom_sub: str
+    project: str | None = Field(default=None)
 
     priority: str | None = Field(default=None)
     issue_type: IssueType | None = Field(default=None)
     description: str | None = Field(default=None)
-
-    project: str | None = Field(default=None)
 
 
 class UpdateERPNextIssue(BaseModel):

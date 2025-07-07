@@ -45,13 +45,13 @@ class FrappCreateRepository:
 
     async def create_task(self, data: ERPNextTask, sub: str):
         task = await self.frappe_client.insert(
-            data.model_dump(exclude_unset=True) | {"doctype": "Task", "custom_sub": sub}
+            data.model_dump(exclude_unset=True) | {"doctype": "Task", "customer": sub}
         )
         return ERPNextTask(**task)
 
     async def create_issue(self, data: CreateERPNextIssue, sub: str):
         issue = await self.frappe_client.insert(
-            data.model_dump(exclude_unset=True) | {"doctype": "Issue", "custom_sub": sub}
+            data.model_dump(exclude_unset=True) | {"doctype": "Issue", "customer": sub}
         )
         return ERPNextIssue(**issue)
 
@@ -203,7 +203,15 @@ class FrappReadRepository:
         return data
 
     async def get_issues(self, data: ERPNextIssuesRequest, sub: str):
-        filters = {"custom_sub": sub}
+        projects = await self.frappe_client.get_list(
+            "Project",
+            fields=[
+                "project_name",
+            ],
+            filters={"custom_team": ["like", f"%{sub}%"]},
+        )
+
+        filters = {"project": ["in", [project["project_name"] for project in projects]]}
         or_filters = {}
 
         if data.keyword:
