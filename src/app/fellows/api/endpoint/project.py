@@ -84,8 +84,8 @@ async def invite_user_to_project(
 
 
 @limiter(1, 2)
-@router.put("/{project_id}/group/invite/accept", response_model=ERPNextProject)
-async def invite_user_to_project(
+@router.post("/{project_id}/group/invite/accept", response_model=ERPNextProject)
+async def accept_invite_to_project(
     project: Annotated[ERPNextProject, Depends(project_service.accept_invite_to_project)],
 ):
     """`project_id`로 초대를 수락합니다"""
