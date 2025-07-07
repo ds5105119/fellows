@@ -11,7 +11,9 @@ from keycloak import KeycloakAdmin
 from src.app.fellows.data.project import *
 from src.app.fellows.repository.frappe import FrappeRepository
 from src.app.fellows.schema.project import *
+from src.app.user.repository.alert import AlertRepository
 from src.core.dependencies.auth import get_current_user
+from src.core.dependencies.db import postgres_session
 from src.core.utils.frappeclient import AsyncFrappeClient
 
 logger = getLogger(__name__)
@@ -34,11 +36,13 @@ class ProjectService:
         openai_client: openai.AsyncOpenAI,
         frappe_client: AsyncFrappeClient,
         frappe_repository: FrappeRepository,
+        alert_repository: AlertRepository,
         keycloak_admin: KeycloakAdmin,
     ):
         self.openai_client = openai_client
         self.frappe_client = frappe_client
         self.frappe_repository = frappe_repository
+        self.alert_repository = alert_repository
         self.keycloak_admin = keycloak_admin
 
     async def create_project(
@@ -147,6 +151,7 @@ class ProjectService:
         self,
         email: Annotated[str, Query()],
         user: get_current_user,
+        session: postgres_session,
         project_id: str = Path(),
     ):
         """
@@ -182,7 +187,42 @@ class ProjectService:
                 status_code=status.HTTP_409_CONFLICT, detail="User is already a member of this project."
             )
 
+        await self.alert_repository.create(
+            session,
+            sub=sub,
+            message=f"{user.name}님에게 {project.custom_project_title}에 초대되었습니다.",
+            link=f"https://fellows.my/service/project/{project.project_name}",
+        )
+
         return await self.frappe_repository.add_member_to_project(project, sub, 4)
+
+    async def accept_invite_to_project(
+        self,
+        user: get_current_user,
+        project_id: str = Path(),
+    ):
+        """
+        초대를 수락합니다.
+
+        Args:
+            user: 현재 인증된 사용자 정보. 권한 레벨 4 허용됩니다.
+            project_id: 초대된 프로젝트의 ID.
+
+        Returns:
+            멤버가 추가된 후의 프로젝트 정보.
+
+        Raises:
+            HTTPException: 권한이 부족할 경우 (level !=4) 경우 발생.
+        """
+        project, level = await self.frappe_repository.get_user_project_permission(project_id, user.sub)
+
+        if level != 4:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to accept.")
+
+        payload = list(filter(lambda m: m.member != user.sub, project.custom_team))
+        payload.append({"member": user.sub, "level": 3})
+
+        return await self.frappe_repository.edit_project_member(project.project_name, data)
 
     async def update_project_team(
         self,

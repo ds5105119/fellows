@@ -18,7 +18,7 @@ async def get_alerts(
     return alerts
 
 
-@router.patch("/{alert_id}/read", response_model=AlertDto)
+@router.patch("/read", response_model=AlertDto)
 async def mark_alert_as_read(alert: Annotated[AlertDto, Depends(alert_service.mark_alert_as_read)]):
     return alert
 

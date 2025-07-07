@@ -34,20 +34,17 @@ class AlertService:
         self,
         user: get_current_user,
         session: postgres_session,
-        alert_id: int = Path(),
+        alert_id: Annotated[list[int], Query()],
     ):
-        alert = await self.alert_repo.get(session, filters=[self.alert_repo.model.id == alert_id])
-        alert = alert.scalars().one_or_none()
-
-        if not alert or alert.sub != user.sub:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        alerts = await self.alert_repo.get(session, filters=[self.alert_repo.model.id in alert_id])
+        alerts = alerts.scalars().all()
 
         await self.alert_repo.update(
             session,
-            filters=[self.alert_repo.model.id == alert_id],
+            filters=[self.alert_repo.model.id in [alert.id for alert in alerts]],
             is_read=True,
         )
-        return AlertDto.model_validate(alert, from_attributes=True)
+        return AlertDto.model_validate(alerts, from_attributes=True)
 
     async def delete_alert(
         self,
