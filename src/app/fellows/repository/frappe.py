@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import json
 import math
 import random
@@ -84,14 +85,29 @@ class FrappReadRepository:
     ):
         self.frappe_client = frappe_client
 
-    async def get_project_by_id(self, project_id: str, sub: str):
-        project = await self.frappe_client.get_doc("Project", project_id)
-        if not project:
+    async def get_user_project_permission(self, project_id: str, sub: str) -> tuple[UserERPNextProject, int]:
+        """
+        프로젝트 정보를 가져오고 사용자의 권한 레벨을 반환합니다.
+        사용자가 프로젝트 멤버가 아니면 404 에러를 발생시킵니다.
+        """
+        project_doc = await self.frappe_client.get_doc("Project", project_id)
+        if not project_doc:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        user_project = UserERPNextProject(**project)
+        project = UserERPNextProject(**project_doc)
 
-        return user_project
+        member_info = next((member for member in project.custom_team if member.member == sub), None)
+
+        if not member_info:
+            raise HTTPException(status_code=404, detail="Project not found or you are not a member.")
+
+        return project, member_info.level
+
+    async def get_project_by_id(self, project_id: str, sub: str):
+        project, level = await self.get_user_project_permission(project_id, sub)
+        if level >= 4:
+            raise HTTPException(status_code=403, detail="You do not have permission to access this project.")
+        return project
 
     async def get_projects(
         self,
@@ -99,6 +115,7 @@ class FrappReadRepository:
         sub: str,
     ):
         filters = {}
+        # 레벨 4인 사용자는 프로젝트 목록에서 제외되어야 하므로, like 검색은 유효
         or_filters = {"customer": sub, "custom_team": ["like", f"%{sub}%"]}
 
         if data.status:
@@ -122,11 +139,17 @@ class FrappReadRepository:
             order_by=order_by,
         )
 
-        return ProjectsPaginatedResponse.model_validate({"items": projects}, from_attributes=True)
+        # 레벨 4 사용자의 프로젝트는 필터링
+        accessible_projects = []
+        for p in projects:
+            team_members = json.loads(p.get("custom_team") or "[]")
+            user_level = next((member["level"] for member in team_members if member["member"] == sub), 5)
+            if user_level < 4:
+                accessible_projects.append(p)
+
+        return ProjectsPaginatedResponse.model_validate({"items": accessible_projects}, from_attributes=True)
 
     async def get_projects_overview(self, sub: str):
-        filters = {"customer": sub}
-
         projects = await self.frappe_client.get_list(
             "Project",
             fields=[
@@ -137,50 +160,68 @@ class FrappReadRepository:
                 "modified",
                 "custom_team",
             ],
-            filters=filters,
-        )
-
-        return OverviewProjectsPaginatedResponse.model_validate({"items": projects}, from_attributes=True)
-
-    async def get_task(self, subject: str):
-        data = await self.frappe_client.get_doc("Task", subject)
-        return ERPNextTask(**data)
-
-    async def get_tasks(self, data: ERPNextTasksRequest, sub: str):
-        projects = await self.frappe_client.get_list(
-            "Project",
-            fields=[
-                "project_name",
-            ],
             filters={"custom_team": ["like", f"%{sub}%"]},
         )
 
-        filters = {"project": ["in", [project["project_name"] for project in projects]], "custom_is_user_visible": True}
+        # 레벨 4 사용자의 프로젝트는 필터링
+        accessible_projects = []
+        for p in projects:
+            team_members = json.loads(p.get("custom_team") or "[]")
+            user_level = next((member["level"] for member in team_members if member["member"] == sub), 5)
+            if user_level < 4:
+                accessible_projects.append(p)
+
+        return OverviewProjectsPaginatedResponse.model_validate({"items": accessible_projects}, from_attributes=True)
+
+    async def get_task(self, name: str):
+        data = await self.frappe_client.get_doc("Task", name)
+        if not data:
+            raise HTTPException(status_code=404, detail="Task not found")
+        return ERPNextTask(**data)
+
+    async def get_tasks(self, data: ERPNextTasksRequest, sub: str):
+        # 1. 사용자가 접근 가능한 프로젝트 목록을 먼저 조회 (레벨 4 제외)
+        all_member_projects = await self.frappe_client.get_list(
+            "Project",
+            fields=["project_name", "custom_team"],
+            filters={"custom_team": ["like", f"%{sub}%"]},
+        )
+
+        accessible_project_names = []
+        for p in all_member_projects:
+            try:
+                team = json.loads(p.get("custom_team", "[]"))
+                user_member_info = next((m for m in team if m.get("member") == sub), None)
+                if user_member_info and user_member_info.get("level", 4) < 4:
+                    accessible_project_names.append(p["project_name"])
+            except (json.JSONDecodeError, TypeError):
+                continue
+
+        if not accessible_project_names:
+            return ERPNextTaskPaginatedResponse(items=[])
+
+        filters = {"project": ["in", accessible_project_names], "custom_is_user_visible": True}
         or_filters = {}
 
         if data.keyword:
             filters["subject"] = ["like", f"%{data.keyword}%"]
-
         if data.start:
             filters["exp_start_date"] = [">=", data.start]
         if data.end:
             filters["exp_end_date"] = ["<=", data.end]
-
-        if type(data.status) == str:
+        if isinstance(data.status, str):
             filters["status"] = ["like", data.status]
-        elif type(data.status) == list:
+        elif isinstance(data.status, list):
             filters["status"] = ["in", data.status]
-
-        if type(data.project_id) == str:
+        if isinstance(data.project_id, str):
             filters["project"] = ["=", data.project_id]
-        elif type(data.project_id) == list:
+        elif isinstance(data.project_id, list):
             filters["project"] = ["in", data.project_id]
 
         order_by = None
-
-        if type(data.order_by) == str:
+        if isinstance(data.order_by, str):
             order_by = data.order_by
-        elif type(data.order_by) == list:
+        elif isinstance(data.order_by, list):
             order_by = [f"{o.split('.')[0]} desc" if o.split(".")[-1] == "desc" else o for o in data.order_by]
 
         tasks = await self.frappe_client.get_list(
@@ -191,57 +232,61 @@ class FrappReadRepository:
             limit_page_length=data.size,
             order_by=order_by,
         )
-
         return ERPNextTaskPaginatedResponse.model_validate({"items": tasks}, from_attributes=True)
 
-    async def get_issue(self, subject: str, sub: str):
-        data = await self.frappe_client.get_doc("Issue", subject)
-        data = ERPNextIssue(**data)
-        if data.custom_sub != sub:
-            raise HTTPException(status_code=403)
-
-        return data
+    async def get_issue(self, name: str):
+        data = await self.frappe_client.get_doc("Issue", name)
+        if not data:
+            raise HTTPException(status_code=404, detail="Issue not found")
+        return ERPNextIssue(**data)
 
     async def get_issues(self, data: ERPNextIssuesRequest, sub: str):
-        projects = await self.frappe_client.get_list(
+        # 1. 사용자가 접근 가능한 프로젝트 목록을 먼저 조회 (레벨 4 제외)
+        all_member_projects = await self.frappe_client.get_list(
             "Project",
-            fields=[
-                "project_name",
-            ],
+            fields=["project_name", "custom_team"],
             filters={"custom_team": ["like", f"%{sub}%"]},
         )
 
-        filters = {"project": ["in", [project["project_name"] for project in projects]]}
+        accessible_project_names = []
+        for p in all_member_projects:
+            try:
+                team = json.loads(p.get("custom_team", "[]"))
+                user_member_info = next((m for m in team if m.get("member") == sub), None)
+                if user_member_info and user_member_info.get("level", 4) < 4:
+                    accessible_project_names.append(p["project_name"])
+            except (json.JSONDecodeError, TypeError):
+                continue
+
+        if not accessible_project_names:
+            return ERPNextIssuePaginatedResponse(items=[])
+
+        filters = {"project": ["in", accessible_project_names]}
         or_filters = {}
 
         if data.keyword:
             filters["subject"] = ["like", f"%{data.keyword}%"]
-
         if data.start:
             filters["creation"] = [">=", data.start]
         if data.end:
             filters["creation"] = ["<=", data.end]
-
-        if type(data.issue_type) == str:
+        if isinstance(data.issue_type, str):
             filters["issue_type"] = ["like", data.issue_type]
-        elif type(data.issue_type) == list:
+        elif isinstance(data.issue_type, list):
             filters["status"] = ["in", data.issue_type]
-
-        if type(data.project_id) == str:
+        if isinstance(data.project_id, str):
             filters["project"] = ["=", data.project_id]
-        elif type(data.project_id) == list:
+        elif isinstance(data.project_id, list):
             filters["project"] = ["in", data.project_id]
-
-        if type(data.status) == str:
+        if isinstance(data.status, str):
             filters["status"] = ["=", data.status]
-        elif type(data.status) == list:
+        elif isinstance(data.status, list):
             filters["status"] = ["in", data.status]
 
         order_by = None
-
-        if type(data.order_by) == str:
+        if isinstance(data.order_by, str):
             order_by = data.order_by
-        elif type(data.order_by) == list:
+        elif isinstance(data.order_by, list):
             order_by = [f"{o.split('.')[0]} desc" if o.split(".")[-1] == "desc" else o for o in data.order_by]
 
         issues = await self.frappe_client.get_list(
@@ -252,9 +297,9 @@ class FrappReadRepository:
             limit_page_length=data.size,
             order_by=order_by,
         )
-
         return ERPNextIssuePaginatedResponse.model_validate({"items": issues}, from_attributes=True)
 
+    # ... get_file, get_files, get_slots는 기존 코드 유지 ...
     async def get_file(self, project_id: str, key: str, task_id: str | None = None) -> ERPNextFile:
         filters = {"project": project_id}
         if task_id:
@@ -398,6 +443,7 @@ class FrappReadRepository:
         return available_slots_info
 
 
+# ... FrappUpdateRepository, FrappDeleteRepository, FrappeRepository는 기존 코드 유지 ...
 class FrappUpdateRepository:
     def __init__(
         self,
