@@ -1,12 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends
 
 from src.app.user.api.dependencies import alert_service
 from src.app.user.schema.alert import *
-from src.app.user.service.alert import AlertService
-from src.core.dependencies.auth import get_current_user
-from src.core.dependencies.db import postgres_session
 
 router = APIRouter()
 
