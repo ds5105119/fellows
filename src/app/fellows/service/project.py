@@ -231,14 +231,14 @@ class ProjectService:
         project_id: str = Path(),
     ):
         """
-        프로젝트 팀 멤버의 권한 레벨을 수정하거나 멤버를 내보냅니다.
+        프로젝트 팀 멤버의 권한 레벨을 수정하거나 멤버를 팀에서 삭제합니다.
 
-        - 소유주(0): 자기 자신을 제외한 모든 멤버의 권한을 수정할 수 있습니다.
-        - 관리자(1): 자기 자신보다 낮은 레벨의 멤버(2, 3, 4)만 수정할 수 있습니다.
-        - 초대된 멤버(4): 오직 본인만 팀에서 나갈 수 있습니다(리스트에서 자신을 제거). 다른 사용자는 레벨 4 멤버를 수정할 수 없습니다.
+        - 소유주(0): 자기 자신을 제외한 모든 멤버의 권한을 수정하거나 삭제할 수 있습니다.
+        - 관리자(1): 자기 자신보다 낮은 레벨(2, 3, 4)의 멤버만 수정하거나 삭제할 수 있습니다.
+        - 초대된 멤버(4) 및 기타 멤버: 오직 본인만 팀에서 나갈 수 있습니다(리스트에서 자신을 제거).
 
         Args:
-            data: 수정할 팀 멤버 정보 리스트.
+            data: 수정 후의 최종 팀 멤버 정보 리스트.
             user: 현재 인증된 사용자 정보.
             project_id: 팀을 수정할 프로젝트의 ID.
 
@@ -249,43 +249,84 @@ class ProjectService:
             HTTPException: 권한 규칙에 어긋날 경우 발생합니다.
         """
         project, level = await self.frappe_repository.get_user_project_permission(project_id, user.sub)
+        original_members_map = {member.member: member for member in project.custom_team}
+        new_member_ids = {member.member for member in data}
 
-        if level > 1 and level != 4:  # 소유자, 관리자, 레벨4 멤버 외에는 수정 불가
+        # 1. 멤버 삭제 권한 검증
+        deleted_member_ids = set(original_members_map.keys()) - new_member_ids
+        for deleted_id in deleted_member_ids:
+            # 자기 자신을 삭제하는 것은 항상 허용 (그룹 탈퇴)
+            if deleted_id == user.sub:
+                continue
+
+            member_to_delete = original_members_map[deleted_id]
+
+            # 소유주(0)는 누구든 삭제 가능 (자기 자신은 이 루프에 들어오지 않음)
+            if level == 0:
+                continue
+
+            # 관리자(1)는 자기보다 낮은 레벨만 삭제 가능
+            if level == 1:
+                if member_to_delete.level > level:
+                    continue
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Admins cannot delete members with the same or higher level.",
+                    )
+
+            # 그 외 레벨(2, 3, 4)은 다른 사람을 삭제할 수 없음
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to edit the team."
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to delete other members.",
             )
 
+        # 2. 멤버 권한 수정 검증
         for member_update in data:
-            original_member = next((m for m in project.custom_team if m.member == member_update.member), None)
+            original_member = original_members_map.get(member_update.member)
 
-            # 레벨 4 멤버에 대한 권한 검사
-            if original_member and original_member.level == 4:
-                if member_update.member != user.sub:
+            # 새롭게 추가된 멤버는 이 API에서 처리하지 않음 (add_members_to_project 사용)
+            if not original_member:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot add new member '{member_update.member}' via this endpoint. Use the add member endpoint.",
+                )
+
+            # 권한 레벨이 변경된 경우에만 검사
+            if original_member.level != member_update.level:
+                # 레벨 4 멤버의 권한은 소유주나 관리자만 변경 가능
+                if original_member.level == 4 and level > 1:
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Only the invited user (level 4) can modify their own status.",
+                        detail="Only admins or the owner can change the level of an invited member.",
                     )
 
-            # 소유주(0) 권한 검사
-            if level == 0:
-                if member_update.member == user.sub and member_update.level != 0:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN, detail="Owner cannot change their own level."
-                    )
-            # 관리자(1) 권한 검사
-            elif level == 1:
-                if original_member and original_member.level <= level:
+                # 소유주(0) 권한 검사
+                if level == 0:
+                    if member_update.member == user.sub:  # 소유주 자신의 레벨 변경 시도
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN, detail="Owner cannot change their own level."
+                        )
+                # 관리자(1) 권한 검사
+                elif level == 1:
+                    if original_member.level <= level:
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Admins cannot change members with the same or higher level.",
+                        )
+                    if member_update.level <= level:
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Admins can only assign levels lower than their own.",
+                        )
+                # 그 외 레벨(2, 3, 4)은 누구의 권한도 변경할 수 없음
+                else:
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Admins cannot change members with the same or higher level.",
-                    )
-                if member_update.level <= level:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Admins can only assign levels lower than their own.",
+                        detail="You do not have permission to change member levels.",
                     )
 
-        # 공통 규칙 검증
+        # 3. 최종 팀 구성 규칙 검증
         if not any(member.member == project.customer for member in data):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="The project owner must remain in the team."
