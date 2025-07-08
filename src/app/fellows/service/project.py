@@ -182,8 +182,11 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User with that email not found.")
         sub = invited_user[0]["id"]
 
-        if any([t.member == sub for t in project.custom_team]):
-            pass
+        project_invited_user = list(filter(lambda m: m.member == sub, project.custom_team))
+
+        if project_invited_user:
+            if project_invited_user[0].level != 4:
+                raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="This member is already joined.")
         else:
             await self.frappe_repository.add_member_to_project(project, sub, 4)
 
