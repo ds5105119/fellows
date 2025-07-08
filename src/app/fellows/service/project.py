@@ -10,7 +10,30 @@ from keycloak import KeycloakAdmin
 
 from src.app.fellows.data.project import *
 from src.app.fellows.repository.frappe import FrappeRepository
-from src.app.fellows.schema.project import *
+from src.app.fellows.schema.project import (
+    CreateERPNextIssue,
+    CreateERPNextProject,
+    CustomProjectStatus,
+    ERPNextFile,
+    ERPNextFileRequest,
+    ERPNextFilesResponse,
+    ERPNextIssuesRequest,
+    ERPNextProjectsRequest,
+    ERPNextTask,
+    ERPNextTaskPaginatedResponse,
+    ERPNextTasksRequest,
+    ERPNextTeam,
+    ERPNextToDo,
+    ERPNextToDoPriority,
+    IsActive,
+    ProjectFeatureEstimateRequest,
+    ProjectsPaginatedResponse,
+    Quote,
+    QuoteSlot,
+    UpdateERPNextIssue,
+    UpdateERPNextProject,
+    UserERPNextProject,
+)
 from src.app.user.repository.alert import AlertRepository
 from src.core.dependencies.auth import get_current_user
 from src.core.dependencies.db import postgres_session
