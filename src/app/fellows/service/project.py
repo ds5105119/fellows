@@ -220,7 +220,7 @@ class ProjectService:
         payload = list(filter(lambda m: m.member != user.sub, project.custom_team))
         payload.append({"member": user.sub, "level": 3})
 
-        return await self.frappe_repository.edit_project_member(project.project_name, data)
+        return await self.frappe_repository.edit_project_member(project.project_name, payload)
 
     async def update_project_team(
         self,
