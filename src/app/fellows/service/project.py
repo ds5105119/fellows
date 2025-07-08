@@ -195,6 +195,9 @@ class ProjectService:
         """
         project, level = await self.frappe_repository.get_user_project_permission(project_id, user.sub)
 
+        if len(project.custom_team) > 5:
+            raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED)
+
         if level > 1:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to add members."
