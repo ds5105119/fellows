@@ -165,7 +165,7 @@ class ProjectService:
             project_id: 멤버를 추가할 프로젝트의 ID.
 
         Returns:
-            멤버가 추가된 후의 프로젝트 정보.
+            None
 
         Raises:
             HTTPException: 권한이 부족할 경우 (level > 1) 또는 초대할 유저가 존재하지 않거나 이미 멤버일 경우 발생.
@@ -183,9 +183,9 @@ class ProjectService:
         sub = invited_user[0]["id"]
 
         if any([t.member == sub for t in project.custom_team]):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="User is already a member of this project."
-            )
+            pass
+        else:
+            await self.frappe_repository.add_member_to_project(project, sub, 4)
 
         await self.alert_repository.create(
             session,
@@ -193,8 +193,6 @@ class ProjectService:
             message=f"{user.name}님에게 {project.custom_project_title} 프로젝트에 초대되었습니다.",
             link=f"https://fellows.my/service/project/{project.project_name}",
         )
-
-        return await self.frappe_repository.add_member_to_project(project, sub, 4)
 
     async def accept_invite_to_project(
         self,
