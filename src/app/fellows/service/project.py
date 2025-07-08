@@ -218,7 +218,7 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to accept.")
 
         payload = list(filter(lambda m: m.member != user.sub, project.custom_team))
-        payload.append({"member": user.sub, "level": 3})
+        payload.append(ERPNextTeam.model_validate({"member": user.sub, "level": 3}))
 
         return await self.frappe_repository.edit_project_member(project.project_name, payload)
 
