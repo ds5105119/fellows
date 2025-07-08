@@ -191,7 +191,7 @@ class ProjectService:
             session,
             sub=sub,
             message=f"{user.name}님에게 {project.custom_project_title} 프로젝트에 초대되었습니다.",
-            link=f"https://fellows.my/service/project/{project.project_name}",
+            link=f"/service/project/{project.project_name}",
         )
 
     async def accept_invite_to_project(
