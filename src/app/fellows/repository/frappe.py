@@ -106,7 +106,7 @@ class FrappReadRepository:
     async def get_project_by_id(self, project_id: str, sub: str):
         project, level = await self.get_user_project_permission(project_id, sub)
         if level > 4:
-            raise HTTPException(status_code=403, detail="You do not have permission to access this project.")
+            raise HTTPException(status_code=401, detail="You do not have permission to access this project.")
         return project
 
     async def get_projects(
