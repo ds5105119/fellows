@@ -217,6 +217,7 @@ class OverviewERPNextProject(BaseModel):
     creation: datetime.datetime | None = Field(default=None)
     modified: datetime.datetime | None = Field(default=None)
 
+    custom_team: list[ERPNextTeam] | None = Field(default=None)
     project_name: str
     custom_project_title: str
     custom_project_status: CustomProjectStatus | None = Field(default=CustomProjectStatus.DRAFT)

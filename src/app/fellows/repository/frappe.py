@@ -156,6 +156,7 @@ class FrappReadRepository:
                 "project_name",
                 "custom_project_title",
                 "custom_project_status",
+                "custom_team",
                 "creation",
                 "modified",
                 "custom_team",
