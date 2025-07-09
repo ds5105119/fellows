@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_serializer
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_serializer
 
 from src.app.map.schema.map import Coord2AddrResponse
 from src.app.user.model.user_data import AcademicStatus
@@ -135,3 +135,7 @@ class UpdateUserAttributes(BaseModel):
     street: list[str] | None = Field(default=None)
     sub_locality: list[str] | None = Field(default=None)
     userData: list[str] | None = Field(default=None)
+
+
+class EmailUpdateRequest(BaseModel):
+    email: EmailStr

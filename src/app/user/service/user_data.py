@@ -6,7 +6,7 @@ from typing import Annotated
 from botocore.exceptions import ClientError
 from fastapi import HTTPException, Path, Query, status
 from keycloak import KeycloakAdmin
-from mypy_boto3_ses import SESClient
+from mypy_boto3_sesv2 import SESV2Client
 from sqlalchemy.exc import IntegrityError
 from webtool.cache import RedisCache
 
@@ -85,7 +85,7 @@ class UserDataService:
         user_business_data_repository: UserBusinessDataRepository,
         keycloak_admin: KeycloakAdmin,
         redis_cache: RedisCache,
-        ses_client: SESClient,
+        ses_client: SESV2Client,
     ):
         self.repository = repository
         self.user_business_data_repository = user_business_data_repository
@@ -210,25 +210,36 @@ class UserDataService:
     async def send_email(self, to_email: str, subject: str, body_text: str, body_html: str):
         try:
             response = self.ses_client.send_email(
+                FromEmailAddress="noreply@iihus.com",
                 Destination={"ToAddresses": [to_email]},
-                Message={
-                    "Body": {
-                        "Html": {"Charset": "UTF-8", "Data": body_html},
-                        "Text": {"Charset": "UTF-8", "Data": body_text},
-                    },
-                    "Subject": {"Charset": "UTF-8", "Data": subject},
+                Content={
+                    "Simple": {
+                        "Subject": {
+                            "Data": subject,
+                            "Charset": "UTF-8",
+                        },
+                        "Body": {
+                            "Text": {
+                                "Data": body_text,
+                                "Charset": "UTF-8",
+                            },
+                            "Html": {
+                                "Data": body_html,
+                                "Charset": "UTF-8",
+                            },
+                        },
+                    }
                 },
-                Source="noreply@iihus.com",
             )
-            logger.info(f"Email sent! Message ID: {response['MessageId']}")
+            logger.info(f"Email sent via SESv2! Message ID: {response['MessageId']}")
             return True
         except ClientError as e:
-            logger.error(f"Failed to send email: {e}")
+            logger.error(f"Failed to send email using SESv2: {e.response['Error']['Message']}")
             return False
 
     async def update_email(
         self,
-        email: str,
+        email: EmailUpdateRequest,
         user: get_current_user,
     ):
         otp = f"{randint(0, 999999):06d}"
@@ -239,7 +250,7 @@ class UserDataService:
         body_html, body_text = _create_verification_email_body(otp)
 
         email_sent = await self.send_email(
-            to_email=email,
+            to_email=str(email.email),
             subject=subject,
             body_html=body_html,
             body_text=body_text,

@@ -28,5 +28,5 @@ ses = boto3.client(
     aws_access_key_id=settings.aws.access_key_id,
     aws_secret_access_key=settings.aws.secret_access_key,
     aws_account_id=settings.aws.account_id,
-    region_name="auto",
+    region_name="us-east-1",
 )
