@@ -396,7 +396,7 @@ class ERPNextTaskForUser(BaseModel):
     parent_task: str | None = Field(None)
     exp_start_date: datetime.date | None = Field(None)
     expected_time: float | None = Field(default=0.0)
-    exp_end_date: datetime.date | None =extra= Field(None)
+    exp_end_date: datetime.date | None = Field(None)
     progress: float = Field(0.0)
 
     description: str | None = Field(None)
