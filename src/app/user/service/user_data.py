@@ -1,14 +1,81 @@
 import asyncio
+from logging import getLogger
+from random import randint
 from typing import Annotated
 
+from botocore.exceptions import ClientError
 from fastapi import HTTPException, Path, Query, status
 from keycloak import KeycloakAdmin
+from mypy_boto3_ses import SESClient
 from sqlalchemy.exc import IntegrityError
+from webtool.cache import RedisCache
 
 from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
 from src.app.user.schema.user_data import *
 from src.core.dependencies.auth import get_current_user, keycloak_admin
 from src.core.dependencies.db import postgres_session
+
+logger = getLogger(__name__)
+
+
+def _create_verification_email_body(otp: str):
+    """인증 이메일의 HTML 및 텍스트 본문을 생성합니다."""
+
+    body_html = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }}
+            .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; padding: 40px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }}
+            .header {{ text-align: center; margin-bottom: 30px; }}
+            .header img {{ max-width: 150px; }}
+            .content {{ text-align: center; }}
+            .content h1 {{ color: #333; font-size: 24px; }}
+            .content p {{ color: #555; font-size: 16px; line-height: 1.6; }}
+            .otp-box {{ background-color: #f0f8ff; border: 1px dashed #add8e6; padding: 20px; margin: 30px 0; border-radius: 5px; }}
+            .otp-code {{ font-size: 36px; font-weight: bold; color: #0056b3; letter-spacing: 5px; }}
+            .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #888; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <img src="https://www.fellows.my/fellows/logo.svg" alt="Fellows Logo">
+            </div>
+            <div class="content">
+                <h1>이메일 주소 인증 안내</h1>
+                <p>이메일 주소를 확인하기 전 거쳐야 할 간단한 단계가 하나 있습니다.</p>
+                <p>아래 코드를 입력하여 인증을 완료해 주세요.</p>
+                <div class="otp-box">
+                    <p style="font-size:14px; margin:0 0 10px 0; color:#555;">인증 코드</p>
+                    <div class="otp-code">{otp}</div>
+                </div>
+                <p>이 코드는 2시간 동안 유효합니다.</p>
+                <p>본인이 요청하지 않은 경우, 이 이메일을 무시해 주세요.</p>
+            </div>
+            <div class="footer">
+                <p>© 2024 Fellows. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    # 일반 텍스트 본문 (HTML을 지원하지 않는 클라이언트용)
+    body_text = f"""
+    이메일 주소를 확인하기 전 거쳐야 할 간단한 단계가 하나 있습니다.
+    아래 코드를 입력하여 인증을 완료해 주세요.
+
+    인증 코드: {otp}
+
+    이 코드는 2시간 동안 유효합니다.
+    본인이 요청하지 않은 경우, 이 이메일을 무시해 주세요.
+
+    감사합니다.
+    Fellows 드림
+    """
+
+    return body_html, body_text
 
 
 class UserDataService:
@@ -17,10 +84,14 @@ class UserDataService:
         repository: UserDataRepository,
         user_business_data_repository: UserBusinessDataRepository,
         keycloak_admin: KeycloakAdmin,
+        redis_cache: RedisCache,
+        ses_client: SESClient,
     ):
         self.repository = repository
         self.user_business_data_repository = user_business_data_repository
         self.keycloak_admin = keycloak_admin
+        self.redis_cache = redis_cache
+        self.ses_client = ses_client
 
         """
         유저의 데이터를 관리하는 서비스
@@ -115,15 +186,14 @@ class UserDataService:
 
     async def read_users(self, _: get_current_user, sub: Annotated[list[str], Query()]):
         users = await asyncio.gather(*[keycloak_admin.a_get_user(s) for s in sub])
-
-        return [ExternalUserAttributes.model_validate(data["attributes"]) for data in users]
+        return [ExternalUserAttributes.model_validate(data["attributes"] | {"email": data["email"]}) for data in users]
 
     async def read_user(self, user: get_current_user, sub: str = Path()):
         data = await keycloak_admin.a_get_user(sub)
 
         if user.sub == sub:
-            return UserAttributes.model_validate(data["attributes"])
-        return ExternalUserAttributes.model_validate(data["attributes"])
+            return UserAttributes.model_validate(data["attributes"] | {"email": data["email"]})
+        return ExternalUserAttributes.model_validate(data["attributes"] | {"email": data["email"]})
 
     async def update_user(
         self,
@@ -131,10 +201,55 @@ class UserDataService:
         user: get_current_user,
     ):
         payload = await keycloak_admin.a_get_user(user.sub)
-        attributes = data.model_dump(exclude_unset=True)
+        attributes = data.model_dump(exclude_unset=True, exclude={"email"})
         payload["attributes"].update(attributes)
+
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
         return await keycloak_admin.a_get_user(user.sub)
+
+    async def send_email(self, to_email: str, subject: str, body_text: str, body_html: str):
+        try:
+            response = self.ses_client.send_email(
+                Destination={"ToAddresses": [to_email]},
+                Message={
+                    "Body": {
+                        "Html": {"Charset": "UTF-8", "Data": body_html},
+                        "Text": {"Charset": "UTF-8", "Data": body_text},
+                    },
+                    "Subject": {"Charset": "UTF-8", "Data": subject},
+                },
+                Source="noreply@iihus.com",
+            )
+            logger.info(f"Email sent! Message ID: {response['MessageId']}")
+            return True
+        except ClientError as e:
+            logger.error(f"Failed to send email: {e}")
+            return False
+
+    async def update_email(
+        self,
+        email: str,
+        user: get_current_user,
+    ):
+        otp = f"{randint(0, 999999):06d}"
+        await self.redis_cache.set(f"{user.sub}{email}", otp, 60 * 60 * 2)
+
+        user_name = getattr(user, "name", "회원")
+        subject = f"Fellows 인증 코드는 {otp} 입니다."
+        body_html, body_text = _create_verification_email_body(otp)
+
+        email_sent = await self.send_email(
+            to_email=email,
+            subject=subject,
+            body_html=body_html,
+            body_text=body_text,
+        )
+
+        if not email_sent:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="인증 이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.",
+            )
 
     async def update_address_kakao(
         self,

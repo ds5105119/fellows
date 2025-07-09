@@ -103,6 +103,7 @@ class UserAttributes(BaseModel):
     street: list[str] | None = Field(default=None)
     sub_locality: list[str] | None = Field(default=None)
     userData: list[str] | None = Field(default=None)
+    email: str | None = Field(default=None)
 
 
 class ExternalUserAttributes(BaseModel):
@@ -112,6 +113,7 @@ class ExternalUserAttributes(BaseModel):
     link: list[str] | None = Field(default=None)
     name: list[str] | None = Field(default=None)
     picture: list[str] | None = Field(default=None)
+    email: str | None = Field(default=None)
 
 
 class UpdateUserAttributes(BaseModel):

@@ -1,10 +1,10 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from webtool.throttle import limiter
 
 from src.app.user.api.dependencies import user_data_service
 from src.app.user.schema.user_data import UserAttributes
-from src.core.dependencies.auth import User
 
 router = APIRouter()
 
@@ -19,7 +19,7 @@ async def read_user_data(user_data: Annotated[None, Depends(user_data_service.re
     return user_data
 
 
-@router.patch("/welfare/personal", status_code=status.HTTP_200_OK)
+@router.put("/welfare/personal", status_code=status.HTTP_200_OK)
 async def update_user_data(_: Annotated[None, Depends(user_data_service.update_user_data)]):
     pass
 
@@ -34,7 +34,7 @@ async def read_business_data(business_data: Annotated[None, Depends(user_data_se
     return business_data
 
 
-@router.patch("/welfare/business", status_code=status.HTTP_200_OK)
+@router.put("/welfare/business", status_code=status.HTTP_200_OK)
 async def update_business_data(_: Annotated[None, Depends(user_data_service.update_business_data)]):
     pass
 
@@ -49,11 +49,17 @@ async def read_user(user: Annotated[UserAttributes, Depends(user_data_service.re
     return user
 
 
-@router.patch("", status_code=status.HTTP_200_OK)
+@router.put("", status_code=status.HTTP_200_OK)
 async def update_user(user: Annotated[UserAttributes, Depends(user_data_service.update_user)]):
     return user
 
 
-@router.patch("/address/kakao", status_code=status.HTTP_200_OK)
+@router.put("/address/kakao", status_code=status.HTTP_200_OK)
 async def update_address_kakao(_: Annotated[None, Depends(user_data_service.update_address_kakao)]):
+    pass
+
+
+@limiter(1, 2)
+@router.post("/email")
+async def update_email(_: Annotated[None, Depends(user_data_service.update_email)]):
     pass

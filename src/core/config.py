@@ -52,7 +52,7 @@ class KeycloakAdminClientConfig(BaseModel):
 class AWS(BaseModel):
     access_key_id: str
     secret_access_key: str
-    storage_bucket_name: str
+    storage_bucket_name: str | None = Field(default=None)
     s3_region_name: str | None = Field(default=None)
     account_id: str | None = Field(default=None)
 
@@ -97,6 +97,8 @@ class Settings(BaseSettings):
     nats: NATS = Field(default_factory=NATS)
 
     cloudflare: AWS
+    aws: AWS
+
     keycloak: KeycloakOpenIDClientConfig
     keycloak_admin: KeycloakAdminClientConfig
 
