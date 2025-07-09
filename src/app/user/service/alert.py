@@ -36,12 +36,12 @@ class AlertService:
         session: postgres_session,
         alert_id: Annotated[list[int], Query()],
     ):
-        alerts = await self.alert_repo.get(session, filters=[self.alert_repo.model.id in alert_id])
+        alerts = await self.alert_repo.get_instance(session, filters=[self.alert_repo.model.id in alert_id])
         alerts = alerts.scalars().all()
 
         await self.alert_repo.update(
             session,
-            filters=[self.alert_repo.model.id in [alert.id for alert in alerts]],
+            filters=[self.alert_repo.model.id.in_([alert.id for alert in alerts])],
             is_read=True,
         )
         return AlertDto.model_validate(alerts, from_attributes=True)
@@ -52,11 +52,10 @@ class AlertService:
         session: postgres_session,
         alert_id: int = Path(),
     ):
-        alert = await self.alert_repo.get(session, filters=[self.alert_repo.model.id == alert_id])
-        alert = alert.scalars().one_or_none()
+        alert = await self.alert_repo.get_instance(session, filters=[self.alert_repo.model.id == alert_id])
+        alert = alert.scalars().first()
 
         if not alert or alert.sub != user.sub:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
         await self.alert_repo.delete(session, alert_id)
-        return {"message": "Alert deleted successfully"}
