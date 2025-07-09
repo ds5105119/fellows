@@ -1,3 +1,4 @@
+from datetime import timezone
 from secrets import randbelow
 from typing import Annotated
 
@@ -78,7 +79,7 @@ class BlogService:
             category = await self.category_repo.create(session, **data.category.model_dump())
 
         post_id = await self.generate_unique_post_id(session)
-        extra_payload = {"published_at": datetime.now()} if data.is_published else {}
+        extra_payload = {"published_at": datetime.now(timezone.utc).replace(tzinfo=None)} if data.is_published else {}
 
         try:
             post = await self.blog_post_repo.create(

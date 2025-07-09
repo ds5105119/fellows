@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Enum, Integer, String, UniqueConstraint, func
@@ -81,9 +81,14 @@ class PaymentTransaction(Base):
     cash_receipt_auth_no: Mapped[Optional[str]] = mapped_column(String(20), comment="현금영수증 승인번호 (cash_authno)")
 
     # --- 타임스탬프 ---
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="레코드 생성 시각")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now(timezone.utc).replace(tzinfo=None),
+    )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now(), comment="레코드 마지막 수정 시각"
+        DateTime,
+        default=datetime.now(timezone.utc).replace(tzinfo=None),
+        onupdate=datetime.now(timezone.utc).replace(tzinfo=None),
     )
 
     # --- 복합 제약 조건 ---
