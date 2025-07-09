@@ -385,7 +385,7 @@ class ERPNextTask(BaseModel):
 
 
 class ERPNextTaskForUser(BaseModel):
-    model_config = ConfigDict(extra="allow", use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True)
     name: str
     subject: str
     project: str
@@ -396,7 +396,7 @@ class ERPNextTaskForUser(BaseModel):
     parent_task: str | None = Field(None)
     exp_start_date: datetime.date | None = Field(None)
     expected_time: float | None = Field(default=0.0)
-    exp_end_date: datetime.date | None = Field(None)
+    exp_end_date: datetime.date | None =extra= Field(None)
     progress: float = Field(0.0)
 
     description: str | None = Field(None)
