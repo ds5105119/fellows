@@ -170,6 +170,7 @@ class FrappReadRepository:
             team_members = json.loads(p.get("custom_team") or "[]")
             user_level = next((member["level"] for member in team_members if member["member"] == sub), 5)
             if user_level < 4:
+                p["custom_team"] = team_members
                 accessible_projects.append(p)
 
         return OverviewProjectsPaginatedResponse.model_validate({"items": accessible_projects}, from_attributes=True)
