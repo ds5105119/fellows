@@ -61,5 +61,11 @@ async def update_address_kakao(_: Annotated[None, Depends(user_data_service.upda
 
 @limiter(1, 2)
 @router.post("/email")
-async def update_email(_: Annotated[None, Depends(user_data_service.update_email)]):
+async def update_email_request(_: Annotated[None, Depends(user_data_service.update_email_request)]):
+    pass
+
+
+@limiter(1, 2)
+@router.post("/email/verify")
+async def update_email_verify(_: Annotated[None, Depends(user_data_service.update_email_verify)]):
     pass

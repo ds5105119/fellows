@@ -237,20 +237,23 @@ class UserDataService:
             logger.error(f"Failed to send email using SESv2: {e.response['Error']['Message']}")
             return False
 
-    async def update_email(
+    async def update_email_request(
         self,
-        email: EmailUpdateRequest,
+        data: EmailUpdateRequest,
         user: get_current_user,
     ):
-        otp = f"{randint(0, 999999):06d}"
-        await self.redis_cache.set(f"{user.sub}{email}", otp, 60 * 60 * 2)
+        existing_user = await self.keycloak_admin.a_get_users({"email": data.email})
+        if existing_user:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
-        user_name = getattr(user, "name", "회원")
+        otp = f"{randint(0, 999999):06d}"
+        await self.redis_cache.set(f"{user.sub}{data.email}", otp, 60 * 60 * 2)
+
         subject = f"Fellows 인증 코드는 {otp} 입니다."
         body_html, body_text = _create_verification_email_body(otp)
 
         email_sent = await self.send_email(
-            to_email=str(email.email),
+            to_email=str(data.email),
             subject=subject,
             body_html=body_html,
             body_text=body_text,
@@ -261,6 +264,26 @@ class UserDataService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="인증 이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.",
             )
+
+    async def update_email_verify(
+        self,
+        data: EmailUpdateVerify,
+        user: get_current_user,
+    ):
+        otp = await self.redis_cache.get(f"{user.sub}{data.email}")
+
+        if otp.decode() != data.otp:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        existing_user = await self.keycloak_admin.a_get_users({"email": data.email})
+        if existing_user:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+        payload = await keycloak_admin.a_get_user(user.sub)
+        payload["email"] = data.email
+
+        await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
+        return await keycloak_admin.a_get_user(user.sub)
 
     async def update_address_kakao(
         self,

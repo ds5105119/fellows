@@ -139,3 +139,8 @@ class UpdateUserAttributes(BaseModel):
 
 class EmailUpdateRequest(BaseModel):
     email: EmailStr
+
+
+class EmailUpdateVerify(BaseModel):
+    email: EmailStr
+    otp: str
