@@ -66,9 +66,9 @@ async def get_project_overview(
     return projects
 
 
-@router.get("/{project_id}", response_model=ERPNextProject)
+@router.get("/{project_id}", response_model=UserERPNextProject)
 async def get_project(
-    project: Annotated[ERPNextProject, Depends(project_service.get_project)],
+    project: Annotated[UserERPNextProject, Depends(project_service.get_project)],
 ):
     """`project_id`로 프로젝트를 조회합니다"""
     return project

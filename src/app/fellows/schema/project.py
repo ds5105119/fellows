@@ -117,6 +117,7 @@ class ERPNextProject(BaseModel):
 
     priority: Priority | None = Field(default=None)
     department: str | None = Field(default=None)
+    customer: str | None = Field(None)
 
     custom_project_title: str | None = Field(default=None)
     custom_project_summary: str | None = Field(default=None)
@@ -179,7 +180,7 @@ class UserERPNextProject(BaseModel):
     actual_start_date: datetime.date | None = Field(default=None)
     actual_end_date: datetime.date | None = Field(default=None)
     actual_time: float | None = Field(default=None)
-    customer: str
+    customer: str | None = Field(None)
 
     custom_project_title: str
     custom_project_summary: str
@@ -249,6 +250,7 @@ class UpdateERPNextProject(BaseModel):
 
     expected_start_date: datetime.date | None = Field(default=None)
     expected_end_date: datetime.date | None = Field(default=None)
+    customer: str | None = Field(None)
 
     custom_content_pages: int | None = Field(default=None)
     custom_maintenance_required: bool | None = Field(default=False)
@@ -386,6 +388,7 @@ class ERPNextTaskForUser(BaseModel):
     name: str
     subject: str
     project: str
+
     color: str | None = Field(None)
     status: ERPNextTaskStatus | None = Field(None)
 
