@@ -337,6 +337,7 @@ class FrappReadRepository:
             limit_page_length=data.size,
             order_by=order_by,
         )
+
         return ERPNextContractPaginatedResponse.model_validate({"items": contracts}, from_attributes=True)
 
     async def get_file(self, project_id: str, key: str, task_id: str | None = None) -> ERPNextFile:

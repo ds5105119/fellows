@@ -497,6 +497,7 @@ class ERPNextIssuePaginatedResponse(BaseModel):
 class ERPNextContract(BaseModel):
     name: str
     owner: str
+    custom_name: str
     creation: datetime.datetime
     modified: datetime.datetime
     modified_by: str
@@ -534,6 +535,7 @@ class ERPNextContract(BaseModel):
 class UserERPNextContract(BaseModel):
     name: str
     owner: str
+    custom_name: str
     creation: datetime.datetime
     modified: datetime.datetime
     modified_by: str
@@ -571,7 +573,7 @@ class ERPNextContractRequest(BaseModel):
 
 
 class ERPNextContractPaginatedResponse(BaseModel):
-    items: list[ERPNextContractRequest]
+    items: list[UserERPNextContract]
 
 
 # --- ETC Models ---
