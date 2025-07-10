@@ -6,6 +6,7 @@ from .fellows.api.endpoint.terms import router as terms_router
 from .gov_api.api.endpoint.fiscal import router as fiscal_router
 from .gov_api.api.endpoint.welfare import router as welfare_router
 from .map.api.endpoint.map import router as map_router
+from .payment.api.endpoint.payment import router as payment_router
 from .user.api.endpoint.alert import router as alert_router
 from .user.api.endpoint.cloud import router as cloud_router
 from .user.api.endpoint.user_data import router as user_data_router
@@ -23,3 +24,4 @@ router.include_router(wakapi_router, prefix="/wakapi", tags=["wakapi"])
 router.include_router(project_router, prefix="/project", tags=["project"])
 router.include_router(cloud_router, prefix="/cloud", tags=["cloud"])
 router.include_router(blog_router, prefix="/blog", tags=["blog"])
+router.include_router(payment_router, prefix="/payment", tags=["payment"])
