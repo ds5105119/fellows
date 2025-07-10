@@ -313,11 +313,11 @@ class FrappReadRepository:
         if isinstance(data.project_id, str):
             if data.project_id not in accessible_projects_names:
                 raise HTTPException(status_code=403, detail="Project not found")
-            filters["project"] = ["=", data.project_id]
+            filters["document_name"] = ["=", data.project_id]
         elif isinstance(data.project_id, list):
             if not set(data.project_id).issubset(accessible_projects_names):
                 raise HTTPException(status_code=403, detail="Project not found")
-            filters["project"] = ["in", data.project_id]
+            filters["document_name"] = ["in", data.project_id]
         if isinstance(data.status, str):
             filters["status"] = ["=", data.status]
         elif isinstance(data.status, list):
