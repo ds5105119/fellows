@@ -3,13 +3,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from src.app.payment.api.dependencies import payment_service
-from src.app.payment.schema.payment import PaymentResponse, TransactionRegistrationResponse
+from src.app.payment.schema.payment import PaymentPageRedirectResponse, PaymentResponse
 
 router = APIRouter()
 
 
 @router.post("/start")
-async def start_payment(response: Annotated[TransactionRegistrationResponse, Depends(payment_service.start_payment)]):
+async def start_payment(response: Annotated[PaymentPageRedirectResponse, Depends(payment_service.start_payment)]):
     return response
 
 

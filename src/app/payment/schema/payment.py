@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import AnyUrl, BaseModel, Field, HttpUrl
 
 
 class PaymentStartRequest(BaseModel):
@@ -16,7 +16,7 @@ class TransactionRegistrationRequest(BaseModel):
     good_mny: int = Field(description="결제 금액")
     pay_method: Literal["CARD", "BANK"] = Field(description="결제 수단 코드")
     good_name: str = Field(description="상품명")
-    Ret_URL: HttpUrl = Field(description="결제 후 리턴 URL")
+    Ret_URL: str = Field(description="결제 후 리턴 URL")
     user_agent: str | None = Field(default=None, description="클라이언트 User-Agent")
     server: Literal["true", "false"] | None = Field(default="false", description="서버 여부")
 
@@ -30,6 +30,31 @@ class TransactionRegistrationResponse(BaseModel):
     traceNo: str = Field(description="거래 등록 추적 번호")
     paymentMethod: str = Field(description="결제 수단")
     request_URI: str | None = Field(default=None, description="요청 URI")
+
+
+class PaymentPageRedirectResponse(BaseModel):
+    site_cd: str = Field(min_length=5, max_length=5, description="가맹점 ID (영문 대문자+숫자 5자리)")
+    pay_method: str = Field(description="결제 수단 코드 (Mobile: CARD/BANK/MOBX 등, PC: 12자리 코드)")
+    currency: str = Field(description="화폐 단위 (Mobile: 410/840, PC: WON/USD)")
+    Ret_URL: str = Field(description="결제 결과를 리턴받을 가맹점 URL")
+    approval_key: str = Field(max_length=256, description="거래 인증 키")
+    PayUrl: HttpUrl = Field(description="결제창 호출 주소")
+    ordr_idxx: str = Field(max_length=20, description="가맹점 주문번호 (중복 불가)")
+    good_name: str = Field(max_length=100, description="상품 이름")
+    good_mny: str = Field(max_length=9, description="상품 금액")
+    shop_user_id: str = Field(max_length=50, description="쇼핑몰 회원 ID (휴대폰/상품권 결제 시 필수)")
+
+    van_code: Literal["SCBL", "SCCL", "SCWB", "SCSK"] | None = Field(
+        default=None, description="상품권/포인트 결제 시 필수. (예: SCBL=도서문화, SCCL=컬쳐랜드 등)"
+    )
+    ActionResult: Literal["batch"] | None = Field(default="batch", description="결제 실행 모드")
+    AppUrl: AnyUrl | None = Field(default=None, description="외부 앱에서 돌아올 앱스킴 (예: myapp://)")
+    good_cd: str | None = Field(default=None, max_length=20, description="상품 코드")
+    buyr_name: str | None = Field(default=None, max_length=40, description="주문자 이름")
+    buyr_mail: str | None = Field(default=None, max_length=100, description="주문자 이메일")
+    buyr_tel2: str | None = Field(default=None, max_length=20, description="주문자 휴대폰번호")
+    shop_name: str | None = Field(default=None, max_length=20, description="사이트 이름 (Mobile)")
+    site_name: str | None = Field(default=None, max_length=20, description="상점 이름 (PC, 영문 권장)")
 
 
 class PaymentAuthResponse(BaseModel):

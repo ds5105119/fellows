@@ -4,6 +4,7 @@ import uuid
 
 import httpx
 from fastapi import HTTPException, Request, status
+from httpx import AsyncClient
 
 from src.app.payment.model.payment import *
 from src.app.payment.repository.payment import *
@@ -44,7 +45,7 @@ class PaymentService:
         data: PaymentStartRequest,
         session: postgres_session,
         user: get_current_user,
-    ) -> TransactionRegistrationResponse:
+    ) -> PaymentPageRedirectResponse:
         """
         [1단계] 결제 거래를 등록하고, 프론트엔드로 결제창 호출 정보를 반환합니다.
         - DB에 PENDING 상태의 결제 트랜잭션을 생성합니다.
@@ -69,19 +70,19 @@ class PaymentService:
         )
 
         # 3. KCP 거래등록 API 요청 데이터 준비
-        kcp_reg_req_payload = {
-            "site_cd": self.site_cd,
-            "ordr_idxx": ordr_idxx,
-            "pay_method": data.pay_method,
-            "good_name": data.good_name,
-            "good_mny": str(data.good_mny),
-            "Ret_URL": f"{settings.base_url}/payment/kcp-return",
-        }
+        kcp_reg_req_payload = TransactionRegistrationRequest(
+            site_cd=self.site_cd,
+            ordr_idxx=ordr_idxx,
+            pay_method=data.pay_method,
+            good_name=data.good_name,
+            good_mny=data.good_mny,
+            Ret_URL=f"{settings.base_url}/payment/kcp-return",
+        )
 
         # 4. KCP 거래등록 API 호출
-        client = request.app.requests_client
+        client: AsyncClient = request.app.requests_client
         try:
-            response = await client.post(self.mobile_reg_url, json=kcp_reg_req_payload)
+            response = await client.post(self.mobile_reg_url, data=kcp_reg_req_payload.model_dump())
             response.raise_for_status()
             kcp_response_data = response.json()
 
@@ -103,7 +104,21 @@ class PaymentService:
 
         await self.repository.update_by_ordr_idxx(session, self.site_cd, ordr_idxx, kcp_trace_no=reg_response.traceNo)
 
-        return reg_response
+        payment_page_redirect_response = PaymentPageRedirectResponse(
+            site_cd=self.site_cd,
+            pay_method=data.pay_method,
+            currency="410",
+            Ret_URL=kcp_reg_req_payload.Ret_URL,
+            approval_key=reg_response.approvalKey,
+            PayUrl=reg_response.PayUrl,
+            ordr_idxx=ordr_idxx,
+            good_name=data.good_name,
+            good_mny=str(data.good_mny),
+            shop_user_id=user.sub,
+            shop_name="Fellows",
+        )
+
+        return payment_page_redirect_response
 
     async def approve_payment(
         self,
