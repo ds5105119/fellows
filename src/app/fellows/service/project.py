@@ -14,6 +14,7 @@ from src.app.fellows.schema.project import (
     CreateERPNextIssue,
     CreateERPNextProject,
     CustomProjectStatus,
+    ERPNextContractRequest,
     ERPNextFile,
     ERPNextFileRequest,
     ERPNextFilesResponse,
@@ -784,6 +785,23 @@ class ProjectService:
             )
 
         return await self.frappe_repository.delete_issue_by_id(issue.name)
+
+    async def get_contracts(
+        self,
+        data: Annotated[ERPNextContractRequest, Query()],
+        user: get_current_user,
+    ):
+        """
+        사용자의 계약서 목록을 조회합니다.
+
+        Args:
+            data: 페이지네이션 및 필터링 옵션.
+            user: 현재 인증된 사용자 정보. 권한 레벨 0-3의 프로젝트만 조회됩니다.
+
+        Returns:
+            계약서 목록과 페이지네이션 정보.
+        """
+        return await self.frappe_repository.get_contracts(data, user.sub)
 
     async def get_project_feature_estimate(
         self,

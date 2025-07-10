@@ -491,6 +491,89 @@ class ERPNextIssuePaginatedResponse(BaseModel):
     items: list[ERPNextIssue]
 
 
+# --- Contract Model ---
+
+
+class ERPNextContract(BaseModel):
+    name: str
+    owner: str
+    creation: datetime.datetime
+    modified: datetime.datetime
+    modified_by: str
+    docstatus: int
+    idx: int
+    party_type: str | None = Field(default=None)
+    is_signed: int | None = Field(default=None)
+    party_name: str | None = Field(default=None)
+    party_user: str | None = Field(default=None)
+    status: str | None = Field(default=None)
+    fulfilment_status: str | None = Field(default=None)
+    party_full_name: str | None = Field(default=None)
+    start_date: datetime.date | None = Field(default=None)
+    end_date: datetime.date | None = Field(default=None)
+    custom_fee: int | None = Field(default=None)
+    custom_down_payment: float | None = Field(default=None)
+    custom_balance: float | None = Field(default=None)
+    custom_maintenance: int | None = Field(default=None)
+    custom_maintenance_start_date: datetime.date | None = Field(default=None)
+    custom_maintenance_end_date: datetime.date | None = Field(default=None)
+    signee: str | None = Field(default=None)
+    signed_on: datetime.datetime | None = Field(default=None)
+    ip_address: str | None = Field(default=None)
+    contract_template: str | None = Field(default=None)
+    contract_terms: str | None = Field(default=None)
+    requires_fulfilment: int | None = Field(default=None)
+    fulfilment_deadline: datetime.datetime | None = Field(default=None)
+    signee_company: str | None = Field(default=None)
+    signed_by_company: str | None = Field(default=None)
+    document_type: str | None = Field(default=None)
+    document_name: str | None = Field(default=None)
+    amended_from: str | None = Field(default=None)
+
+
+class UserERPNextContract(BaseModel):
+    name: str
+    owner: str
+    creation: datetime.datetime
+    modified: datetime.datetime
+    modified_by: str
+    docstatus: int
+    idx: int
+    party_name: str | None = Field(default=None)
+    status: str | None = Field(default=None)
+    start_date: datetime.date | None = Field(default=None)
+    end_date: datetime.date | None = Field(default=None)
+    custom_fee: int | None = Field(default=None)
+    custom_down_payment: float | None = Field(default=None)
+    custom_balance: float | None = Field(default=None)
+    custom_maintenance: int | None = Field(default=None)
+    custom_maintenance_start_date: datetime.date | None = Field(default=None)
+    custom_maintenance_end_date: datetime.date | None = Field(default=None)
+    is_signed: int | None = Field(default=None)
+    signee: str | None = Field(default=None)
+    signed_on: datetime.datetime | None = Field(default=None)
+    ip_address: str | None = Field(default=None)
+    contract_template: str | None = Field(default=None)
+    contract_terms: str | None = Field(default=None)
+    document_type: str | None = Field(default=None)
+    document_name: str | None = Field(default=None)
+
+
+class ERPNextContractRequest(BaseModel):
+    page: int = Field(0, ge=0, description="Page number")
+    size: int = Field(10, ge=1, le=20, description="Page size")
+    project_id: list[str] | str | None = Field(default=None)
+    keyword: str | None = Field(default=None)
+    order_by: list[str] | str = Field(default="modified")
+    status: list[str] | str | None = Field(default=None)
+    start: datetime.date | None = Field(default=None)
+    end: datetime.date | None = Field(default=None)
+
+
+class ERPNextContractPaginatedResponse(BaseModel):
+    items: list[ERPNextContractRequest]
+
+
 # --- ETC Models ---
 
 

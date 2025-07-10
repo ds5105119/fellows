@@ -7,9 +7,13 @@ from webtool.throttle import limiter
 from src.app.fellows.api.dependencies import project_service
 from src.app.fellows.schema.project import *
 from src.core.dependencies.auth import get_current_user
-from src.core.models.repository import PaginatedResult
 
 router = APIRouter()
+
+
+@router.get("/contract", response_model=ERPNextContractPaginatedResponse)
+async def get_contracts(contracts: Annotated[ERPNextContractPaginatedResponse, Depends(project_service.get_contracts)]):
+    return contracts
 
 
 @router.get("/task", response_model=ERPNextTaskPaginatedResponse)
@@ -53,7 +57,7 @@ async def create_project(
 
 @router.get("", response_model=ProjectsPaginatedResponse)
 async def get_projects(
-    projects: Annotated[PaginatedResult, Depends(project_service.get_projects)],
+    projects: Annotated[ProjectsPaginatedResponse, Depends(project_service.get_projects)],
 ):
     """자신의 프로젝트 전체를 조회합니다."""
     return projects
