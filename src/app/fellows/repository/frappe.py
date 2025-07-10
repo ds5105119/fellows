@@ -205,7 +205,9 @@ class FrappReadRepository:
         if not accessible_projects:
             return ERPNextTaskPaginatedResponse(items=[])
 
-        filters = {"project": ["in", accessible_projects], "custom_is_user_visible": True}
+        accessible_projects_names = [p["project_name"] for p in accessible_projects]
+
+        filters = {"project": ["in", accessible_projects_names], "custom_is_user_visible": True}
         or_filters = {}
 
         if data.keyword:
@@ -251,7 +253,9 @@ class FrappReadRepository:
         if not accessible_projects:
             return ERPNextTaskPaginatedResponse(items=[])
 
-        filters = {"project": ["in", accessible_projects]}
+        accessible_projects_names = [p["project_name"] for p in accessible_projects]
+
+        filters = {"project": ["in", accessible_projects_names]}
         or_filters = {}
 
         if data.keyword:
