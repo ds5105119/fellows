@@ -299,18 +299,24 @@ class FrappReadRepository:
         if not accessible_projects:
             return ERPNextContractPaginatedResponse(items=[])
 
-        filters = {"document_type": ["=", "Project"]}
+        accessible_projects_names = [p["project_name"] for p in accessible_projects]
+
+        filters = {"document_type": ["=", "Project"], "document_name": accessible_projects_names}
         or_filters = {}
 
         if data.keyword:
-            filters["subject"] = ["like", f"%{data.keyword}%"]
+            filters["custom_name"] = ["like", f"%{data.keyword}%"]
         if data.start:
             filters["start_date"] = [">=", data.start]
         if data.end:
             filters["start_date"] = ["<=", data.end]
         if isinstance(data.project_id, str):
+            if data.project_id not in accessible_projects_names:
+                raise HTTPException(status_code=403, detail="Project not found")
             filters["project"] = ["=", data.project_id]
         elif isinstance(data.project_id, list):
+            if not set(data.project_id).issubset(accessible_projects_names):
+                raise HTTPException(status_code=403, detail="Project not found")
             filters["project"] = ["in", data.project_id]
         if isinstance(data.status, str):
             filters["status"] = ["=", data.status]
