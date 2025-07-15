@@ -26,7 +26,7 @@ class PaymentService:
         self.site_cd = settings.kcp.site_id
         self.cert_info = settings.kcp.cert_info
 
-        self.mobile_reg_url = "https://testpay.kcp.co.kr/"
+        self.mobile_reg_url = "https://testpaygw.kcp.co.kr/v1/order"
         self.payment_url = "https://stg-spl.kcp.co.kr/gw/enc/v1/payment"
 
     async def _get_transaction_or_404(self, session: AsyncSession, ordr_idxx: str) -> PaymentTransaction:
@@ -81,6 +81,7 @@ class PaymentService:
 
         # 4. KCP 거래등록 API 호출
         client: AsyncClient = request.app.requests_client
+
         try:
             response = await client.post(self.mobile_reg_url, data=kcp_reg_req_payload.model_dump())
             response.raise_for_status()

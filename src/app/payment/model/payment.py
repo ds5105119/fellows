@@ -2,7 +2,7 @@ import enum
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Enum, Integer, String, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Enum, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.models.base import Base
@@ -28,7 +28,7 @@ class PaymentTransaction(Base):
 
     # --- 기본 정보 ---
     id: Mapped[int] = mapped_column(primary_key=True, comment="고유 식별자 (PK)")
-    sub: Mapped[int] = mapped_column(String, unique=True, nullable=False)
+    sub: Mapped[int] = mapped_column(String, nullable=False)
 
     site_cd: Mapped[str] = mapped_column(String(10), nullable=False, comment="KCP 가맹점 사이트 코드 (T0000)")
     ordr_idxx: Mapped[str] = mapped_column(

@@ -51,6 +51,20 @@ class Priority(str, Enum):
     HIGH = "High"
 
 
+class ProjectMethod(str, Enum):
+    CODE = "Code"
+    NOCODE = "NoCode"
+    SHOP = "Shop"
+
+
+class NoCodePlatform(str, Enum):
+    CAFE24 = "CAFE24"
+    GODO = "GODO"
+    SHOPIFY = "SHOPIFY"
+    IMWEB = "IMWEB"
+    FRAMER = "FRAMER"
+
+
 # --- Child Table Models for ERPNext ---
 
 
@@ -229,6 +243,8 @@ class CreateERPNextProject(BaseModel):
     custom_project_title: str
     custom_project_summary: str
     custom_readiness_level: str
+    custom_project_method: ProjectMethod | None = Field(default=None)
+    custom_nocode_platform: NoCodePlatform | None = Field(default=None)
 
     expected_start_date: datetime.date | None = Field(default=None)
     expected_end_date: datetime.date | None = Field(default=None)
