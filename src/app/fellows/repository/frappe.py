@@ -311,7 +311,11 @@ class FrappReadRepository:
 
         accessible_projects_names = [p["project_name"] for p in accessible_projects]
 
-        filters = {"document_type": ["=", "Project"], "document_name": accessible_projects_names}
+        filters = {
+            "document_type": ["=", "Project"],
+            "document_name": accessible_projects_names,
+            "status": ["!=", "draft"],
+        }
         or_filters = {}
 
         if data.keyword:
