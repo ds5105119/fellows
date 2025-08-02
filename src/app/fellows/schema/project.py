@@ -52,17 +52,17 @@ class Priority(str, Enum):
 
 
 class ProjectMethod(str, Enum):
-    CODE = "Code"
-    NOCODE = "NoCode"
-    SHOP = "Shop"
+    CODE = "code"
+    NOCODE = "nocode"
+    SHOP = "shop"
 
 
 class NoCodePlatform(str, Enum):
-    CAFE24 = "CAFE24"
-    GODO = "GODO"
-    SHOPIFY = "SHOPIFY"
-    IMWEB = "IMWEB"
-    FRAMER = "FRAMER"
+    CAFE24 = "cafe24"
+    GODO = "godo"
+    SHOPIFY = "shopify"
+    IMWEB = "imweb"
+    FRAMER = "framer"
 
 
 # --- Child Table Models for ERPNext ---
