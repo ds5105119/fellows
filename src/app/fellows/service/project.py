@@ -31,6 +31,7 @@ from src.app.fellows.schema.project import (
     ProjectsPaginatedResponse,
     Quote,
     QuoteSlot,
+    UpdateERPNextContract,
     UpdateERPNextIssue,
     UpdateERPNextProject,
     UserERPNextProject,
@@ -802,6 +803,34 @@ class ProjectService:
             계약서 목록과 페이지네이션 정보.
         """
         return await self.frappe_repository.get_contracts(data, user.sub)
+
+    async def update_contracts(
+        self,
+        data: UpdateERPNextContract,
+        user: get_current_user,
+        contract_id: str = Path(),
+    ):
+        """
+        사용자의 계약서를 업데이트합니다
+
+        Args:
+            data: 업데이트할 계약서 정보
+            user: 현재 인증된 사용자 정보. 계약자이면서 어드민 이상만 사인할 수 있습니다.
+            contract_id: 계약서 번호
+
+        Returns:
+            None
+        """
+        contract = await self.frappe_repository.get_contract(contract_id)
+        project, level = await self.frappe_repository.get_user_project_permission(contract.document_name, user.sub)
+
+        if project.customer != user.sub:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to update the contracts.",
+            )
+
+        return await self.frappe_repository.update_contract_by_id(contract.name, data)
 
     async def get_project_feature_estimate(
         self,

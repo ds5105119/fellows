@@ -528,6 +528,7 @@ class ERPNextContract(BaseModel):
     party_full_name: str | None = Field(default=None)
     start_date: datetime.date | None = Field(default=None)
     end_date: datetime.date | None = Field(default=None)
+    custom_customer_sign: str | None = Field(default=None)
     custom_fee: int | None = Field(default=None)
     custom_down_payment: float | None = Field(default=None)
     custom_balance: float | None = Field(default=None)
@@ -561,6 +562,7 @@ class UserERPNextContract(BaseModel):
     status: str | None = Field(default=None)
     start_date: datetime.date | None = Field(default=None)
     end_date: datetime.date | None = Field(default=None)
+    custom_customer_sign: str | None = Field(default=None)
     custom_fee: int | None = Field(default=None)
     custom_down_payment: float | None = Field(default=None)
     custom_balance: float | None = Field(default=None)
@@ -575,6 +577,10 @@ class UserERPNextContract(BaseModel):
     contract_terms: str | None = Field(default=None)
     document_type: str | None = Field(default=None)
     document_name: str | None = Field(default=None)
+
+
+class UpdateERPNextContract(BaseModel):
+    custom_customer_sign: str | None = Field(default=None)
 
 
 class ERPNextContractRequest(BaseModel):

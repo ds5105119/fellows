@@ -293,6 +293,12 @@ class FrappReadRepository:
         )
         return ERPNextIssuePaginatedResponse.model_validate({"items": issues}, from_attributes=True)
 
+    async def get_contract(self, name: str):
+        data = await self.frappe_client.get_doc("Contract", name)
+        if not data:
+            raise HTTPException(status_code=404, detail="contract not found")
+        return ERPNextContract(**data)
+
     async def get_contracts(
         self,
         data: ERPNextContractRequest,
@@ -544,6 +550,17 @@ class FrappUpdateRepository:
         )
 
         return ERPNextIssue(**updated_issue)
+
+    async def update_contract_by_id(self, name: str, data: UpdateERPNextContract):
+        updated_contract = await self.frappe_client.update(
+            {
+                "doctype": "Contract",
+                "name": name,
+                **data.model_dump(by_alias=True, exclude_unset=True),
+            }
+        )
+
+        return ERPNextContract(**updated_contract)
 
 
 class FrappDeleteRepository:
