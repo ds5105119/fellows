@@ -314,7 +314,7 @@ class FrappReadRepository:
         filters = {
             "document_type": ["=", "Project"],
             "document_name": accessible_projects_names,
-            "status": ["!=", "draft"],
+            "status": ["!=", "Draft"],
         }
         or_filters = {}
 
