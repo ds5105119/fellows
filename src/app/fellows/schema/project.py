@@ -520,7 +520,7 @@ class ERPNextContract(BaseModel):
     docstatus: int
     idx: int
     party_type: str | None = Field(default=None)
-    is_signed: int | None = Field(default=None)
+    is_signed: bool | None = Field(default=None)
     party_name: str | None = Field(default=None)
     party_user: str | None = Field(default=None)
     status: str | None = Field(default=None)
@@ -569,7 +569,7 @@ class UserERPNextContract(BaseModel):
     custom_maintenance: int | None = Field(default=None)
     custom_maintenance_start_date: datetime.date | None = Field(default=None)
     custom_maintenance_end_date: datetime.date | None = Field(default=None)
-    is_signed: int | None = Field(default=None)
+    is_signed: bool | None = Field(default=None)
     signee: str | None = Field(default=None)
     signed_on: datetime.datetime | None = Field(default=None)
     ip_address: str | None = Field(default=None)
@@ -580,6 +580,7 @@ class UserERPNextContract(BaseModel):
 
 
 class UpdateERPNextContract(BaseModel):
+    is_signed: bool | None = Field(default=None)
     custom_customer_sign: str | None = Field(default=None)
 
 
