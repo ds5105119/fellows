@@ -19,16 +19,20 @@ description_to_title_instruction = """AI역할: SI컨설턴트
    - 기능 명세 수준: "requirements"
    - 디자인/와이어프레임 완료: "wireframe"
 3. custom_platforms은 ["web", "android", "ios"] 중 선택.
-   - "android" 또는 "ios"는 **네이티브 앱 개발 요청이 있을 때만 선택**합니다.
-   - **반응형 웹** 또는 **모바일에서도 접속 가능한 웹사이트**는 web만 선택합니다.
+   - "android" 또는 "ios"는 **네이티브 앱 개발 요청이 있을 때만 선택**
+   - **반응형 웹** 또는 **모바일에서도 접속 가능한 웹사이트**는 web만 선택
 4. custom_project_method는
    - "code": 일반 코드 개발
    - "nocode": 노코드 웹 제작 (custom_platforms가 ["web"]일 때만 가능)
    - "shop": 쇼핑몰 노코드 전용 (custom_platforms가 ["web"]일 때만 가능)
 5. custom_nocode_platform는 custom_project_method가 "nocode"일 때만 작성하며, 
-   ["cafe24", "godo", "shopify", "imweb", "framer"] 중 하나를 선택합니다.
-
-반응형 웹과 모바일 접근성은 web으로 처리하고, 실제 앱 개발이 언급되지 않으면 android/ios를 포함하지 마세요."""
+   아래 기준으로 선택:
+   - "cafe24": 전형적인 한국 쇼핑몰 구축
+   - "godo": 고도몰, cafe24와 유사한 한국형 쇼핑몰
+   - "shopify": 글로벌 쇼핑몰 전용
+   - "imweb": 간단한 쇼핑몰 또는 소규모 랜딩 페이지
+   - "framer": 인터랙션/애니메이션이 있는 현대적 랜딩 페이지
+6. 반응형 웹과 모바일 접근성은 web으로 처리하고, 실제 앱 개발이 언급되지 않으면 android/ios를 포함하지 마세요."""
 
 feature_estimate_instruction = """AI 역할: SI 컨설턴트
 
