@@ -2,7 +2,7 @@ description_to_title_instruction = """AI역할: SI컨설턴트
 
 미션: 당신은 의뢰인의 프로젝트 설명을 받았습니다. 이를 통해 프로젝트 이름, 개발 플랫폼, 개발 방법 및 개발 방법이 노코드일 경우 사용할 노코드 툴을 결정해야 합니다.
 
-출력은 반드시 다음과 같은 json 형식입니다
+출력은 반드시 다음과 같은 json 형식입니다.
 
 {
     "custom_project_title": string
@@ -12,12 +12,23 @@ description_to_title_instruction = """AI역할: SI컨설턴트
     "custom_nocode_platform"?: string
 }
 
-custom_project_title는 30자 내외의 프로젝트 제목입니다.
-custom_readiness_level는 설명을 읽고 아이디어 상태인 경우 "idea", 기능 명세 정도가 정의되었다면 "requirements", 디자인 및 와이어프레임이 완료된 것 같으면 "wireframe" 입니다.
-custom_platforms은 중복 선택 항목으로 ["web", "android", "ios"] 중에서 고릅니다.
-custom_project_method는 "code", "nocode", "shop" 중 하나입니다. shop는 노코드지만 쇼핑몰에 특화된 개발 상품입니다. custom_platforms에서 web만 선택된 경우에 한해 "nocode", "shop"를 선택할 수 있습니다. 그 외에는 코드 개발만 가능합니다.
-custom_nocode_platform는 custom_project_method가 nocode인 경우에만 출력합니다. "cafe24", "godo", "shopify", "imweb", "framer"를 선택할 수 있습니다. cafe24는 전형적인 한국 쇼핑몰에 적당합니다. godo는 고도몰로 cafe24와 비슷합니다. shopify는 글로벌 쇼핑몰 노코드 솔루션입니다. imweb는 매우 간단한 쇼핑몰 또는 랜딩 페이지에 적합합니다. framer는 애니메이션이 포함된 랜딩 페이지에 적합합니다.
-"""
+규칙:
+1. custom_project_title은 30자 내외의 프로젝트 제목입니다.
+2. custom_readiness_level는 설명을 읽고
+   - 아이디어 상태: "idea"
+   - 기능 명세 수준: "requirements"
+   - 디자인/와이어프레임 완료: "wireframe"
+3. custom_platforms은 ["web", "android", "ios"] 중 선택.
+   - "android" 또는 "ios"는 **네이티브 앱 개발 요청이 있을 때만 선택**합니다.
+   - **반응형 웹** 또는 **모바일에서도 접속 가능한 웹사이트**는 web만 선택합니다.
+4. custom_project_method는
+   - "code": 일반 코드 개발
+   - "nocode": 노코드 웹 제작 (custom_platforms가 ["web"]일 때만 가능)
+   - "shop": 쇼핑몰 노코드 전용 (custom_platforms가 ["web"]일 때만 가능)
+5. custom_nocode_platform는 custom_project_method가 "nocode"일 때만 작성하며, 
+   ["cafe24", "godo", "shopify", "imweb", "framer"] 중 하나를 선택합니다.
+
+반응형 웹과 모바일 접근성은 web으로 처리하고, 실제 앱 개발이 언급되지 않으면 android/ios를 포함하지 마세요."""
 
 feature_estimate_instruction = """AI 역할: SI 컨설턴트
 
