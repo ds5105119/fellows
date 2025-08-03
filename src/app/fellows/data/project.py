@@ -1,3 +1,7 @@
+description_to_title_instruction = """AI역할: SI컨설턴트
+
+미션: 당신은 의뢰인의 프로젝트 설명을 받았습니다. 이를 30자 이내의 제목으로 변환하세요."""
+
 feature_estimate_instruction = """AI 역할: SI 컨설턴트
 
 미션:

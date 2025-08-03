@@ -189,6 +189,14 @@ async def feature_estimate(
     return ProjectFeatureEstimateResponse(feature_list=features)
 
 
+@limiter(max_requests=500, interval=60 * 60 * 24)
+@router.get("/estimate/title", response_model=str)
+async def estimate_title(
+    title: Annotated[str, Depends(project_service.generate_project_name_by_description)],
+):
+    return title
+
+
 @router.get("/slots/quote", response_model=list[QuoteSlot])
 async def get_quote_slots(
     slots: Annotated[None, Depends(project_service.get_quote_slots)],

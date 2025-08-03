@@ -832,6 +832,33 @@ class ProjectService:
 
         return await self.frappe_repository.update_contract_by_id(contract.name, data)
 
+    async def generate_project_name_by_description(
+        self,
+        user: get_current_user,
+        project_summary: Annotated[str, Query()],
+    ):
+        """
+        AI를 사용하여 프로젝트의 주요 기능 목록을 예측합니다.
+
+        Args:
+            user: 현재 인증된 사용자 정보.
+            project_summary: 프로젝트 설명.
+
+        Returns:
+            예측된 기능 이름의 리스트.
+        """
+        response = await self.openai_client.responses.create(
+            model="gpt-4.1-mini",
+            instructions=description_to_title_instruction,
+            input=project_summary,
+            max_output_tokens=1000,
+            temperature=0.0,
+            top_p=1.0,
+        )
+
+        result = response.output_text
+        return result
+
     async def get_project_feature_estimate(
         self,
         user: get_current_user,
