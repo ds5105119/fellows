@@ -190,7 +190,7 @@ async def feature_estimate(
 
 
 @limiter(max_requests=500, interval=60 * 60 * 24)
-@router.get("/estimate/info", response_model=str)
+@router.get("/estimate/info", response_model=ProjectSummary2InfoResponse)
 async def estimate_title(
     info: Annotated[ProjectSummary2InfoResponse, Depends(project_service.generate_project_info_by_summary)],
 ):
