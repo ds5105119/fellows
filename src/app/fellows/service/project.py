@@ -29,6 +29,7 @@ from src.app.fellows.schema.project import (
     IsActive,
     ProjectFeatureEstimateRequest,
     ProjectsPaginatedResponse,
+    ProjectSummary2InfoResponse,
     Quote,
     QuoteSlot,
     UpdateERPNextContract,
@@ -832,11 +833,11 @@ class ProjectService:
 
         return await self.frappe_repository.update_contract_by_id(contract.name, data)
 
-    async def generate_project_name_by_description(
+    async def generate_project_info_by_summary(
         self,
         user: get_current_user,
         project_summary: Annotated[str, Query()],
-    ):
+    ) -> ProjectSummary2InfoResponse:
         """
         AI를 사용하여 프로젝트의 주요 기능 목록을 예측합니다.
 
@@ -857,7 +858,8 @@ class ProjectService:
         )
 
         result = response.output_text
-        return result
+
+        return ProjectSummary2InfoResponse.model_validate_json(result)
 
     async def get_project_feature_estimate(
         self,

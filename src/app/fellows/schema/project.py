@@ -633,11 +633,18 @@ class ERPNextFilesResponse(BaseModel):
     items: list[ERPNextFile]
 
 
-class ProjectFeatureEstimateRequest(BaseModel):
+class ProjectSummary2InfoResponse(BaseModel):
     project_name: str
-    project_summary: str
     readiness_level: ReadinessLevel
     platforms: list[Platform]
+
+
+class ProjectFeatureEstimateRequest(BaseModel):
+    custom_project_title: str
+    custom_readiness_level: str
+    custom_platforms: list[ERPNextProjectPlatformRow] = Field(default_factory=list)
+    custom_project_method: ProjectMethod | None = Field(default=None)
+    custom_nocode_platform: NoCodePlatform | None = Field(default=None)
 
 
 class ProjectFeatureEstimateResponse(BaseModel):
