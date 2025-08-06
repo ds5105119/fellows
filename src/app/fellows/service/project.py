@@ -461,6 +461,10 @@ class ProjectService:
         else:
             quote_date = sorted(quote_slots, key=lambda x: x["date"])[0]["date"]
         quote_date = datetime.strptime(quote_date, "%Y-%m-%d").date()
+
+        if quote_date > project.expected_end_date:
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
+
         await self.frappe_repository.update_project_by_id(
             project_id,
             UpdateERPNextProject(
@@ -468,6 +472,7 @@ class ProjectService:
                 is_active=IsActive.YES,
             ),
         )
+
         task = await self.frappe_repository.create_task(
             ERPNextTask(
                 subject="프로젝트 견적 확인",
