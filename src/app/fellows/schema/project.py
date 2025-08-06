@@ -147,6 +147,8 @@ class ERPNextProject(BaseModel):
     custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
     custom_preferred_tech_stacks: list[ERPNextProjectPreferredTechStackRow] | None = Field(default_factory=list)
     custom_design_urls: list[ERPNextProjectDesignUrlRow] | None = Field(default_factory=list)
+    custom_project_method: ProjectMethod | None = Field(default=None)
+    custom_nocode_platform: NoCodePlatform | None = Field(default=None)
 
     estimated_costing: float | None = Field(default=None)
     total_costing_amount: float | None = Field(default=None)
@@ -210,6 +212,8 @@ class UserERPNextProject(BaseModel):
     custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
     custom_preferred_tech_stacks: list[ERPNextProjectPreferredTechStackRow] | None = Field(default_factory=list)
     custom_design_urls: list[ERPNextProjectDesignUrlRow] | None = Field(default_factory=list)
+    custom_project_method: ProjectMethod | None = Field(default=None)
+    custom_nocode_platform: NoCodePlatform | None = Field(default=None)
 
     estimated_costing: float | None = Field(default=None)
 
@@ -263,6 +267,9 @@ class UpdateERPNextProject(BaseModel):
     custom_project_title: str | None = Field(default=None)
     custom_project_summary: str | None = Field(default=None)
     custom_readiness_level: str | None = Field(default=None)
+    custom_project_method: ProjectMethod | None = Field(default=None)
+    custom_nocode_platform: NoCodePlatform | None = Field(default=None)
+
     is_active: IsActive | None = Field(default=None)
 
     expected_start_date: datetime.date | None = Field(default=None)
