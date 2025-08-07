@@ -260,9 +260,11 @@ class FrappReadRepository:
 
         if data.keyword:
             filters["subject"] = ["like", f"%{data.keyword}%"]
-        if data.start:
+        if data.start and data.end:
+            filters["creation"] = [["<=", data.end], [">=", data.start]]  # type: ignore
+        elif data.start:
             filters["creation"] = [">=", data.start]
-        if data.end:
+        elif data.end:
             filters["creation"] = ["<=", data.end]
         if isinstance(data.issue_type, str):
             filters["issue_type"] = ["like", data.issue_type]
@@ -273,7 +275,7 @@ class FrappReadRepository:
         elif isinstance(data.project_id, list):
             filters["project"] = ["in", data.project_id]
         if isinstance(data.status, str):
-            filters["status"] = ["=", data.status]
+            filters["status"] = ["=", data.status] if type(data.status) is str else ["in", data.status]
         elif isinstance(data.status, list):
             filters["status"] = ["in", data.status]
 
