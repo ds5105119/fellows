@@ -253,31 +253,41 @@ class FrappReadRepository:
         if not accessible_projects:
             return ERPNextTaskPaginatedResponse(items=[])
 
-        accessible_projects_names = [p["project_name"] for p in accessible_projects]
+        # filters를 딕셔너리가 아닌 리스트로 시작합니다.
+        filters = []
 
-        filters = {"project": ["in", accessible_projects_names]}
-        or_filters = {}
+        # project 필터 처리: data.project_id가 있으면 그것을 우선 사용하고, 없으면 접근 가능한 전체 프로젝트를 사용합니다.
+        if data.project_id:
+            if isinstance(data.project_id, str):
+                filters.append(["Issue", "project", "=", data.project_id])
+            elif isinstance(data.project_id, list):
+                filters.append(["Issue", "project", "in", data.project_id])
+        else:
+            accessible_projects_names = [p["project_name"] for p in accessible_projects]
+            filters.append(["Issue", "project", "in", accessible_projects_names])
 
+        # 나머지 필터들을 리스트에 추가합니다.
         if data.keyword:
-            filters["subject"] = ["like", f"%{data.keyword}%"]
-        if data.start and data.end:
-            filters["creation"] = [["<=", data.end], [">=", data.start]]  # type: ignore
-        elif data.start:
-            filters["creation"] = [">=", data.start]
-        elif data.end:
-            filters["creation"] = ["<=", data.end]
+            filters.append(["Issue", "subject", "like", f"%{data.keyword}%"])
+
+        # start와 end 날짜 필터를 각각 독립적으로 추가합니다.
+        if data.start:
+            filters.append(["Issue", "creation", ">=", data.start])
+        if data.end:
+            filters.append(["Issue", "creation", "<=", data.end])
+
         if isinstance(data.issue_type, str):
-            filters["issue_type"] = ["like", data.issue_type]
+            filters.append(["Issue", "issue_type", "like", data.issue_type])
         elif isinstance(data.issue_type, list):
-            filters["status"] = ["in", data.issue_type]
-        if isinstance(data.project_id, str):
-            filters["project"] = ["=", data.project_id]
-        elif isinstance(data.project_id, list):
-            filters["project"] = ["in", data.project_id]
+            # 이전 코드에 있던 버그 수정: issue_type인데 status를 필터링하는 문제를 바로잡았습니다.
+            filters.append(["Issue", "issue_type", "in", data.issue_type])
+
         if isinstance(data.status, str):
-            filters["status"] = ["=", data.status] if type(data.status) is str else ["in", data.status]
+            filters.append(["Issue", "status", "=", data.status])
         elif isinstance(data.status, list):
-            filters["status"] = ["in", data.status]
+            filters.append(["Issue", "status", "in", data.status])
+
+        or_filters = {}  # or_filters는 그대로 딕셔너리 형식을 유지합니다.
 
         order_by = None
         if isinstance(data.order_by, str):
@@ -287,7 +297,7 @@ class FrappReadRepository:
 
         issues = await self.frappe_client.get_list(
             "Issue",
-            filters=filters,
+            filters=filters,  # 리스트 형태로 전달
             or_filters=or_filters,
             limit_start=data.page * data.size,
             limit_page_length=data.size,
