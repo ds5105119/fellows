@@ -858,7 +858,6 @@ class ProjectService:
             instructions=description_to_title_instruction,
             input=project_summary,
             max_output_tokens=1000,
-            temperature=0.0,
             top_p=1.0,
         )
 
@@ -888,7 +887,6 @@ class ProjectService:
             instructions=feature_estimate_instruction,
             input=payload,
             max_output_tokens=1000,
-            temperature=0.0,
             top_p=1.0,
         )
 
@@ -991,10 +989,10 @@ class ProjectService:
             (emoji, total_amount) 튜플.
         """
         response = await self.openai_client.responses.create(
-            model="gpt-4.1-mini",
+            model="gpt-5-mini",
             instructions=project_information_instruction,
             input=ai_estimate,
-            max_output_tokens=100,
+            max_output_tokens=1000,
             top_p=1.0,
         )
 
