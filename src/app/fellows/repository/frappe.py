@@ -177,6 +177,8 @@ class FrappReadRepository:
                 "custom_team",
                 "creation",
                 "modified",
+                "expected_start_date",
+                "expected_end_date",
                 "custom_team",
             ],
             filters={"custom_team": ["like", f"%{sub}%"]},

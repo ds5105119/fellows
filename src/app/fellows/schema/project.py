@@ -234,6 +234,8 @@ class OverviewERPNextProject(BaseModel):
 
     creation: datetime.datetime | None = Field(default=None)
     modified: datetime.datetime | None = Field(default=None)
+    expected_start_date: datetime.date | None = Field(default=None)
+    expected_end_date: datetime.date | None = Field(default=None)
 
     custom_team: list[ERPNextTeam] | None = Field(default=None)
     project_name: str
@@ -558,13 +560,6 @@ class MonthlyReportRequest(BaseModel):
     date: datetime.date
 
 
-class ReportResponse(BaseModel):
-    summary: str
-    comment: str
-    tasks: list[ERPNextTaskForUser]
-    project: ERPNextProjectForUser
-
-
 class ERPNextReport(BaseModel):
     model_config = ConfigDict(extra="allow", use_enum_values=True)
 
@@ -577,6 +572,12 @@ class ERPNextReport(BaseModel):
     end_date: datetime.date
 
     summary: str | None = None
+
+
+class ReportResponse(BaseModel):
+    report: list[ERPNextTimeSheetForUser]
+    tasks: list[ERPNextTaskForUser]
+    timesheets: list[ERPNextTimeSheetForUser]
 
 
 # --- Issue Models ---

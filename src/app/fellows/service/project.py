@@ -1,6 +1,6 @@
 import asyncio
 import json
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from logging import getLogger
 from typing import Annotated
 
@@ -22,7 +22,6 @@ from src.app.fellows.schema.project import (
     ERPNextIssuesRequest,
     ERPNextProjectForUser,
     ERPNextProjectsRequest,
-    ERPNextReport,
     ERPNextTask,
     ERPNextTaskPaginatedResponse,
     ERPNextTasksRequest,
@@ -35,6 +34,7 @@ from src.app.fellows.schema.project import (
     ProjectSummary2InfoResponse,
     Quote,
     QuoteSlot,
+    ReportResponse,
     UpdateERPNextContract,
     UpdateERPNextIssue,
     UpdateERPNextProject,
@@ -699,12 +699,9 @@ class ProjectService:
         self,
         user: get_current_user,
         data: DailyReportRequest,
-        project_id: str = Path(),
-    ) -> ERPNextReport:
+        project_id: str | None = Path(),
+    ) -> ReportResponse:
         report = await self.frappe_repository.get_report(project_id, user.sub, data.date)
-
-        if report:
-            return report
 
         tasks = await self.frappe_repository.get_tasks(
             0,
@@ -715,7 +712,7 @@ class ProjectService:
             end=data.date,
         )
 
-        timesheet = await self.frappe_repository.get_timesheets(
+        timesheets = await self.frappe_repository.get_timesheets(
             0,
             100,
             user.sub,
@@ -724,7 +721,19 @@ class ProjectService:
             end_date=data.date,
         )
 
-        print(tasks, timesheet)
+        print(tasks, timesheets)
+
+        if not report:
+            pass
+
+        return ReportResponse.model_validate(
+            {
+                "report": report,
+                "tasks": tasks,
+                "timesheets": timesheets,
+            },
+            from_attributes=True,
+        )
 
     async def create_issue(
         self,
