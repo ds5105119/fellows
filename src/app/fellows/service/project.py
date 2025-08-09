@@ -14,12 +14,15 @@ from src.app.fellows.schema.project import (
     CreateERPNextIssue,
     CreateERPNextProject,
     CustomProjectStatus,
+    DailyReportRequest,
     ERPNextContractRequest,
     ERPNextFile,
     ERPNextFileRequest,
     ERPNextFilesResponse,
     ERPNextIssuesRequest,
+    ERPNextProjectForUser,
     ERPNextProjectsRequest,
+    ERPNextReport,
     ERPNextTask,
     ERPNextTaskPaginatedResponse,
     ERPNextTasksRequest,
@@ -35,11 +38,10 @@ from src.app.fellows.schema.project import (
     UpdateERPNextContract,
     UpdateERPNextIssue,
     UpdateERPNextProject,
-    UserERPNextProject,
 )
 from src.app.user.repository.alert import AlertRepository
 from src.core.dependencies.auth import get_current_user
-from src.core.dependencies.db import postgres_session
+from src.core.dependencies.db import db_session
 from src.core.utils.frappeclient import AsyncFrappeClient
 
 logger = getLogger(__name__)
@@ -75,7 +77,7 @@ class ProjectService:
         self,
         data: CreateERPNextProject,
         user: get_current_user,
-    ) -> UserERPNextProject:
+    ) -> ERPNextProjectForUser:
         """
         새로운 프로젝트를 생성합니다.
 
@@ -95,7 +97,7 @@ class ProjectService:
         self,
         user: get_current_user,
         project_id: str = Path(),
-    ) -> UserERPNextProject:
+    ) -> ERPNextProjectForUser:
         """
         특정 프로젝트의 상세 정보를 조회합니다.
 
@@ -148,7 +150,7 @@ class ProjectService:
         data: UpdateERPNextProject,
         user: get_current_user,
         project_id: str = Path(),
-    ) -> UserERPNextProject:
+    ) -> ERPNextProjectForUser:
         """
         프로젝트의 기본 정보를 수정합니다.
 
@@ -177,7 +179,7 @@ class ProjectService:
         self,
         email: Annotated[str, Query()],
         user: get_current_user,
-        session: postgres_session,
+        session: db_session,
         project_id: str = Path(),
     ):
         """
@@ -690,7 +692,39 @@ class ProjectService:
         Returns:
             태스크 목록과 페이지네이션 정보.
         """
-        return await self.frappe_repository.get_tasks(data, user.sub)
+
+        return await self.frappe_repository.get_tasks(**data.model_dump(), sub=user.sub)
+
+    async def get_daily_report(
+        self,
+        user: get_current_user,
+        data: DailyReportRequest,
+        project_id: str = Path(),
+    ) -> ERPNextReport:
+        report = await self.frappe_repository.get_report(project_id, user.sub, data.date)
+
+        if report:
+            return report
+
+        tasks = await self.frappe_repository.get_tasks(
+            0,
+            1000,
+            user.sub,
+            project_id=project_id,
+            start=data.date,
+            end=data.date,
+        )
+
+        timesheet = await self.frappe_repository.get_timesheets(
+            0,
+            100,
+            user.sub,
+            project_id=project_id,
+            start_date=data.date,
+            end_date=data.date,
+        )
+
+        print(tasks, timesheet)
 
     async def create_issue(
         self,

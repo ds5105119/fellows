@@ -179,7 +179,7 @@ class ERPNextProject(BaseModel):
         return v
 
 
-class UserERPNextProject(BaseModel):
+class ERPNextProjectForUser(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     creation: datetime.datetime | None = Field(default=None)
@@ -295,7 +295,7 @@ class ERPNextProjectsRequest(BaseModel):
 
 class ProjectsPaginatedResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    items: list[UserERPNextProject]
+    items: list[ERPNextProjectForUser]
 
 
 class OverviewProjectsPaginatedResponse(BaseModel):
@@ -442,6 +442,141 @@ class ERPNextToDo(BaseModel):
     reference_name: str | None = Field(default=None)
     role: str | None = Field(default=None)
     assigned_by: str | None = Field(default=None)
+
+
+# --- Timesheet ---
+
+
+class TimeSheetRequest(BaseModel):
+    page: int = Field(0, ge=0, description="Page number")
+    size: int = Field(40, ge=1, le=100, description="Page size")
+    start_date: datetime.date
+    end_date: datetime.date
+    project_id: str
+
+
+class TimeSheetStatus(str, Enum):
+    DRAFT = "Draft"
+    SUBMITTED = "Submitted"
+    CANCELLED = "Cancelled"
+    BILLED = "Billed"
+
+
+class TimeSheetDocStatus(int, Enum):
+    DRAFT = 0
+    SUBMITTED = 1
+    CANCELLED = 2
+
+
+class ERPNextTimeSheet(BaseModel):
+    model_config = ConfigDict(extra="allow", use_enum_values=True)
+
+    # 기본 정보
+    name: str
+    owner: str
+    creation: datetime.datetime
+    modified: datetime.datetime
+    modified_by: str
+    docstatus: TimeSheetDocStatus = Field(default=TimeSheetDocStatus.DRAFT)
+    idx: int
+    title: str
+    naming_series: str
+    status: TimeSheetStatus = Field(default=TimeSheetStatus.DRAFT)
+
+    # 연결 정보
+    company: str | None = Field(default=None)
+    customer: str | None = Field(default=None)
+    sales_invoice: str | None = Field(default=None)
+    salary_slip: str | None = Field(default=None)
+    parent_project: str | None = Field(default=None)
+    amended_from: str | None = Field(default=None)
+
+    # 직원 정보
+    employee: str | None = Field(default=None)
+    employee_name: str | None = Field(default=None)
+    department: str | None = Field(default=None)
+    user: str | None = Field(default=None)
+
+    # 날짜 및 시간
+    start_date: datetime.date | None = Field(default=None)
+    end_date: datetime.date | None = Field(default=None)
+    total_hours: float | None = Field(default=None)
+    total_billable_hours: float | None = Field(default=None)
+    total_billed_hours: float | None = Field(default=None)
+
+    # 금액 정보
+    currency: str | None = Field(default=None)
+    exchange_rate: float | None = Field(default=None)
+    total_billable_amount: float | None = Field(default=None)
+    total_billed_amount: float | None = Field(default=None)
+    total_costing_amount: float | None = Field(default=None)
+    base_total_billable_amount: float | None = Field(default=None)
+    base_total_billed_amount: float | None = Field(default=None)
+    base_total_costing_amount: float | None = Field(default=None)
+    per_billed: float | None = Field(default=None)
+
+    # 추가 정보
+    note: str | None = Field(default=None)
+
+
+class ERPNextTimeSheetForUser(BaseModel):
+    model_config = ConfigDict(extra="allow", use_enum_values=True)
+
+    # 기본 정보
+    name: str
+    creation: datetime.datetime
+    modified: datetime.datetime
+    idx: int
+    title: str
+    status: TimeSheetStatus = Field(default=TimeSheetStatus.DRAFT)
+
+    # 연결 정보
+    customer: str | None = Field(default=None)
+    parent_project: str | None = Field(default=None)
+
+    # 날짜 및 시간
+    start_date: datetime.date | None = Field(default=None)
+    end_date: datetime.date | None = Field(default=None)
+    total_hours: float | None = Field(default=None)
+
+    # 추가 정보
+    note: str | None = Field(default=None)
+
+
+class ERPNextTimeSheetForUserList(BaseModel):
+    items: list[ERPNextTimeSheetForUser]
+
+
+# --- Report Models ---
+
+
+class DailyReportRequest(BaseModel):
+    date: datetime.date
+
+
+class MonthlyReportRequest(BaseModel):
+    date: datetime.date
+
+
+class ReportResponse(BaseModel):
+    summary: str
+    comment: str
+    tasks: list[ERPNextTaskForUser]
+    project: ERPNextProjectForUser
+
+
+class ERPNextReport(BaseModel):
+    model_config = ConfigDict(extra="allow", use_enum_values=True)
+
+    name: str
+    creation: datetime.datetime
+    modified: datetime.datetime
+
+    project: str
+    start_date: datetime.date
+    end_date: datetime.date
+
+    summary: str | None = None
 
 
 # --- Issue Models ---

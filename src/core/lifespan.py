@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
 
-from src.core.dependencies.db import Postgres, Redis
+from src.core.dependencies.db import DB, Redis
 
 LOGGING_CONFIG = {
     "version": 1,
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    await Postgres.aclose()
+    await DB.aclose()
     await Redis.aclose()
     await app.requests_client.aclose()
     log.info("Application Stopped")

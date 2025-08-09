@@ -5,7 +5,7 @@ from sqlalchemy import desc
 
 from src.app.gov_api.repository.fiscal import FiscalByYearOffcRepository, FiscalByYearRepository, FiscalRepository
 from src.app.gov_api.schema.fiscal import FiscalByYearDto, FiscalByYearOffcDto, FiscalDto
-from src.core.dependencies.db import postgres_session
+from src.core.dependencies.db import db_session
 
 
 class FiscalService:
@@ -21,7 +21,7 @@ class FiscalService:
 
     async def get_fiscal(
         self,
-        session: postgres_session,
+        session: db_session,
         data: Annotated[FiscalDto, Query()],
     ):
         filters = []
@@ -46,7 +46,7 @@ class FiscalService:
 
     async def get_fiscal_by_year(
         self,
-        session: postgres_session,
+        session: db_session,
         data: Annotated[FiscalByYearDto, Query()],
     ):
         filters = []
@@ -67,7 +67,7 @@ class FiscalService:
 
     async def get_fiscal_by_year_offc(
         self,
-        session: postgres_session,
+        session: db_session,
         data: Annotated[FiscalByYearOffcDto, Query()],
     ):
         filters = []

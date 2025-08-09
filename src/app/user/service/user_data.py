@@ -13,7 +13,7 @@ from webtool.cache import RedisCache
 from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
 from src.app.user.schema.user_data import *
 from src.core.dependencies.auth import get_current_user, keycloak_admin
-from src.core.dependencies.db import postgres_session
+from src.core.dependencies.db import db_session
 
 logger = getLogger(__name__)
 
@@ -109,7 +109,7 @@ class UserDataService:
     async def create_user_data(
         self,
         data: UserDataDto,
-        session: postgres_session,
+        session: db_session,
         user: get_current_user,
     ):
         try:
@@ -123,7 +123,7 @@ class UserDataService:
 
     async def read_user_data(
         self,
-        session: postgres_session,
+        session: db_session,
         user: get_current_user,
     ):
         result = await self.repository.get(
@@ -136,7 +136,7 @@ class UserDataService:
     async def update_user_data(
         self,
         data: PartialUserDataDto,
-        session: postgres_session,
+        session: db_session,
         user: get_current_user,
     ):
         await self.repository.update(
@@ -148,7 +148,7 @@ class UserDataService:
     async def create_business_data(
         self,
         data: UserBusinessDataDto,
-        session: postgres_session,
+        session: db_session,
         user: get_current_user,
     ):
         try:
@@ -162,7 +162,7 @@ class UserDataService:
 
     async def read_business_data(
         self,
-        session: postgres_session,
+        session: db_session,
         user: get_current_user,
     ):
         result = await self.user_business_data_repository.get(
@@ -175,7 +175,7 @@ class UserDataService:
     async def update_business_data(
         self,
         data: UserBusinessDataDto,
-        session: postgres_session,
+        session: db_session,
         user: get_current_user,
     ):
         await self.user_business_data_repository.update(

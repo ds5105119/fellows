@@ -7,7 +7,7 @@ from sqlalchemy import desc
 from src.app.map.schema.map import Coord2AddrDto, Coord2AddrResponse
 from src.core.config import settings
 from src.core.dependencies.auth import get_current_user
-from src.core.dependencies.db import postgres_session
+from src.core.dependencies.db import db_session
 
 
 class MapService:

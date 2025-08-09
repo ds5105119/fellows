@@ -5,7 +5,7 @@ from fastapi import HTTPException, Path, Query, status
 from src.app.user.repository.alert import AlertRepository
 from src.app.user.schema.alert import *
 from src.core.dependencies.auth import get_current_user
-from src.core.dependencies.db import postgres_session
+from src.core.dependencies.db import db_session
 
 
 class AlertService:
@@ -16,7 +16,7 @@ class AlertService:
         self,
         user: get_current_user,
         data: Annotated[AlertListQueryDto, Query()],
-        session: postgres_session,
+        session: db_session,
     ):
         filters = [self.alert_repo.model.sub == user.sub]
 
@@ -33,7 +33,7 @@ class AlertService:
     async def mark_alert_as_read(
         self,
         user: get_current_user,
-        session: postgres_session,
+        session: db_session,
         alert_id: Annotated[list[int], Query()],
     ):
         alerts = await self.alert_repo.get_instance(session, filters=[self.alert_repo.model.id in alert_id])
@@ -49,7 +49,7 @@ class AlertService:
     async def delete_alert(
         self,
         user: get_current_user,
-        session: postgres_session,
+        session: db_session,
         alert_id: int = Path(),
     ):
         alert = await self.alert_repo.get_instance(session, filters=[self.alert_repo.model.id == alert_id])

@@ -10,7 +10,7 @@ from src.app.gov_api.schema.welfare import WelfareDto
 from src.app.user.model.user_data import AcademicStatus, UserBusinessData, UserData
 from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
 from src.core.dependencies.auth import User, get_current_user_without_error
-from src.core.dependencies.db import postgres_session
+from src.core.dependencies.db import db_session
 
 
 class GovWelfareService:
@@ -194,7 +194,7 @@ class GovWelfareService:
 
     async def get_personal_welfare(
         self,
-        session: postgres_session,
+        session: db_session,
         data: Annotated[WelfareDto, Query()],
         user: get_current_user_without_error,
     ):
@@ -272,7 +272,7 @@ class GovWelfareService:
 
     async def get_business_welfare(
         self,
-        session: postgres_session,
+        session: db_session,
         data: Annotated[WelfareDto, Query()],
         user: get_current_user_without_error,
     ):
@@ -388,12 +388,12 @@ class GovWelfareService:
 
     async def get_welfare(
         self,
-        session: postgres_session,
+        session: db_session,
         id: Annotated[str, Query()],
     ):
         result = await self.repository.get(session, [self.repository.model.service_id == id])
         return result.mappings().first()
 
-    async def get_welfare_id(self, session: postgres_session):
+    async def get_welfare_id(self, session: db_session):
         result = await self.repository.get(session, columns=[self.repository.model.service_id])
         return result.mappings().all()

@@ -8,10 +8,10 @@ from webtool.db import AsyncDB
 
 from src.core.config import settings
 
-Postgres = AsyncDB(settings.postgres_dsn.unicode_string())
+DB = AsyncDB(settings.postgres_dsn.unicode_string())
 Wakapi_Postgres = AsyncDB(settings.wakapi_postgres_dsn.unicode_string())
 
-postgres_session = Annotated[AsyncSession, Depends(Postgres)]
+db_session = Annotated[AsyncSession, Depends(DB)]
 wakapi_postgres_session = Annotated[AsyncSession, Depends(Wakapi_Postgres)]
 
 
@@ -24,7 +24,7 @@ Redis = RedisCache(
 )
 
 
-async def create_postgis_extension(async_db: AsyncDB = Postgres):
+async def create_postgis_extension(async_db: AsyncDB = DB):
     async with async_db.session_factory() as session:
         try:
             result = await session.execute(text("SELECT 1 FROM pg_extension WHERE extname = 'postgis';"))

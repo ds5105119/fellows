@@ -11,7 +11,7 @@ from src.app.payment.repository.payment import *
 from src.app.payment.schema.payment import *
 from src.core.config import settings
 from src.core.dependencies.auth import get_current_user
-from src.core.dependencies.db import postgres_session
+from src.core.dependencies.db import db_session
 
 
 class PaymentService:
@@ -43,7 +43,7 @@ class PaymentService:
         self,
         request: Request,
         data: PaymentStartRequest,
-        session: postgres_session,
+        session: db_session,
         user: get_current_user,
     ) -> PaymentPageRedirectResponse:
         """
@@ -125,7 +125,7 @@ class PaymentService:
         self,
         request: Request,
         data: PaymentAuthResponse,
-        session: postgres_session,
+        session: db_session,
     ) -> PaymentResponse:
         """
         [3단계] KCP 결제창 인증 후, 백엔드에서 최종 결제 승인을 요청하고 결과를 처리합니다.

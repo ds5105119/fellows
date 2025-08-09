@@ -15,7 +15,7 @@ from src.app.blog.repository.blog import (
 )
 from src.app.blog.schema.blog import *
 from src.core.dependencies.auth import get_current_user, get_current_user_without_error
-from src.core.dependencies.db import postgres_session
+from src.core.dependencies.db import db_session
 
 
 def generate_date_based_12_digit_id() -> str:
@@ -52,7 +52,7 @@ class BlogService:
     async def create_blog_post(
         self,
         data: CreateBlogPostDto,
-        session: postgres_session,
+        session: db_session,
         user: get_current_user,
     ):
         if "/manager" not in user.groups:
@@ -112,7 +112,7 @@ class BlogService:
 
     async def get_post_by_id(
         self,
-        session: postgres_session,
+        session: db_session,
         post_id: str = Path(),
     ):
         result = await self.blog_post_repo.get_instance(
@@ -134,7 +134,7 @@ class BlogService:
     async def get_posts(
         self,
         data: Annotated[BlogPostListQueryDto, Query()],
-        session: postgres_session,
+        session: db_session,
         user: get_current_user_without_error,
     ):
         filters = []
@@ -169,7 +169,7 @@ class BlogService:
 
     async def post_paths(
         self,
-        session: postgres_session,
+        session: db_session,
     ):
         result = await self.blog_post_repo.get(
             session,
@@ -183,7 +183,7 @@ class BlogService:
         self,
         user: get_current_user,
         data: UpdateBlogPostDto,
-        session: postgres_session,
+        session: db_session,
         post_id: str = Path(),
     ):
         # 포스트 불러오기
@@ -234,7 +234,7 @@ class BlogService:
     async def delete_post(
         self,
         user: get_current_user,
-        session: postgres_session,
+        session: db_session,
         post_id: str = Path(),
     ):
         await self.blog_post_repo.delete(session, post_id)

@@ -42,7 +42,7 @@ class FrappCreateRepository:
             }
         )
 
-        return UserERPNextProject(**project)
+        return ERPNextProjectForUser(**project)
 
     async def create_task(self, data: ERPNextTask, sub: str):
         task = await self.frappe_client.insert(
@@ -85,7 +85,7 @@ class FrappReadRepository:
     ):
         self.frappe_client = frappe_client
 
-    async def get_project_name(self, sub: str) -> list[dict]:
+    async def get_project_names(self, sub: str) -> list[dict]:
         # 1. 사용자가 접근 가능한 프로젝트 목록을 먼저 조회 (레벨 4 제외)
         all_member_projects = await self.frappe_client.get_list(
             "Project",
@@ -103,7 +103,7 @@ class FrappReadRepository:
 
         return accessible_projects
 
-    async def get_user_project_permission(self, project_id: str, sub: str) -> tuple[UserERPNextProject, int]:
+    async def get_user_project_permission(self, project_id: str, sub: str) -> tuple[ERPNextProjectForUser, int]:
         """
         프로젝트 정보를 가져오고 사용자의 권한 레벨을 반환합니다.
         사용자가 프로젝트 멤버가 아니면 404 에러를 발생시킵니다.
@@ -112,7 +112,7 @@ class FrappReadRepository:
         if not project_doc:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        project = UserERPNextProject(**project_doc)
+        project = ERPNextProjectForUser(**project_doc)
 
         member_info = next((member for member in project.custom_team if member.member == sub), None)
 
@@ -199,8 +199,19 @@ class FrappReadRepository:
             raise HTTPException(status_code=404, detail="Task not found")
         return ERPNextTask(**data)
 
-    async def get_tasks(self, data: ERPNextTasksRequest, sub: str):
-        accessible_projects = await self.get_project_name(sub)
+    async def get_tasks(
+        self,
+        page: int,
+        size: int,
+        sub: str,
+        project_id: list[str] | str | None = None,
+        order_by: list[str] | str | None = None,
+        status: list[ERPNextTaskStatus] | ERPNextTaskStatus | None = None,
+        start: datetime.date | None = None,
+        end: datetime.date | None = None,
+        keyword: str | None = None,
+    ):
+        accessible_projects = await self.get_project_names(sub)
 
         if not accessible_projects:
             return ERPNextTaskPaginatedResponse(items=[])
@@ -210,35 +221,36 @@ class FrappReadRepository:
         filters = {"project": ["in", accessible_projects_names], "custom_is_user_visible": True}
         or_filters = {}
 
-        if data.keyword:
-            filters["subject"] = ["like", f"%{data.keyword}%"]
-        if data.start:
-            filters["exp_start_date"] = [">=", data.start]
-        if data.end:
-            filters["exp_end_date"] = ["<=", data.end]
-        if isinstance(data.status, str):
-            filters["status"] = ["like", data.status]
-        elif isinstance(data.status, list):
-            filters["status"] = ["in", data.status]
-        if isinstance(data.project_id, str):
-            filters["project"] = ["=", data.project_id]
-        elif isinstance(data.project_id, list):
-            filters["project"] = ["in", data.project_id]
+        if keyword:
+            filters["subject"] = ["like", f"%{keyword}%"]
+        if start:
+            filters["exp_end_date"] = [">=", start]
+        if end:
+            filters["exp_start_date"] = ["<=", end]
+        if isinstance(status, str):
+            filters["status"] = ["like", status]
+        elif isinstance(status, list):
+            filters["status"] = ["in", status]
+        if isinstance(project_id, str):
+            filters["project"] = ["=", project_id]
+        elif isinstance(project_id, list):
+            filters["project"] = ["in", project_id]
 
-        order_by = None
-        if isinstance(data.order_by, str):
-            order_by = data.order_by
-        elif isinstance(data.order_by, list):
-            order_by = [f"{o.split('.')[0]} desc" if o.split(".")[-1] == "desc" else o for o in data.order_by]
+        _order_by = None
+        if isinstance(order_by, str):
+            _order_by = order_by
+        elif isinstance(order_by, list):
+            _order_by = [f"{o.split('.')[0]} desc" if o.split(".")[-1] == "desc" else o for o in order_by]
 
         tasks = await self.frappe_client.get_list(
             "Task",
             filters=filters,
             or_filters=or_filters,
-            limit_start=data.page * data.size,
-            limit_page_length=data.size,
-            order_by=order_by,
+            limit_start=page * size,
+            limit_page_length=size,
+            order_by=_order_by,
         )
+
         return ERPNextTaskPaginatedResponse.model_validate({"items": tasks}, from_attributes=True)
 
     async def get_issue(self, name: str):
@@ -248,7 +260,7 @@ class FrappReadRepository:
         return ERPNextIssue(**data)
 
     async def get_issues(self, data: ERPNextIssuesRequest, sub: str):
-        accessible_projects = await self.get_project_name(sub)
+        accessible_projects = await self.get_project_names(sub)
 
         if not accessible_projects:
             return ERPNextTaskPaginatedResponse(items=[])
@@ -316,7 +328,7 @@ class FrappReadRepository:
         data: ERPNextContractRequest,
         sub: str,
     ):
-        accessible_projects = await self.get_project_name(sub)
+        accessible_projects = await self.get_project_names(sub)
 
         if not accessible_projects:
             return ERPNextContractPaginatedResponse(items=[])
@@ -365,6 +377,60 @@ class FrappReadRepository:
         )
 
         return ERPNextContractPaginatedResponse.model_validate({"items": contracts}, from_attributes=True)
+
+    async def get_report(
+        self,
+        project_id: str,
+        sub: str,
+        start_date: datetime.date | str,
+        end_date: datetime.date | str | None = None,
+    ):
+        project = await self.get_project_by_id(project_id, sub)
+        filters = ["Project Report", "project", "=", project.project_name]
+
+        if end_date is None or start_date == end_date:
+            filters.append(["Project Report", "start_date", "=", start_date])
+            filters.append(["Project Report", "end_date", "=", end_date])
+
+        else:
+            filters.append(["Project Report", "start_date", ">=", start_date])
+            filters.append(["Project Report", "end_date", "<=", end_date])
+
+        reports = await self.frappe_client.get_list(
+            "Project Report",
+            filters=filters,
+            limit_start=0,
+            limit_page_length=1,
+        )
+
+        if len(reports) == 0:
+            return None
+
+        return ERPNextReport.model_validate(reports[0])
+
+    async def get_timesheets(
+        self,
+        page: int,
+        size: int,
+        sub: str,
+        project_id: str,
+        start_date: datetime.date | str,
+        end_date: datetime.date | str,
+    ):
+        project = await self.get_project_by_id(project_id, sub)
+
+        timesheet = await self.frappe_client.get_list(
+            "Timesheet",
+            filters=[
+                ["Timesheet", "end_date", ">=", start_date],
+                ["Timesheet", "start_date", "<=", end_date],
+                ["Timesheet", "parent_project=", "=", project.project_name],
+            ],
+            limit_start=page * size,
+            limit_page_length=size,
+        )
+
+        return ERPNextTimeSheetForUserList.model_validate({"items": timesheet}, from_attributes=True)
 
     async def get_file(self, project_id: str, key: str, task_id: str | None = None) -> ERPNextFile:
         filters = {"project": project_id}
@@ -530,9 +596,9 @@ class FrappUpdateRepository:
             }
         )
 
-        return UserERPNextProject(**project)
+        return ERPNextProjectForUser(**project)
 
-    async def add_member_to_project(self, data: UserERPNextProject, sub: str, level: int):
+    async def add_member_to_project(self, data: ERPNextProjectForUser, sub: str, level: int):
         project = await self.frappe_client.update(
             {
                 "doctype": "Project",
@@ -543,7 +609,7 @@ class FrappUpdateRepository:
             }
         )
 
-        return UserERPNextProject(**project)
+        return ERPNextProjectForUser(**project)
 
     async def edit_project_member(self, project_id: str, data: list[ERPNextTeam]):
         project = await self.frappe_client.update(
@@ -554,7 +620,7 @@ class FrappUpdateRepository:
             }
         )
 
-        return UserERPNextProject(**project)
+        return ERPNextProjectForUser(**project)
 
     async def update_issue_by_id(self, name: str, data: UpdateERPNextIssue):
         updated_issue = await self.frappe_client.update(

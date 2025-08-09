@@ -75,9 +75,9 @@ async def get_project_overview(
     return projects
 
 
-@router.get("/{project_id}", response_model=UserERPNextProject)
+@router.get("/{project_id}", response_model=ERPNextProjectForUser)
 async def get_project(
-    project: Annotated[UserERPNextProject, Depends(project_service.get_project)],
+    project: Annotated[ERPNextProjectForUser, Depends(project_service.get_project)],
 ):
     """`project_id`로 프로젝트를 조회합니다"""
     return project
@@ -163,6 +163,12 @@ async def get_files(files: Annotated[ERPNextFilesResponse, Depends(project_servi
 @router.delete("/{project_id}/files/{key}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_files(_: Annotated[None, Depends(project_service.delete_file)]):
     pass
+
+
+@limiter(100, 60 * 60 * 24)
+@router.post("/{project_id}/report", response_model=ERPNextReport)
+async def get_daily_report(report: Annotated[ERPNextReport, Depends(project_service.get_daily_report)]):
+    return report
 
 
 @limiter(max_requests=100, interval=60 * 60 * 24)
