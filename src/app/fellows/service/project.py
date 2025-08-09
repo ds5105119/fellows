@@ -464,13 +464,14 @@ class ProjectService:
             quote_date = sorted(quote_slots, key=lambda x: x["date"])[0]["date"]
         quote_date = datetime.strptime(quote_date, "%Y-%m-%d").date()
 
-        if quote_date > project.expected_end_date:
+        if project.expected_end_date and quote_date > project.expected_end_date:
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
 
         await self.frappe_repository.update_project_by_id(
             project_id,
             UpdateERPNextProject(
                 custom_project_status=CustomProjectStatus.PROCESS_1,
+                expected_start_date=quote_date,
                 is_active=IsActive.YES,
             ),
         )

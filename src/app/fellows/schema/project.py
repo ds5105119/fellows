@@ -244,7 +244,7 @@ class OverviewERPNextProject(BaseModel):
 
 
 class CreateERPNextProject(BaseModel):
-    model_config = ConfigDict(extra="allow", use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True)
 
     custom_project_title: str
     custom_project_summary: str
@@ -265,12 +265,13 @@ class CreateERPNextProject(BaseModel):
 
 
 class UpdateERPNextProject(BaseModel):
-    model_config = ConfigDict(extra="allow", use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True)
     custom_project_title: str | None = Field(default=None)
     custom_project_summary: str | None = Field(default=None)
     custom_readiness_level: str | None = Field(default=None)
     custom_project_method: ProjectMethod | None = Field(default=None)
     custom_nocode_platform: NoCodePlatform | None = Field(default=None)
+    custom_project_status: CustomProjectStatus | None = Field(default=CustomProjectStatus.DRAFT)
 
     is_active: IsActive | None = Field(default=None)
 
