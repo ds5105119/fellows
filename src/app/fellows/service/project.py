@@ -1056,10 +1056,10 @@ class ProjectService:
     ):
         is_loading = await self.redis_cache.get(report_id)
 
-        if is_loading:
+        if is_loading == b"1":
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
-        await self.redis_cache.set(report_id, 1, 60 * 10)
+        await self.redis_cache.set(report_id, b"1", 60 * 10)
 
         report = await self.frappe_repository.get_report_by_name(report_id)
         project, level = await self.frappe_repository.get_user_project_permission(report.project, user.sub)
