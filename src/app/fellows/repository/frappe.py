@@ -388,27 +388,39 @@ class FrappReadRepository:
         end_date: datetime.date | str | None = None,
     ):
         project = await self.get_project_by_id(project_id, sub)
-        filters = ["Project Report", "project", "=", project.project_name]
+        filters = [
+            ["Project Report", "project", "=", project.project_name],
+            ["Project Report", "start_date", "=", start_date],
+        ]
 
-        if end_date is None or start_date == end_date:
-            filters.append(["Project Report", "start_date", "=", start_date])
+        if end_date:
             filters.append(["Project Report", "end_date", "=", end_date])
-
-        else:
-            filters.append(["Project Report", "start_date", ">=", start_date])
-            filters.append(["Project Report", "end_date", "<=", end_date])
 
         reports = await self.frappe_client.get_list(
             "Project Report",
             filters=filters,
-            limit_start=0,
             limit_page_length=1,
         )
 
-        if len(reports) == 0:
+        if reports is None or len(reports) == 0:
             return None
 
         return ERPNextReport.model_validate(reports[0])
+
+    async def create_report(
+        self, project_id: str, start_date: datetime.date | str, end_date: datetime.date | str, summary: str
+    ):
+        report = await self.frappe_client.insert(
+            {
+                "doctype": "Project Report",
+                "project": project_id,
+                "start_date": start_date,
+                "end_date": end_date,
+                "summary": summary,
+            }
+        )
+
+        return ERPNextReport.model_validate(report)
 
     async def get_timesheets(
         self,
@@ -426,7 +438,7 @@ class FrappReadRepository:
             filters=[
                 ["Timesheet", "end_date", ">=", start_date],
                 ["Timesheet", "start_date", "<=", end_date],
-                ["Timesheet", "parent_project=", "=", project.project_name],
+                ["Timesheet", "parent_project", "=", project.project_name],
             ],
             limit_start=page * size,
             limit_page_length=size,

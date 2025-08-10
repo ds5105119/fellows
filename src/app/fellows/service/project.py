@@ -699,7 +699,7 @@ class ProjectService:
     async def get_daily_report(
         self,
         user: get_current_user,
-        data: DailyReportRequest,
+        data: Annotated[DailyReportRequest, Query()],
         project_id: str | None = Path(),
     ) -> ReportResponse:
         report = await self.frappe_repository.get_report(project_id, user.sub, data.date)
@@ -722,16 +722,51 @@ class ProjectService:
             end_date=data.date,
         )
 
-        print(tasks, timesheets)
-
         if not report:
-            pass
+            task_items = [
+                task.model_dump(
+                    include={
+                        "subject",
+                        "status",
+                        "exp_start_date",
+                        "expected_time",
+                        "exp_end_date",
+                        "progress",
+                        "description",
+                    }
+                )
+                for task in tasks.items
+            ]
+            timesheet_items = [
+                timesheet.model_dump(
+                    include={
+                        "name",
+                        "creation",
+                        "start_date",
+                        "end_date",
+                        "total_hours",
+                        "note",
+                    }
+                )
+                for timesheet in timesheets.items
+            ]
+
+            response = await self.openai_client.responses.create(
+                model="gpt-5-mini",
+                instructions=report_summary_instruction,
+                input=f"tasks={task_items}, timesheet={timesheet_items}",
+                max_output_tokens=20000,
+                top_p=1.0,
+            )
+
+            result = response.output_text
+            report = await self.frappe_repository.create_report(project_id, data.date, data.date, result)
 
         return ReportResponse.model_validate(
             {
                 "report": report,
-                "tasks": tasks,
-                "timesheets": timesheets,
+                "tasks": tasks.items,
+                "timesheets": timesheets.items,
             },
             from_attributes=True,
         )

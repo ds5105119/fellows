@@ -165,7 +165,6 @@ async def delete_files(_: Annotated[None, Depends(project_service.delete_file)])
     pass
 
 
-@limiter(100, 60 * 60 * 24)
 @router.get("/{project_id}/report/daily", response_model=ReportResponse)
 async def get_daily_report(report: Annotated[ReportResponse, Depends(project_service.get_daily_report)]):
     return report
