@@ -400,7 +400,7 @@ class FrappReadRepository:
         return ERPNextContractPaginatedResponse.model_validate({"items": contracts}, from_attributes=True)
 
     async def get_report_by_name(self, name: str):
-        report = await self.frappe_client.get_doc("Report", name)
+        report = await self.frappe_client.get_doc("Project Report", name)
 
         if report:
             return ERPNextReport.model_validate(report)
