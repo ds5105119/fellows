@@ -7,6 +7,7 @@ from typing import Annotated
 import openai
 from fastapi import HTTPException, Path, Query, status
 from keycloak import KeycloakAdmin
+from webtool.cache import RedisCache
 
 from src.app.fellows.data.project import *
 from src.app.fellows.repository.frappe import FrappeRepository
@@ -67,12 +68,14 @@ class ProjectService:
         frappe_repository: FrappeRepository,
         alert_repository: AlertRepository,
         keycloak_admin: KeycloakAdmin,
+        redis_cache: RedisCache,
     ):
         self.openai_client = openai_client
         self.frappe_client = frappe_client
         self.frappe_repository = frappe_repository
         self.alert_repository = alert_repository
         self.keycloak_admin = keycloak_admin
+        self.redis_cache = redis_cache
 
     async def create_project(
         self,
@@ -1052,6 +1055,13 @@ class ProjectService:
         tasks: ERPNextTaskPaginatedResponse,
         timesheets: ERPNextTimeSheetForUserList,
     ):
+        is_loading = await self.redis_cache.get(summary_name)
+
+        if is_loading:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+        await self.redis_cache.set(summary_name, 1, 60 * 10)
+
         task_items = [
             task.model_dump(
                 include={
@@ -1090,5 +1100,7 @@ class ProjectService:
 
         result = response.output_text
         report = await self.frappe_repository.update_report(summary_name, summary=result)
+
+        await self.redis_cache.delete(summary_name)
 
         return report
