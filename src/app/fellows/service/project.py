@@ -1061,71 +1061,77 @@ class ProjectService:
 
         await self.redis_cache.set(report_id, b"1", 60 * 10)
 
-        report = await self.frappe_repository.get_report_by_name(report_id)
-        project, level = await self.frappe_repository.get_user_project_permission(report.project, user.sub)
+        try:
+            report = await self.frappe_repository.get_report_by_name(report_id)
+            project, level = await self.frappe_repository.get_user_project_permission(report.project, user.sub)
 
-        if level > 2:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to cancel project submission."
+            if level > 2:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have permission to cancel project submission.",
+                )
+
+            tasks = await self.frappe_repository.get_tasks(
+                0,
+                1000,
+                user.sub,
+                project_id=report.project,
+                start=report.start_date,
+                end=report.end_date,
             )
 
-        tasks = await self.frappe_repository.get_tasks(
-            0,
-            1000,
-            user.sub,
-            project_id=report.project,
-            start=report.start_date,
-            end=report.end_date,
-        )
-
-        timesheets = await self.frappe_repository.get_timesheets(
-            0,
-            100,
-            user.sub,
-            project_id=report.project,
-            start_date=report.start_date,
-            end_date=report.end_date,
-        )
-
-        task_items = [
-            task.model_dump(
-                include={
-                    "subject",
-                    "status",
-                    "exp_start_date",
-                    "expected_time",
-                    "exp_end_date",
-                    "progress",
-                    "description",
-                }
+            timesheets = await self.frappe_repository.get_timesheets(
+                0,
+                100,
+                user.sub,
+                project_id=report.project,
+                start_date=report.start_date,
+                end_date=report.end_date,
             )
-            for task in tasks.items
-        ]
-        timesheet_items = [
-            timesheet.model_dump(
-                include={
-                    "name",
-                    "creation",
-                    "start_date",
-                    "end_date",
-                    "total_hours",
-                    "note",
-                }
+
+            task_items = [
+                task.model_dump(
+                    include={
+                        "subject",
+                        "status",
+                        "exp_start_date",
+                        "expected_time",
+                        "exp_end_date",
+                        "progress",
+                        "description",
+                    }
+                )
+                for task in tasks.items
+            ]
+            timesheet_items = [
+                timesheet.model_dump(
+                    include={
+                        "name",
+                        "creation",
+                        "start_date",
+                        "end_date",
+                        "total_hours",
+                        "note",
+                    }
+                )
+                for timesheet in timesheets.items
+            ]
+
+            response = await self.openai_client.responses.create(
+                model="gpt-5-mini",
+                instructions=report_summary_instruction,
+                input=f"tasks={task_items}, timesheet={timesheet_items}",
+                max_output_tokens=10000,
+                top_p=1.0,
             )
-            for timesheet in timesheets.items
-        ]
 
-        response = await self.openai_client.responses.create(
-            model="gpt-5-mini",
-            instructions=report_summary_instruction,
-            input=f"tasks={task_items}, timesheet={timesheet_items}",
-            max_output_tokens=10000,
-            top_p=1.0,
-        )
+            result = response.output_text
+            report = await self.frappe_repository.update_report(report_id, summary=result)
 
-        result = response.output_text
-        report = await self.frappe_repository.update_report(report_id, summary=result)
+            return report
 
-        await self.redis_cache.delete(report_id)
+        except Exception:
+            pass
 
-        return report
+        finally:
+            await self.redis_cache.delete(report_id)
