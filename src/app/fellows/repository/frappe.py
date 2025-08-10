@@ -399,7 +399,7 @@ class FrappReadRepository:
 
         return ERPNextContractPaginatedResponse.model_validate({"items": contracts}, from_attributes=True)
 
-    async def get_report(
+    async def get_report_by_project_id(
         self,
         project_id: str,
         sub: str,

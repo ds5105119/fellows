@@ -564,7 +564,7 @@ class MonthlyReportRequest(BaseModel):
 class ERPNextReport(BaseModel):
     model_config = ConfigDict(extra="allow", use_enum_values=True)
 
-    name: int
+    name: str
     creation: datetime.datetime
     modified: datetime.datetime
 

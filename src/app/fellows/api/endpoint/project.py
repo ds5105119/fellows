@@ -202,6 +202,14 @@ async def estimate_title(
     return info
 
 
+@limiter(max_requests=100, interval=60 * 60 * 24)
+@router.get("/estimate/report/daily", response_model=ReportResponse)
+async def estimate_title(
+    report: Annotated[ReportResponse, Depends(project_service.get_daily_report_summary)],
+):
+    return report
+
+
 @router.get("/slots/quote", response_model=list[QuoteSlot])
 async def get_quote_slots(
     slots: Annotated[None, Depends(project_service.get_quote_slots)],

@@ -706,7 +706,7 @@ class ProjectService:
         data: Annotated[DailyReportRequest, Query()],
         project_id: str | None = Path(),
     ) -> ReportResponse:
-        report = await self.frappe_repository.get_report(project_id, user.sub, data.date)
+        report = await self.frappe_repository.get_report_by_project_id(project_id, user.sub, data.date)
 
         tasks = await self.frappe_repository.get_tasks(
             0,
@@ -1051,9 +1051,8 @@ class ProjectService:
 
     async def get_daily_report_summary(
         self,
-        summary_name: str,
-        tasks: ERPNextTaskPaginatedResponse,
-        timesheets: ERPNextTimeSheetForUserList,
+        user: get_current_user,
+        summary_name: str = Path(),
     ):
         is_loading = await self.redis_cache.get(summary_name)
 
@@ -1061,6 +1060,24 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
         await self.redis_cache.set(summary_name, 1, 60 * 10)
+
+        tasks = await self.frappe_repository.get_tasks(
+            0,
+            1000,
+            user.sub,
+            project_id=project_id,
+            start=data.date,
+            end=data.date,
+        )
+
+        timesheets = await self.frappe_repository.get_timesheets(
+            0,
+            100,
+            user.sub,
+            project_id=project_id,
+            start_date=data.date,
+            end_date=data.date,
+        )
 
         task_items = [
             task.model_dump(
