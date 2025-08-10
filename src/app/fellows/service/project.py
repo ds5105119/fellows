@@ -1052,31 +1052,39 @@ class ProjectService:
     async def get_daily_report_summary(
         self,
         user: get_current_user,
-        summary_name: str = Path(),
+        report_id: str = Path(),
     ):
-        is_loading = await self.redis_cache.get(summary_name)
+        is_loading = await self.redis_cache.get(report_id)
 
         if is_loading:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
-        await self.redis_cache.set(summary_name, 1, 60 * 10)
+        await self.redis_cache.set(report_id, 1, 60 * 10)
+
+        report = await self.frappe_repository.get_report_by_name(report_id)
+        project, level = await self.frappe_repository.get_user_project_permission(report.project, user.sub)
+
+        if level > 2:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to cancel project submission."
+            )
 
         tasks = await self.frappe_repository.get_tasks(
             0,
             1000,
             user.sub,
-            project_id=project_id,
-            start=data.date,
-            end=data.date,
+            project_id=report.project,
+            start=report.start_date,
+            end=report.end_date,
         )
 
         timesheets = await self.frappe_repository.get_timesheets(
             0,
             100,
             user.sub,
-            project_id=project_id,
-            start_date=data.date,
-            end_date=data.date,
+            project_id=report.project,
+            start_date=report.start_date,
+            end_date=report.end_date,
         )
 
         task_items = [
@@ -1116,8 +1124,8 @@ class ProjectService:
         )
 
         result = response.output_text
-        report = await self.frappe_repository.update_report(summary_name, summary=result)
+        report = await self.frappe_repository.update_report(report_id, summary=result)
 
-        await self.redis_cache.delete(summary_name)
+        await self.redis_cache.delete(report_id)
 
         return report
