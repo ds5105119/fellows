@@ -1128,7 +1128,14 @@ class ProjectService:
             result = response.output_text
             report = await self.frappe_repository.update_report(report_id, summary=result)
 
-            return report
+            return ReportResponse.model_validate(
+                {
+                    "report": report,
+                    "tasks": tasks.items,
+                    "timesheets": timesheets.items,
+                },
+                from_attributes=True,
+            )
 
         except Exception:
             pass
