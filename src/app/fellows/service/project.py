@@ -26,6 +26,7 @@ from src.app.fellows.schema.project import (
     ERPNextTaskPaginatedResponse,
     ERPNextTasksRequest,
     ERPNextTeam,
+    ERPNextTimeSheetForUserList,
     ERPNextToDo,
     ERPNextToDoPriority,
     IsActive,
@@ -723,44 +724,7 @@ class ProjectService:
         )
 
         if not report:
-            task_items = [
-                task.model_dump(
-                    include={
-                        "subject",
-                        "status",
-                        "exp_start_date",
-                        "expected_time",
-                        "exp_end_date",
-                        "progress",
-                        "description",
-                    }
-                )
-                for task in tasks.items
-            ]
-            timesheet_items = [
-                timesheet.model_dump(
-                    include={
-                        "name",
-                        "creation",
-                        "start_date",
-                        "end_date",
-                        "total_hours",
-                        "note",
-                    }
-                )
-                for timesheet in timesheets.items
-            ]
-
-            response = await self.openai_client.responses.create(
-                model="gpt-5-mini",
-                instructions=report_summary_instruction,
-                input=f"tasks={task_items}, timesheet={timesheet_items}",
-                max_output_tokens=20000,
-                top_p=1.0,
-            )
-
-            result = response.output_text
-            report = await self.frappe_repository.create_report(project_id, data.date, data.date, result)
+            report = await self.frappe_repository.create_report(project_id, data.date, data.date, "")
 
         return ReportResponse.model_validate(
             {
@@ -1081,3 +1045,50 @@ class ProjectService:
         total_amount = int(result[1])
 
         return emoji, total_amount
+
+    async def get_daily_report_summary(
+        self,
+        summary_name: str,
+        tasks: ERPNextTaskPaginatedResponse,
+        timesheets: ERPNextTimeSheetForUserList,
+    ):
+        task_items = [
+            task.model_dump(
+                include={
+                    "subject",
+                    "status",
+                    "exp_start_date",
+                    "expected_time",
+                    "exp_end_date",
+                    "progress",
+                    "description",
+                }
+            )
+            for task in tasks.items
+        ]
+        timesheet_items = [
+            timesheet.model_dump(
+                include={
+                    "name",
+                    "creation",
+                    "start_date",
+                    "end_date",
+                    "total_hours",
+                    "note",
+                }
+            )
+            for timesheet in timesheets.items
+        ]
+
+        response = await self.openai_client.responses.create(
+            model="gpt-5-mini",
+            instructions=report_summary_instruction,
+            input=f"tasks={task_items}, timesheet={timesheet_items}",
+            max_output_tokens=10000,
+            top_p=1.0,
+        )
+
+        result = response.output_text
+        report = await self.frappe_repository.update_report(summary_name, summary=result)
+
+        return report
