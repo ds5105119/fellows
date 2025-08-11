@@ -769,7 +769,7 @@ class ProjectService:
         )
 
         if not report:
-            report = await self.frappe_repository.create_report(project_id, data.date, data.date, "")
+            report = await self.frappe_repository.create_report(project_id, start_date, end_date, "")
 
         return ReportResponse.model_validate(
             {
