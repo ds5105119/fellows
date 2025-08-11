@@ -177,6 +177,11 @@ async def get_daily_report(report: Annotated[ReportResponse, Depends(project_ser
     return report
 
 
+@router.get("/{project_id}/report/monthly", response_model=ReportResponse)
+async def get_daily_report(report: Annotated[ReportResponse, Depends(project_service.get_monthly_report)]):
+    return report
+
+
 @limiter(max_requests=100, interval=60 * 60 * 24)
 @router.get("/{project_id}/estimate", response_class=StreamingResponse)
 async def estimate_stream(
