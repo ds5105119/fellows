@@ -204,8 +204,8 @@ async def estimate_title(
 
 @limiter(max_requests=100, interval=60 * 60 * 24)
 @router.get("/estimate/report/{report_id}", response_model=ReportResponse)
-async def estimate_title(
-    report: Annotated[ReportResponse, Depends(project_service.get_daily_report_summary)],
+async def estimate_report_summary(
+    report: Annotated[ReportResponse, Depends(project_service.get_report_summary)],
 ):
     return report
 
