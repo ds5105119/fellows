@@ -143,6 +143,13 @@ async def cancel_submit_project(
     pass
 
 
+@router.get("/slots/quote", response_model=list[QuoteSlot])
+async def get_quote_slots(
+    slots: Annotated[None, Depends(project_service.get_quote_slots)],
+):
+    return slots
+
+
 @limiter(1, 2)
 @router.post("/{project_id}/files", status_code=status.HTTP_204_NO_CONTENT)
 async def create_files(_: Annotated[None, Depends(project_service.create_file)]):
@@ -188,7 +195,7 @@ async def estimate_stream(
 
 @limiter(max_requests=500, interval=60 * 60 * 24)
 @router.get("/estimate/feature", response_model=ProjectFeatureEstimateResponse)
-async def feature_estimate(
+async def estimate_feature(
     features: Annotated[list[str], Depends(project_service.get_project_feature_estimate)],
 ):
     return ProjectFeatureEstimateResponse(feature_list=features)
@@ -208,10 +215,3 @@ async def estimate_report_summary(
     report: Annotated[ReportResponse, Depends(project_service.get_report_summary)],
 ):
     return report
-
-
-@router.get("/slots/quote", response_model=list[QuoteSlot])
-async def get_quote_slots(
-    slots: Annotated[None, Depends(project_service.get_quote_slots)],
-):
-    return slots
