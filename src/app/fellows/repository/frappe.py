@@ -245,9 +245,9 @@ class FrappReadRepository:
         if keyword:
             filters["subject"] = ["like", f"%{keyword}%"]
         if start:
-            filters["exp_end_date"] = [">=", start]
+            filters["exp_end_date"] = [">", start - timedelta(days=1)]
         if end:
-            filters["exp_start_date"] = ["<=", end]
+            filters["exp_start_date"] = ["<", end + timedelta(days=1)]
         if isinstance(status, str):
             filters["status"] = ["like", status]
         elif isinstance(status, list):
@@ -305,9 +305,9 @@ class FrappReadRepository:
 
         # start와 end 날짜 필터를 각각 독립적으로 추가합니다.
         if data.start:
-            filters.append(["Issue", "creation", ">=", data.start])
+            filters.append(["Issue", "creation", ">", data.start - timedelta(days=1)])
         if data.end:
-            filters.append(["Issue", "creation", "<=", data.end])
+            filters.append(["Issue", "creation", "<", data.end + timedelta(days=1)])
 
         if isinstance(data.issue_type, str):
             filters.append(["Issue", "issue_type", "like", data.issue_type])
