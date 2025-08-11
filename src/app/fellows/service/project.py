@@ -1,4 +1,5 @@
 import asyncio
+import calendar
 import json
 from datetime import datetime, timedelta
 from logging import getLogger
@@ -27,7 +28,6 @@ from src.app.fellows.schema.project import (
     ERPNextTaskPaginatedResponse,
     ERPNextTasksRequest,
     ERPNextTeam,
-    ERPNextTimeSheetForUserList,
     ERPNextToDo,
     ERPNextToDoPriority,
     IsActive,
@@ -738,6 +738,48 @@ class ProjectService:
             from_attributes=True,
         )
 
+    async def get_monthly_report(
+        self,
+        user: get_current_user,
+        data: Annotated[DailyReportRequest, Query()],
+        project_id: str | None = Path(),
+    ) -> ReportResponse:
+        report = await self.frappe_repository.get_report_by_project_id(project_id, user.sub, data.date)
+
+        last_day = calendar.monthrange(data.date.year, data.date.month)[1]
+        start_date = data.date.replace(day=1)
+        end_date = data.date.replace(day=last_day)
+
+        tasks = await self.frappe_repository.get_tasks(
+            0,
+            1000,
+            user.sub,
+            project_id=project_id,
+            start=start_date,
+            end=end_date,
+        )
+
+        timesheets = await self.frappe_repository.get_timesheets(
+            0,
+            100,
+            user.sub,
+            project_id=project_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        if not report:
+            report = await self.frappe_repository.create_report(project_id, data.date, data.date, "")
+
+        return ReportResponse.model_validate(
+            {
+                "report": report,
+                "tasks": tasks.items,
+                "timesheets": timesheets.items,
+            },
+            from_attributes=True,
+        )
+
     async def create_issue(
         self,
         user: get_current_user,
@@ -1049,7 +1091,7 @@ class ProjectService:
 
         return emoji, total_amount
 
-    async def get_daily_report_summary(
+    async def get_report_summary(
         self,
         user: get_current_user,
         report_id: str = Path(),
