@@ -382,7 +382,7 @@ class FrappReadRepository:
         elif isinstance(data.status, list):
             filters["status"] = ["in", data.status]
 
-        order_by = ["modified desc"]
+        order_by = ["modified asc"]
         if isinstance(data.order_by, str):
             order_by = data.order_by
         elif isinstance(data.order_by, list):
