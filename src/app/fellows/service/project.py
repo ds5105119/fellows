@@ -42,6 +42,7 @@ from src.app.fellows.schema.project import (
     UpdateERPNextProject,
 )
 from src.app.user.repository.alert import AlertRepository
+from src.app.user.service.cloud import CloudService
 from src.core.dependencies.auth import get_current_user
 from src.core.dependencies.db import db_session
 from src.core.utils.frappeclient import AsyncFrappeClient
@@ -65,6 +66,7 @@ class ProjectService:
         self,
         openai_client: openai.AsyncOpenAI,
         frappe_client: AsyncFrappeClient,
+        cloud_service: CloudService,
         frappe_repository: FrappeRepository,
         alert_repository: AlertRepository,
         keycloak_admin: KeycloakAdmin,
@@ -72,6 +74,7 @@ class ProjectService:
     ):
         self.openai_client = openai_client
         self.frappe_client = frappe_client
+        self.cloud_service = cloud_service
         self.frappe_repository = frappe_repository
         self.alert_repository = alert_repository
         self.keycloak_admin = keycloak_admin
@@ -403,6 +406,9 @@ class ProjectService:
                 status_code=status.HTTP_403_FORBIDDEN, detail="Only the project owner can delete the project."
             )
 
+        files = await self.frappe_repository.get_files(project_id, page=0, size=1000)
+        await self.cloud_service.delete_files(files)
+
         return await self.frappe_repository.delete_project_by_id(project.project_name)
 
     async def get_quote_slots(self) -> list[QuoteSlot]:
@@ -654,7 +660,7 @@ class ProjectService:
                 detail="You do not have permission to read files in this project.",
             )
 
-        return await self.frappe_repository.get_files(project.project_name, data)
+        return await self.frappe_repository.get_files(project_id=project.project_name, **data.model_dump())
 
     async def delete_file(
         self,

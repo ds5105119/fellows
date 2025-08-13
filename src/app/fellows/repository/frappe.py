@@ -464,28 +464,36 @@ class FrappReadRepository:
         data = await self.frappe_client.get_doc("Files", key, filters)
         return ERPNextFile(**data)
 
-    async def get_files(self, project_id: str, data: ERPNextFileRequest):
+    async def get_files(
+        self,
+        project_id: str,
+        page: int,
+        size: int,
+        order_by: str = "modified",
+        task: str | None = None,
+        issue: str | None = None,
+    ):
         filters = {"project": project_id}
 
-        if data.task:
-            filters["task"] = data.task
-        if data.issue:
-            filters["issue"] = data.issue
+        if task:
+            filters["task"] = task
+        if issue:
+            filters["issue"] = issue
 
-        order_by = None
+        _order_by = None
 
-        if data.order_by:
-            if data.order_by.split(".")[-1] == "desc":
-                order_by = f"{data.order_by.split('.')[0]} desc"
+        if order_by:
+            if order_by.split(".")[-1] == "desc":
+                _order_by = f"{order_by.split('.')[0]} desc"
             else:
-                order_by = data.order_by
+                _order_by = order_by
 
         files = await self.frappe_client.get_list(
             "Files",
             filters=filters,
-            limit_start=data.page * data.size,
-            limit_page_length=data.size,
-            order_by=order_by,
+            limit_start=page * size,
+            limit_page_length=size,
+            order_by=_order_by,
         )
 
         return ERPNextFilesResponse.model_validate({"items": files}, from_attributes=True)

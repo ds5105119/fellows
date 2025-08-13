@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import hashlib
 import logging
@@ -10,6 +11,7 @@ from botocore.client import ClientError
 from fastapi import Header, HTTPException, Query, Request, Response, status
 from mypy_boto3_s3 import S3Client
 
+from src.app.fellows.schema.project import ERPNextFilesResponse
 from src.app.user.schema.cloud import *
 from src.core.config import settings
 from src.core.dependencies.auth import get_current_user
@@ -240,3 +242,20 @@ class CloudService:
             raise HTTPException(status_code=500, detail="Deletion failed")
 
         await self.frappe_client.delete("Files", data.key)
+
+    async def delete_files(self, files: ERPNextFilesResponse):
+        files_key = [file.file_name for file in files.items]
+
+        async def delete_one(key: str):
+            await asyncio.to_thread(
+                self.s3_client.delete_object,
+                Bucket=settings.cloudflare.storage_bucket_name,
+                Key=key,
+            )
+            await self.frappe_client.delete("Files", key)
+
+        try:
+            await asyncio.gather(*(delete_one(key) for key in files_key))
+        except ClientError as e:
+            logger.error("Cloudflare delete error: %s", e)
+            raise HTTPException(status_code=500, detail="Deletion failed")
