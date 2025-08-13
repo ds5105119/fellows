@@ -713,7 +713,7 @@ class FrappDeleteRepository:
     async def delete_project_by_id(self, project_id: str):
         timesheets = await self.frappe_client.get_list("Timesheet", fields=["name"], filters={"project": project_id})
         tasks = await self.frappe_client.get_list("Task", fields=["name"], filters={"project": project_id})
-        issues = await self.frappe_client.get_list("Issue", fields=["name"], filters={"project": project_id})
+        issues = await self.frappe_client.get_list("Issue", fields=["name"], filters={"parent_project": project_id})
         files = await self.frappe_client.get_list("Files", fields=["name"], filters={"project": project_id})
         reports = await self.frappe_client.get_list("Project Report", fields=["name"], filters={"project": project_id})
 
