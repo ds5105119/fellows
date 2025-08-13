@@ -140,7 +140,7 @@ class ERPNextProject(BaseModel):
     custom_emoji: str | None = Field(default=None)
     custom_readiness_level: str | None = Field(default=None)  # ReadinessLevel Enum 사용 가능
     custom_content_pages: int | None = Field(default=None)
-    custom_maintenance_required: bool | None = Field(default=False)
+    custom_maintenance: int | None = Field(default=1)
 
     custom_team: list[ERPNextTeam] | None = Field(default=None)
     custom_platforms: list[ERPNextProjectPlatformRow] | None = Field(default_factory=list)
@@ -205,7 +205,7 @@ class ERPNextProjectForUser(BaseModel):
     custom_emoji: str | None = Field(default=None)
     custom_readiness_level: str
     custom_content_pages: int | None = Field(default=None)
-    custom_maintenance_required: bool | None = Field(default=False)
+    custom_maintenance: int | None = Field(default=1)
 
     custom_team: list[ERPNextTeam] | None = Field(default=None)
     custom_platforms: list[ERPNextProjectPlatformRow] | None = Field(default_factory=list)
@@ -256,7 +256,7 @@ class CreateERPNextProject(BaseModel):
     expected_end_date: datetime.date | None = Field(default=None)
 
     custom_content_pages: int | None = Field(default=None)
-    custom_maintenance_required: bool | None = Field(default=False)
+    custom_maintenance: int | None = Field(default=1)
 
     custom_platforms: list[ERPNextProjectPlatformRow] = Field(default_factory=list)
     custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
@@ -280,7 +280,7 @@ class UpdateERPNextProject(BaseModel):
     customer: str | None = Field(None)
 
     custom_content_pages: int | None = Field(default=None)
-    custom_maintenance_required: bool | None = Field(default=False)
+    custom_maintenance: int | None = Field(default=1)
 
     custom_platforms: list[ERPNextProjectPlatformRow] = Field(default_factory=list)
     custom_features: list[ERPNextProjectFeatureRow] | None = Field(default_factory=list)
