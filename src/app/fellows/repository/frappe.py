@@ -718,6 +718,16 @@ class FrappDeleteRepository:
         reports = await self.frappe_client.get_list("Project Report", fields=["name"], filters={"project": project_id})
 
         await asyncio.gather(
+            *[
+                self.frappe_client.bulk_update(
+                    {
+                        "doctype": "Task",
+                        "name": task["name"],
+                        "depends_on": [],
+                    }
+                )
+                for task in tasks
+            ],
             *[self.frappe_client.delete("Timesheet", timesheet["name"]) for timesheet in timesheets],
         )
 
