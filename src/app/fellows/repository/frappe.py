@@ -711,33 +711,59 @@ class FrappDeleteRepository:
         self.frappe_client = frappe_client
 
     async def delete_project_by_id(self, project_id: str):
-        timesheets = await self.frappe_client.get_list("Timesheet", fields=["name"], filters={"project": project_id})
-        tasks = await self.frappe_client.get_list("Task", fields=["name"], filters={"project": project_id})
-        issues = await self.frappe_client.get_list("Issue", fields=["name"], filters={"parent_project": project_id})
-        files = await self.frappe_client.get_list("Files", fields=["name"], filters={"project": project_id})
-        reports = await self.frappe_client.get_list("Project Report", fields=["name"], filters={"project": project_id})
+        # 1. 모든 관련 데이터 병렬 조회
+        timesheets, tasks, issues, files, reports, contracts = await asyncio.gather(
+            self.frappe_client.get_list(
+                "Timesheet", fields=["name", "docstatus"], filters={"parent_project": project_id}
+            ),
+            self.frappe_client.get_list("Task", fields=["name", "parent_task"], filters={"project": project_id}),
+            self.frappe_client.get_list("Issue", fields=["name"], filters={"project": project_id}),
+            self.frappe_client.get_list("Files", fields=["name"], filters={"project": project_id}),
+            self.frappe_client.get_list("Project Report", fields=["name"], filters={"project": project_id}),
+            self.frappe_client.get_list(
+                "Contract", fields=["name", "docstatus"], filters={"document_name": project_id}
+            ),
+        )
+
+        # 2. timesheet 및 contract 캔슬
+        async def cancel_and_delete_timesheet(ts):
+            if ts.get("docstatus") == 1:  # Submitted
+                await self.frappe_client.cancel("Timesheet", ts["name"])
+            await self.frappe_client.delete("Timesheet", ts["name"])
+
+        async def cancel_and_delete_contract(ct):
+            if ct.get("docstatus") == 1:
+                await self.frappe_client.cancel("Contract", ct["name"])
+            await self.frappe_client.delete("Contract", ct["name"])
 
         await asyncio.gather(
-            *[
-                self.frappe_client.bulk_update(
-                    {
-                        "doctype": "Task",
-                        "name": task["name"],
-                        "depends_on": [],
-                    }
-                )
+            *(cancel_and_delete_timesheet(ts) for ts in timesheets),
+            *(cancel_and_delete_contract(ct) for ct in contracts),
+        )
+
+        # 3. Tasks Dependency 제거
+        await self.frappe_client.bulk_update(
+            [
+                {
+                    "doctype": "Task",
+                    "docname": task["name"],
+                    "parent_task": None,
+                    "depends_on": None,
+                    "depends_on_tasks": None,
+                }
                 for task in tasks
-            ],
-            *[self.frappe_client.delete("Timesheet", timesheet["name"]) for timesheet in timesheets],
+            ]
         )
 
+        # 이외 제거
         await asyncio.gather(
-            *[self.frappe_client.delete("Task", task["name"]) for task in tasks],
-            *[self.frappe_client.delete("Issue", issue["name"]) for issue in issues],
-            *[self.frappe_client.delete("Files", file["name"]) for file in files],
-            *[self.frappe_client.delete("Project Report", report["name"]) for report in reports],
+            *(self.frappe_client.delete("Task", t["name"]) for t in tasks),
+            *(self.frappe_client.delete("Issue", i["name"]) for i in issues),
+            *(self.frappe_client.delete("Files", f["name"]) for f in files),
+            *(self.frappe_client.delete("Project Report", r["name"]) for r in reports),
         )
 
+        # 5. 마지막에 Project 삭제
         await self.frappe_client.delete("Project", project_id)
 
     async def delete_task_by_id(self, task_id: str):
