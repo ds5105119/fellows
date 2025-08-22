@@ -977,10 +977,10 @@ class ProjectService:
         payload = project_base.model_dump_json()
 
         response = await self.openai_client.responses.create(
-            model="gpt-4.1-mini",
+            model="gpt-5-mini",
             instructions=feature_estimate_instruction,
             input=payload,
-            max_output_tokens=1000,
+            max_output_tokens=2000,
             top_p=1.0,
         )
 
