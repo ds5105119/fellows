@@ -25,7 +25,7 @@ description_to_title_instruction = """AI역할: SI컨설턴트
    - "code": 일반 코드 개발
    - "nocode": 노코드 웹 제작 (custom_platforms가 ["web"]일 때만 가능)
    - "shop": 쇼핑몰 노코드 전용 (custom_platforms가 ["web"]일 때만 가능)
-5. custom_nocode_platform는 custom_project_method가 "nocode" 또는 "Shop" 일 때만 작성하며, 
+5. custom_nocode_platform는 custom_project_method가 "nocode" 또는 "shop" 일 때만 작성하며, 
    아래 기준으로 선택:
    - "cafe24": 전형적인 한국 쇼핑몰 구축
    - "godo": 고도몰, cafe24와 유사한 한국형 쇼핑몰
