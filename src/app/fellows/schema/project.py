@@ -63,6 +63,9 @@ class NoCodePlatform(str, Enum):
     SHOPIFY = "shopify"
     IMWEB = "imweb"
     FRAMER = "framer"
+    WORDPRESS = "wordpress"
+    WEBFLOW = "webflow"
+    BUBBLE = "bubble"
 
 
 # --- Child Table Models for ERPNext ---
