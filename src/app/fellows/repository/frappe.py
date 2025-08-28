@@ -110,6 +110,7 @@ class FrappReadRepository:
             "Project",
             fields=["project_name", "custom_team"],
             filters={"custom_team": ["like", f"%{sub}%"]},
+            limit_page_length=500
         )
 
         accessible_projects = []
