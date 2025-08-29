@@ -110,7 +110,6 @@ class FrappReadRepository:
             "Project",
             fields=["project_name", "custom_team"],
             filters={"custom_team": ["like", f"%{sub}%"]},
-            order_by="modified",
             limit_page_length=500
         )
 
@@ -203,6 +202,8 @@ class FrappReadRepository:
                 "custom_team",
             ],
             filters={"custom_team": ["like", f"%{sub}%"]},
+            order_by="modified desc",
+            limit_page_length=500
         )
 
         # 레벨 4 사용자의 프로젝트는 필터링
