@@ -363,6 +363,7 @@ class FrappReadRepository:
             "document_type": ["=", "Project"],
             "document_name": accessible_projects_names,
             "status": ["!=", "Draft"],
+            "docstatus": ["!=", 0],
         }
         or_filters = {}
 
