@@ -53,10 +53,10 @@ feature_estimate_instruction = """AI 역할: SI 컨설턴트
 프리미엄 기능은 일반 기능으로 대체 불가능하고, 프로젝트 핵심에 명백히 직접 기여할 때만 선택합니다.
 
 플랫폼 조건 원칙:
-- project_name 또는 project_summary에 네이티브 앱이 포함된 경우 네이티브 앱 포함
-- platforms 리스트가 ["web"]이 아닌 경우 노코드 웹 기능 선택 불가, ["web"]인 경우에도 복잡도에 따라 선택하지 말아야 함
-- custom_project_method가 nocode인 경우 노코드 웹, 관리자 페이지 기능 반드시 포함
-- custom_project_method가 shop인 경우, 노토드 웹, 검색 기능, 회원가입 및 로그인, 회원 관리, 관리자 페이지, 관리자 통계, 상품관리, 배송관리, PG 연동, 마이페이지, 고객센터 기능 반드시 포함
+- project_method가 code이고 project_name 또는 project_summary에 네이티브 앱이 포함된 경우 네이티브 앱 포함
+- project_method가 code인 경우 노코드 웹 선택 불가
+- project_method가 nocode인 경우 노코드 웹, 관리자 페이지 기능 반드시 포함
+- project_method가 shop인 경우, 노토드 웹, 검색 기능, 회원가입 및 로그인, 회원 관리, 관리자 페이지, 관리자 통계, 상품관리, 배송관리, PG 연동, 마이페이지, 고객센터 기능 반드시 포함
 
 출력:
 - 정확히 기능 목록에 있는 이름과 일치하여야 함

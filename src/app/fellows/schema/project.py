@@ -791,6 +791,9 @@ class ProjectFeatureEstimateRequest(BaseModel):
     project_summary: str
     readiness_level: ReadinessLevel
     platforms: list[Platform]
+    project_method: ProjectMethod | None = Field(default=None)
+    nocode_platform: NoCodePlatform | None = Field(default=None)
+
 
 
 class ProjectFeatureEstimateResponse(BaseModel):
