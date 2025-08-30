@@ -795,6 +795,5 @@ class ProjectFeatureEstimateRequest(BaseModel):
     nocode_platform: NoCodePlatform | None = Field(default=None)
 
 
-
 class ProjectFeatureEstimateResponse(BaseModel):
     feature_list: list[str]

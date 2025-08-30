@@ -1017,18 +1017,23 @@ class ProjectService:
         if project.custom_project_status != "draft" and project.custom_project_status != "process:1":
             return
 
+        obj = {
+            "프로젝트 이름": project.custom_project_title,
+            "프로젝트 설명": project.custom_project_summary,
+            "프로젝트 진행 방법": project.custom_project_method,
+            "플랫폼": [item.platform for item in project.custom_platforms],
+            "준비 정도": project.custom_readiness_level,
+            "시작일": project.expected_start_date,
+            "종료일": project.expected_end_date,
+            "예상 페이지 수": project.custom_content_pages,
+            "기능": [item.feature for item in project.custom_features],
+        }
+
+        if project.custom_nocode_platform:
+            obj["노코드 플랫폼"] = project.custom_nocode_platform
+
         payload = json.dumps(
-            {
-                "프로젝트 이름": project.custom_project_title,
-                "프로젝트 설명": project.custom_project_summary,
-                "플랫폼": [item.platform for item in project.custom_platforms],
-                "준비 정도": project.custom_readiness_level,
-                "시작일": project.expected_start_date,
-                "종료일": project.expected_end_date,
-                "유지 보수 필요": project.custom_maintenance_required,
-                "예상 페이지 수": project.custom_content_pages,
-                "기능": [item.feature for item in project.custom_features],
-            },
+            obj,
             default=str,
             ensure_ascii=False,
         )
