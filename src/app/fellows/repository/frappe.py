@@ -704,6 +704,8 @@ class FrappUpdateRepository:
 
         report = await self.frappe_client.update(update_doc)
 
+        print(report)
+
         return ERPNextReport.model_validate(report)
 
 

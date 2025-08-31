@@ -750,11 +750,11 @@ class ProjectService:
         data: Annotated[DailyReportRequest, Query()],
         project_id: str | None = Path(),
     ) -> ReportResponse:
-        report = await self.frappe_repository.get_report_by_project_id(project_id, user.sub, data.date)
-
         last_day = calendar.monthrange(data.date.year, data.date.month)[1]
         start_date = data.date.replace(day=1)
         end_date = data.date.replace(day=last_day)
+
+        report = await self.frappe_repository.get_report_by_project_id(project_id, user.sub, start_date, end_date)
 
         tasks = await self.frappe_repository.get_tasks(
             0,
@@ -1131,7 +1131,7 @@ class ProjectService:
     async def get_report_summary_status(
         self,
         user: get_current_user,
-        project_id: str = Path(),
+        report_id: str = Path(),
     ) -> bool:
         is_loading = await self.redis_cache.get(report_id)
 
