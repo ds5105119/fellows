@@ -1128,6 +1128,18 @@ class ProjectService:
 
         return emoji, total_amount
 
+    async def get_report_summary_status(
+        self,
+        user: get_current_user,
+        project_id: str = Path(),
+    ) -> bool:
+        is_loading = await self.redis_cache.get(report_id)
+
+        if is_loading == b"1":
+            return True
+
+        return False
+
     async def get_report_summary(
         self,
         user: get_current_user,

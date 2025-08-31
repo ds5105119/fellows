@@ -230,6 +230,11 @@ async def estimate_title(
     return info
 
 
+@router.get("/estimate/report/{report_id}/status", response_model=bool)
+async def estimate_stream_status(s: Annotated[bool, Depends(project_service.get_report_summary_status)]):
+    return s
+
+
 @limiter(max_requests=100, interval=60 * 60 * 24)
 @router.get("/estimate/report/{report_id}", response_model=ReportResponse)
 async def estimate_report_summary(
