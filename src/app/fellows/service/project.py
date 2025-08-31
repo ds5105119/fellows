@@ -988,6 +988,18 @@ class ProjectService:
 
         return result
 
+    async def get_project_estimate_status(
+        self,
+        user: get_current_user,
+        project_id: str = Path(),
+    ) -> bool:
+        is_loading = await self.redis_cache.get("project_estimate" + project_id)
+
+        if is_loading == b"1":
+            return True
+
+        return False
+
     async def get_project_estimate(
         self,
         user: get_current_user,
@@ -1006,76 +1018,90 @@ class ProjectService:
         Raises:
             HTTPException: 권한이 부족할 경우 (level > 2) 발생합니다.
         """
-        project, level = await self.frappe_repository.get_user_project_permission(project_id, user.sub)
+        is_loading = await self.redis_cache.get("project_estimate" + project_id)
 
-        if level > 2:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to get AI estimate for this project.",
-            )
+        if is_loading == b"1":
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
-        if project.custom_project_status != "draft" and project.custom_project_status != "process:1":
-            return
+        await self.redis_cache.set("project_estimate" + project_id, b"1", 60 * 10)
 
-        obj = {
-            "프로젝트 이름": project.custom_project_title,
-            "프로젝트 설명": project.custom_project_summary,
-            "프로젝트 진행 방법": project.custom_project_method,
-            "플랫폼": [item.platform for item in project.custom_platforms],
-            "준비 정도": project.custom_readiness_level,
-            "시작일": project.expected_start_date,
-            "종료일": project.expected_end_date,
-            "예상 페이지 수": project.custom_content_pages,
-            "기능": [item.feature for item in project.custom_features],
-        }
+        try:
+            project, level = await self.frappe_repository.get_user_project_permission(project_id, user.sub)
 
-        if project.custom_nocode_platform:
-            obj["노코드 플랫폼"] = project.custom_nocode_platform
-
-        payload = json.dumps(
-            obj,
-            default=str,
-            ensure_ascii=False,
-        )
-
-        stream = await self.openai_client.responses.create(
-            model="o4-mini",
-            instructions=estimation_instruction,
-            input=payload,
-            max_output_tokens=10000,
-            top_p=1.0,
-            stream=True,
-        )
-        yield "event: ping\n"
-
-        async for event in stream:
-            if event.type == "response.output_text.delta":
-                for chunk in event.delta.splitlines():
-                    yield f"data: {chunk}\n"
-                if event.delta.endswith("\n"):
-                    yield "data: \n"
-                yield "\n"
-            elif event.type == "response.output_text.done":
-                yield "event: stream_done\n"
-                yield "data: \n\n"
-            elif event.type == "response.completed":
-                ai_estimate = event.response.output_text
-                try:
-                    emoji, total_amount = await self.project_estimate_after_job(ai_estimate)
-                except:
-                    emoji, total_amount = None, None
-
-                await self.frappe_client.update(
-                    {
-                        "doctype": "Project",
-                        "name": project.project_name,
-                        "custom_ai_estimate": ai_estimate,
-                        "custom_emoji": emoji,
-                        "estimated_costing": total_amount,
-                    }
+            if level > 2:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have permission to get AI estimate for this project.",
                 )
 
-                break
+            if project.custom_project_status != "draft" and project.custom_project_status != "process:1":
+                return
+
+            obj = {
+                "프로젝트 이름": project.custom_project_title,
+                "프로젝트 설명": project.custom_project_summary,
+                "프로젝트 진행 방법": project.custom_project_method,
+                "플랫폼": [item.platform for item in project.custom_platforms],
+                "준비 정도": project.custom_readiness_level,
+                "시작일": project.expected_start_date,
+                "종료일": project.expected_end_date,
+                "예상 페이지 수": project.custom_content_pages,
+                "기능": [item.feature for item in project.custom_features],
+            }
+
+            if project.custom_nocode_platform:
+                obj["노코드 플랫폼"] = project.custom_nocode_platform
+
+            payload = json.dumps(
+                obj,
+                default=str,
+                ensure_ascii=False,
+            )
+
+            stream = await self.openai_client.responses.create(
+                model="o4-mini",
+                instructions=estimation_instruction,
+                input=payload,
+                max_output_tokens=10000,
+                top_p=1.0,
+                stream=True,
+            )
+            yield "event: ping\n"
+
+            async for event in stream:
+                if event.type == "response.output_text.delta":
+                    for chunk in event.delta.splitlines():
+                        yield f"data: {chunk}\n"
+                    if event.delta.endswith("\n"):
+                        yield "data: \n"
+                    yield "\n"
+                elif event.type == "response.output_text.done":
+                    yield "event: stream_done\n"
+                    yield "data: \n\n"
+                elif event.type == "response.completed":
+                    ai_estimate = event.response.output_text
+                    try:
+                        emoji, total_amount = await self.project_estimate_after_job(ai_estimate)
+                    except:
+                        emoji, total_amount = None, None
+
+                    await self.frappe_client.update(
+                        {
+                            "doctype": "Project",
+                            "name": project.project_name,
+                            "custom_ai_estimate": ai_estimate,
+                            "custom_emoji": emoji,
+                            "estimated_costing": total_amount,
+                        }
+                    )
+
+                    break
+
+        except Exception:
+            pass
+
+        finally:
+            await self.redis_cache.delete("project_estimate" + project_id)
 
     async def project_estimate_after_job(self, ai_estimate: str):
         """
