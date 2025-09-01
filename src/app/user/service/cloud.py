@@ -216,20 +216,24 @@ class CloudService:
         user: get_current_user,
         data: Annotated[PresignedDeleteRequest, Query()],
     ) -> None:
-        file = await self.frappe_client.get_doc("Files", data.key)
+        file = await self.frappe_client.get_list("Files", filters={"key": ["=", data.key]})
         if not file:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+        file = file[0]
+
+        print(file)
 
         project = file.get("project")
         if not project:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-        sub = await self.frappe_client.get_value(
+        project = await self.frappe_client.get_value(
             "Project",
-            "custom_sub",
+            "custom_team",
             filters={"project_name": project},
         )
-        if sub.get("custom_sub") != user.sub:
+        if user.sub not in project["custom_team"]:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -241,7 +245,7 @@ class CloudService:
             logger.error("Cloudflare delete error: %s", e)
             raise HTTPException(status_code=500, detail="Deletion failed")
 
-        await self.frappe_client.delete("Files", data.key)
+        await self.frappe_client.delete("Files", file["name"])
 
     async def delete_files(self, files: ERPNextFilesResponse):
         files_key = [file.file_name for file in files.items]

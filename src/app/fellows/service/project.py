@@ -465,6 +465,10 @@ class ProjectService:
             ["Fellows Manager"],
             ["Quote Review"],
         )
+
+        if not quote_slots or all(slot["remaining"] == "0" for slot in quote_slots):
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
+
         if data.date:
             vaild = list(filter(lambda d: d["date"] == data.date.strftime("%Y-%m-%d"), quote_slots))
             if not vaild:
