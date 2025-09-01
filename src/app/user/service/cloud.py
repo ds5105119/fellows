@@ -248,7 +248,7 @@ class CloudService:
         await self.frappe_client.delete("Files", file["name"])
 
     async def delete_files(self, files: ERPNextFilesResponse):
-        files_key = [file.file_name for file in files.items]
+        files_key = [file.key for file in files.items]
 
         async def delete_one(key: str):
             await asyncio.to_thread(
