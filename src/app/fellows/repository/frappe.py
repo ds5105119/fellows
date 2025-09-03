@@ -387,8 +387,6 @@ class FrappReadRepository:
         filters = {
             "document_type": ["=", "Project"],
             "document_name": ["in", accessible_projects_names],  # 고침
-            "status": ["!=", "Draft"],
-            "docstatus": ["!=", 0],
         }
         or_filters = {}
 
