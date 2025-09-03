@@ -6,6 +6,7 @@ from webtool.throttle import limiter
 
 from src.app.fellows.api.dependencies import project_service
 from src.app.fellows.schema.project import *
+from src.app.user.schema.user_data import ProjectAdminUserAttributes
 from src.core.dependencies.auth import get_current_user
 from src.core.dependencies.db import Redis
 
@@ -74,6 +75,13 @@ async def get_project_overview(
     projects: Annotated[OverviewProjectsPaginatedResponse, Depends(project_service.get_projects_overview)],
 ):
     return projects
+
+
+@router.get("/{project_id}/customer", response_model=ProjectAdminUserAttributes)
+async def get_project_customer(
+    customer: Annotated[ProjectAdminUserAttributes, Depends(project_service.get_project_admin)],
+):
+    return customer
 
 
 @router.get("/{project_id}", response_model=ERPNextProjectForUser)
