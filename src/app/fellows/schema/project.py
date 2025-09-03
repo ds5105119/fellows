@@ -717,6 +717,7 @@ class UserERPNextContract(BaseModel):
     custom_maintenance: int | None = Field(default=None)
     signee: str | None = Field(default=None)
     signed_on: datetime.datetime | None = Field(default=None)
+    signee_company: str | None = Field(default=None)
     ip_address: str | None = Field(default=None)
     contract_template: str | None = Field(default=None)
     contract_terms: str | None = Field(default=None)
