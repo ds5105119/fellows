@@ -42,6 +42,7 @@ from src.app.fellows.schema.project import (
     UpdateERPNextProject,
 )
 from src.app.user.repository.alert import AlertRepository
+from src.app.user.schema.user_data import ProjectAdminUserAttributes
 from src.app.user.service.cloud import CloudService
 from src.core.dependencies.auth import get_current_user
 from src.core.dependencies.db import db_session
@@ -119,6 +120,25 @@ class ProjectService:
             HTTPException: 사용자가 프로젝트 멤버가 아니거나 권한 레벨이 4일 경우 발생.
         """
         return await self.frappe_repository.get_project_by_id(project_id, user.sub)
+
+    async def get_project_admin(self, user: get_current_user, project_id: str = Path()) -> ProjectAdminUserAttributes:
+        """
+        특정 프로젝트의 소유자를 확인합니다.
+
+        Args:
+            user: 현재 인증된 사용자 정보. 권한 레벨 0-3만 접근 가능.
+            project_id: 조회할 프로젝트의 ID.
+
+        Returns:
+            프로젝트의 소유자 상세 정보.
+
+        Raises:
+            HTTPException: 사용자가 프로젝트 멤버가 아니거나 권한 레벨이 4일 경우 발생.
+        """
+        project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
+        data = await self.keycloak_admin.a_get_user(project.customer)
+
+        return ProjectAdminUserAttributes.model_validate(data["attributes"] | {"email": data["email"]})
 
     async def get_projects(
         self,

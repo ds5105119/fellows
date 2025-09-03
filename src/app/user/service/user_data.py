@@ -12,7 +12,7 @@ from webtool.cache import RedisCache
 
 from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
 from src.app.user.schema.user_data import *
-from src.core.dependencies.auth import get_current_user, keycloak_admin
+from src.core.dependencies.auth import get_current_user
 from src.core.dependencies.db import db_session
 
 logger = getLogger(__name__)
@@ -185,11 +185,11 @@ class UserDataService:
         )
 
     async def read_users(self, _: get_current_user, sub: Annotated[list[str], Query()]):
-        users = await asyncio.gather(*[keycloak_admin.a_get_user(s) for s in sub])
+        users = await asyncio.gather(*[self.keycloak_admin.a_get_user(s) for s in sub])
         return [ExternalUserAttributes.model_validate(data["attributes"] | {"email": data["email"]}) for data in users]
 
     async def read_user(self, user: get_current_user, sub: str = Path()):
-        data = await keycloak_admin.a_get_user(sub)
+        data = await self.keycloak_admin.a_get_user(sub)
 
         if user.sub == sub:
             return UserAttributes.model_validate(data["attributes"] | {"email": data["email"]})
@@ -200,12 +200,12 @@ class UserDataService:
         data: UpdateUserAttributes,
         user: get_current_user,
     ):
-        payload = await keycloak_admin.a_get_user(user.sub)
+        payload = await self.keycloak_admin.a_get_user(user.sub)
         attributes = data.model_dump(exclude_unset=True, exclude={"email"})
         payload["attributes"].update(attributes)
 
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
-        return await keycloak_admin.a_get_user(user.sub)
+        return await self.keycloak_admin.a_get_user(user.sub)
 
     async def send_email(self, to_email: str, subject: str, body_text: str, body_html: str):
         try:
@@ -279,11 +279,11 @@ class UserDataService:
         if existing_user:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
-        payload = await keycloak_admin.a_get_user(user.sub)
+        payload = await self.keycloak_admin.a_get_user(user.sub)
         payload["email"] = data.email
 
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
-        return await keycloak_admin.a_get_user(user.sub)
+        return await self.keycloak_admin.a_get_user(user.sub)
 
     async def update_address_kakao(
         self,
@@ -304,7 +304,7 @@ class UserDataService:
             formatted=data.documents[0].address.address_name,
         )
 
-        payload = await keycloak_admin.a_get_user(user.sub)
+        payload = await self.keycloak_admin.a_get_user(user.sub)
         payload["attributes"].update(oidc_address.model_dump())
 
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)

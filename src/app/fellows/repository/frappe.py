@@ -8,8 +8,33 @@ from datetime import timedelta
 
 from fastapi import HTTPException
 
-from src.app.fellows.schema.project import *
-from src.core.dependencies.auth import get_current_user, keycloak_admin
+from src.app.fellows.schema.project import (
+    CreateERPNextIssue,
+    CreateERPNextProject,
+    ERPNextContract,
+    ERPNextContractPaginatedResponse,
+    ERPNextContractRequest,
+    ERPNextFile,
+    ERPNextFilesResponse,
+    ERPNextIssue,
+    ERPNextIssuePaginatedResponse,
+    ERPNextIssuesRequest,
+    ERPNextProjectForUser,
+    ERPNextProjectsRequest,
+    ERPNextReport,
+    ERPNextTask,
+    ERPNextTaskPaginatedResponse,
+    ERPNextTaskStatus,
+    ERPNextTeam,
+    ERPNextTimeSheetForUserList,
+    ERPNextToDo,
+    OverviewProjectsPaginatedResponse,
+    ProjectsPaginatedResponse,
+    UpdateERPNextContract,
+    UpdateERPNextIssue,
+    UpdateERPNextProject,
+)
+from src.core.dependencies.auth import get_current_user
 from src.core.utils.frappeclient import AsyncFrappeClient
 
 

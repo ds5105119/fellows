@@ -106,6 +106,26 @@ class UserAttributes(BaseModel):
     email: str | None = Field(default=None)
 
 
+class ProjectAdminUserAttributes(BaseModel):
+    bio: list[str] | None = Field(default=None)
+    birthdate: list[str] | None = Field(default=None)
+    country: list[str] | None = Field(default=None)
+    formatted: list[str] | None = Field(default=None)
+    gender: list[str] | None = Field(default=None)
+    link: list[str] | None = Field(default=None)
+    locale: list[str] | None = Field(default=None)
+    locality: list[str] | None = Field(default=None)
+    location: list[str] | None = Field(default=None)
+    name: list[str] | None = Field(default=None)
+    phoneNumber: list[str] | None = Field(default=None)
+    picture: list[str] | None = Field(default=None)
+    postal_code: list[str] | None = Field(default=None)
+    region: list[str] | None = Field(default=None)
+    street: list[str] | None = Field(default=None)
+    sub_locality: list[str] | None = Field(default=None)
+    email: str | None = Field(default=None)
+
+
 class ExternalUserAttributes(BaseModel):
     bio: list[str] | None = Field(default=None)
     birthdate: list[str] | None = Field(default=None)
