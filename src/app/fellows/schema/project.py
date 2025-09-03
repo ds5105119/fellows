@@ -725,6 +725,7 @@ class UserERPNextContract(BaseModel):
 
 
 class UpdateERPNextContract(BaseModel):
+    ip_address: str | None = Field(default=None)
     is_signed: bool | None = Field(default=None)
     custom_customer_sign: str | None = Field(default=None)
 
