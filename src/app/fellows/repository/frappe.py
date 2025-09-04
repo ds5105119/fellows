@@ -396,6 +396,10 @@ class FrappReadRepository:
             filters["start_date"] = [">=", data.start]
         if data.end:
             filters["start_date"] = ["<=", data.end]
+        if type(data.docstatus) is int:
+            filters["docstatus"] = ["=", data.docstatus]
+        if type(data.is_signed) is bool:
+            filters["is_signed"] = ["=", data.is_signed]
         if isinstance(data.project_id, str):
             if data.project_id not in accessible_projects_names:
                 raise HTTPException(status_code=403, detail="Project not found")
@@ -404,10 +408,6 @@ class FrappReadRepository:
             if not set(data.project_id).issubset(accessible_projects_names):
                 raise HTTPException(status_code=403, detail="Project not found")
             filters["document_name"] = ["in", data.project_id]
-        if isinstance(data.status, str):
-            filters["status"] = ["=", data.status]
-        elif isinstance(data.status, list):
-            filters["status"] = ["in", data.status]
 
         order_by = ["modified asc"]
         if isinstance(data.order_by, str):
@@ -423,6 +423,8 @@ class FrappReadRepository:
             limit_page_length=data.size,
             order_by=order_by,
         )
+
+        print(contracts)
 
         return ERPNextContractPaginatedResponse.model_validate({"items": contracts}, from_attributes=True)
 

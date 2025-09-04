@@ -737,7 +737,8 @@ class ERPNextContractRequest(BaseModel):
     project_id: list[str] | str | None = Field(default=None)
     keyword: str | None = Field(default=None)
     order_by: list[str] | str = Field(default="modified")
-    status: list[str] | str | None = Field(default=None)
+    docstatus: int | None = Field(default=None)
+    is_signed: bool | None = Field(default=None)
     start: datetime.date | None = Field(default=None)
     end: datetime.date | None = Field(default=None)
 
