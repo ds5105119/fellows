@@ -733,7 +733,7 @@ class UpdateERPNextContract(BaseModel):
 
 class ERPNextContractRequest(BaseModel):
     page: int = Field(0, ge=0, description="Page number")
-    size: int = Field(10, ge=1, le=20, description="Page size")
+    size: int = Field(10, ge=1, le=100, description="Page size")
     project_id: list[str] | str | None = Field(default=None)
     keyword: str | None = Field(default=None)
     order_by: list[str] | str = Field(default="modified")

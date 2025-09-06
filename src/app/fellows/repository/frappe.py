@@ -424,8 +424,6 @@ class FrappReadRepository:
             order_by=order_by,
         )
 
-        print(contracts)
-
         return ERPNextContractPaginatedResponse.model_validate({"items": contracts}, from_attributes=True)
 
     async def get_report_by_name(self, name: str):
@@ -728,8 +726,6 @@ class FrappUpdateRepository:
             update_doc["summary"] = summary
 
         report = await self.frappe_client.update(update_doc)
-
-        print(report)
 
         return ERPNextReport.model_validate(report)
 
