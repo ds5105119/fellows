@@ -18,13 +18,13 @@ async def get_contracts(contracts: Annotated[ERPNextContractPaginatedResponse, D
     return contracts
 
 
-@router.put("/contract/{contract_id}", response_model=UserERPNextContract)
-async def update_contract(contract: Annotated[UserERPNextContract, Depends(project_service.update_contracts)]):
+@router.get("/contract/{contract_id}", response_model=UserERPNextContract)
+async def get_contract(contract: Annotated[UserERPNextContract, Depends(project_service.get_contract)]):
     return contract
 
 
-@router.get("contract/{contract_id}", response_model=UserERPNextContract)
-async def get_contract(contract: Annotated[UserERPNextContract, Depends(project_service.get_contract)]):
+@router.put("/contract/{contract_id}", response_model=UserERPNextContract)
+async def update_contract(contract: Annotated[UserERPNextContract, Depends(project_service.update_contracts)]):
     return contract
 
 
