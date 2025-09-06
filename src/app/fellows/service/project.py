@@ -40,6 +40,7 @@ from src.app.fellows.schema.project import (
     UpdateERPNextContract,
     UpdateERPNextIssue,
     UpdateERPNextProject,
+    UserERPNextContract,
 )
 from src.app.user.repository.alert import AlertRepository
 from src.app.user.schema.user_data import ProjectAdminUserAttributes
@@ -911,6 +912,25 @@ class ProjectService:
 
         return await self.frappe_repository.delete_issue_by_id(issue.name)
 
+    async def get_contract(self, user: get_current_user, contract_id: str = Path()) -> UserERPNextContract:
+        contract = await self.frappe_repository.get_contract(contract_id)
+
+        if not contract.document_name:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to update issues in this project.",
+            )
+
+        project, level = await self.frappe_repository.get_user_project_permission(contract.document_name, user.sub)
+
+        if level > 2:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to update issues in this project.",
+            )
+
+        return contract
+
     async def get_contracts(
         self,
         data: Annotated[ERPNextContractRequest, Query()],
@@ -946,6 +966,13 @@ class ProjectService:
             None
         """
         contract = await self.frappe_repository.get_contract(contract_id)
+
+        if not contract.document_name:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to update issues in this project.",
+            )
+
         project, level = await self.frappe_repository.get_user_project_permission(contract.document_name, user.sub)
 
         if project.customer != user.sub:

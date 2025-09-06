@@ -23,6 +23,11 @@ async def update_contract(contract: Annotated[UserERPNextContract, Depends(proje
     return contract
 
 
+@router.get("contract/{contract_id}", response_model=UserERPNextContract)
+async def get_contract(contract: Annotated[UserERPNextContract, Depends(project_service.get_contract)]):
+    return contract
+
+
 @router.get("/task", response_model=ERPNextTaskPaginatedResponse)
 async def get_tasks(tasks: Annotated[ERPNextTaskPaginatedResponse, Depends(project_service.read_tasks)]):
     return tasks
