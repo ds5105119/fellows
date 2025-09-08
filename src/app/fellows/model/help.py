@@ -13,3 +13,4 @@ class Help(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=True)
     category: Mapped[str] = mapped_column(Text, nullable=True)
+    arcade: Mapped[str] = mapped_column(Text, nullable=True)

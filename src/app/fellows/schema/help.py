@@ -7,6 +7,7 @@ class HelpCreate(BaseModel):
     content: str
     summary: str | None = None
     category: str | None = None
+    arcade: str | None = None
 
 
 class HelpRead(BaseModel):
@@ -16,6 +17,7 @@ class HelpRead(BaseModel):
     content: str
     summary: str | None = None
     category: str | None = None
+    arcade: str | None = None
 
 
 class HelpsRead(BaseModel):
@@ -28,3 +30,4 @@ class HelpUpdate(BaseModel):
     content: str
     summary: str | None = None
     category: str | None = None
+    arcade: str | None = None
