@@ -57,6 +57,7 @@ class BlogService:
     ):
         if "/manager" not in user.groups:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
         author = await self.author_repo.get_by_sub(session, user.sub)
         updated_author = {}
         if not author:
@@ -186,6 +187,9 @@ class BlogService:
         session: db_session,
         post_id: str = Path(),
     ):
+        if "/manager" not in user.groups:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
         # 포스트 불러오기
         post = await self.get_post_by_id(session, post_id)
         if not post:
@@ -237,4 +241,7 @@ class BlogService:
         session: db_session,
         post_id: str = Path(),
     ):
+        if "/manager" not in user.groups:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
         await self.blog_post_repo.delete(session, post_id)
