@@ -20,11 +20,11 @@ class HelpService:
 
         await self.help_repository.create(session, **data.model_dump())
 
-    async def update_help(self, session: db_session, data: HelpUpdate, user: get_current_user):
+    async def update_help(self, session: db_session, data: HelpUpdate, user: get_current_user, id: int = Path()):
         if "/manager" not in user.groups:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-        await self.help_repository.update(session, **data.model_dump())
+        await self.help_repository.update(session, filters=[self.help_repository.model.id == id], **data.model_dump())
 
     async def delete_help(self, session: db_session, user: get_current_user, id: int = Path()):
         if "/manager" not in user.groups:
