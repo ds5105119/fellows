@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from fastapi import HTTPException, Path, status
 
 from src.app.fellows.repository.help import HelpRepository
@@ -18,7 +20,7 @@ class HelpService:
         if "/manager" not in user.groups:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-        await self.help_repository.create(session, **data.model_dump())
+        await self.help_repository.create(session, **data.model_dump(), id=uuid4())
 
     async def update_help(self, session: db_session, data: HelpUpdate, user: get_current_user, id: int = Path()):
         if "/manager" not in user.groups:
