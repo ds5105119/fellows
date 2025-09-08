@@ -18,7 +18,7 @@ async def create_help(_: Annotated[None, Depends(help_service.create_help)]):
     return None
 
 
-@router.put("")
+@router.put("/{id}")
 async def update_help(_: Annotated[None, Depends(help_service.update_help)]):
     return None
 
