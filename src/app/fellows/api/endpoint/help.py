@@ -3,9 +3,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from src.app.fellows.api.dependencies import help_service
-from src.app.fellows.schema.help import HelpsRead
+from src.app.fellows.schema.help import HelpRead, HelpsRead
 
 router = APIRouter()
+
+
+@router.get("/{id}", response_model=HelpRead)
+async def get_help(help: Annotated[HelpRead, Depends(help_service.get_help)]):
+    return help
 
 
 @router.get("", response_model=HelpsRead)
