@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class HelpCreate(BaseModel):
     title: str
     title_image: str
-    content: str
+    content: str | None = None
     summary: str | None = None
     category: str | None = None
     arcade: str | None = None
@@ -14,7 +14,7 @@ class HelpRead(BaseModel):
     id: str
     title: str
     title_image: str
-    content: str
+    content: str | None = None
     summary: str | None = None
     category: str | None = None
     arcade: str | None = None
@@ -27,7 +27,7 @@ class HelpsRead(BaseModel):
 class HelpUpdate(BaseModel):
     title: str
     title_image: str
-    content: str
+    content: str | None = None
     summary: str | None = None
     category: str | None = None
     arcade: str | None = None
