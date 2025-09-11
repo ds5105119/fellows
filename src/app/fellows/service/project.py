@@ -1092,6 +1092,7 @@ class ProjectService:
                 "프로젝트 이름": project.custom_project_title,
                 "프로젝트 설명": project.custom_project_summary,
                 "프로젝트 진행 방법": project.custom_project_method,
+                "프로젝트 진행 방법이 노코드인 경우 노코드 플랫폼": project.custom_nocode_platform,
                 "플랫폼": [item.platform for item in project.custom_platforms],
                 "준비 정도": project.custom_readiness_level,
                 "시작일": project.expected_start_date,
@@ -1110,11 +1111,11 @@ class ProjectService:
             )
 
             stream = await self.openai_client.responses.create(
-                model="o4-mini",
+                model="gpt-5-mini",
                 instructions=estimation_instruction,
                 input=payload,
                 max_output_tokens=10000,
-                top_p=1.0,
+                top_p=0.0,
                 stream=True,
             )
             yield "event: ping\n"
