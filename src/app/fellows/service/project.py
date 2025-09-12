@@ -1114,7 +1114,7 @@ class ProjectService:
             )
 
             stream = await self.openai_client.responses.create(
-                model="gpt-4.1-mini",
+                model="o4-mini",
                 instructions=estimation_instruction,
                 input=payload,
                 max_output_tokens=10000,
