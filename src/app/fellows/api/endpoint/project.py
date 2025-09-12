@@ -1,6 +1,6 @@
 from typing import Annotated, AsyncIterable
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, Path, status
 from starlette.responses import StreamingResponse
 from webtool.throttle import limiter
 
@@ -8,7 +8,6 @@ from src.app.fellows.api.dependencies import project_service
 from src.app.fellows.schema.project import *
 from src.app.user.schema.user_data import ProjectAdminUserAttributes
 from src.core.dependencies.auth import get_current_user
-from src.core.dependencies.db import Redis
 
 router = APIRouter()
 
@@ -208,18 +207,8 @@ async def estimate_stream(
     project_id: str = Path(),
 ):
     async def event_generator() -> AsyncIterable[str]:
-        try:
-            async for chunk in project_service.get_project_estimate(user, project_id):
-                yield chunk
-        finally:
-            await Redis.delete(project_id + "estimate_costs")
-
-    is_loading = await Redis.get(project_id + "estimate_costs")
-
-    if is_loading == b"1":
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT)
-
-    await Redis.set(project_id + "estimate_costs", b"1", 60 * 10)
+        async for chunk in project_service.get_project_estimate(user, project_id):
+            yield chunk
 
     return StreamingResponse(
         event_generator(),
