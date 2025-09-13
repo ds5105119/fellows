@@ -1118,7 +1118,6 @@ class ProjectService:
                 instructions=estimation_instruction,
                 input=payload,
                 max_output_tokens=10000,
-                top_p=0.0,
                 stream=True,
             )
             yield "event: ping\n"
