@@ -66,6 +66,7 @@ class NoCodePlatform(str, Enum):
     WORDPRESS = "wordpress"
     WEBFLOW = "webflow"
     BUBBLE = "bubble"
+    OTHER = "other"
 
 
 # --- Child Table Models for ERPNext ---
