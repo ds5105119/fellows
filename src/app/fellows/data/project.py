@@ -28,7 +28,6 @@ description_to_title_instruction = """AI역할: SI컨설턴트
 5. custom_nocode_platform는 custom_project_method가 "nocode" 또는 "shop" 일 때만 작성하며, 
    아래 기준으로 선택:
    - "cafe24": 전형적인 한국 쇼핑몰 구축
-   - "godo": 고도몰, cafe24와 유사한 한국형 쇼핑몰
    - "shopify": 글로벌 쇼핑몰 전용
    - "imweb": 간단한 쇼핑몰 또는 소규모 랜딩 페이지
    - "framer": 인터랙션/애니메이션이 있는 현대적 랜딩 페이지
