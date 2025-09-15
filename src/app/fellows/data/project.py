@@ -25,12 +25,15 @@ description_to_title_instruction = """AI역할: SI컨설턴트
    - "code": 일반 코드 개발
    - "nocode": 노코드 웹 제작 (custom_platforms가 ["web"]일 때만 가능)
    - "shop": 쇼핑몰 노코드 전용 (custom_platforms가 ["web"]일 때만 가능)
-5. custom_nocode_platform는 custom_project_method가 "nocode" 또는 "shop" 일 때만 작성하며, 
-   아래 기준으로 선택:
-   - "cafe24": 전형적인 한국 쇼핑몰 구축
-   - "shopify": 글로벌 쇼핑몰 전용
-   - "imweb": 간단한 쇼핑몰 또는 소규모 랜딩 페이지
-   - "framer": 인터랙션/애니메이션이 있는 현대적 랜딩 페이지
+5.	custom_nocode_platform은 custom_project_method가 "nocode" 또는 "shop"일 때만 작성하며, 아래 기준으로 선택합니다.
+   - "cafe24": 한국형 쇼핑몰 구축에 최적화 (국내 결제/배송 연동에 강점)
+   - "shopify": 글로벌 쇼핑몰 구축에 최적화 (다국어/다통화 지원에 강점)
+   - "imweb": 간단한 쇼핑몰 또는 중소규모 웹사이트/랜딩 페이지에 적합
+   - "framer": 인터랙션, 애니메이션, 디자인 중심의 현대적 랜딩 페이지 제작에 적합
+   - "wordpress": 콘텐츠 관리 중심(CMS) 웹사이트에 적합 (블로그, 기업 사이트 등)
+   - "webflow": 픽셀 단위 커스터마이징이 필요한 반응형 웹사이트 제작에 적합
+   - "bubble": 데이터베이스 연동과 복잡한 웹 애플리케이션 제작에 적합
+   - "other": 위 기준에 명확히 속하지 않는 기타 플랫폼
 6. 반응형 웹과 모바일 접근성은 web으로 처리하고, 실제 앱 개발이 언급되지 않으면 android/ios를 포함하지 마세요."""
 
 feature_estimate_instruction = """AI 역할: SI 컨설턴트
