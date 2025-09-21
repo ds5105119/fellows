@@ -213,28 +213,12 @@ class CloudService:
 
     async def delete_file(
         self,
-        user: get_current_user,
         data: Annotated[PresignedDeleteRequest, Query()],
     ) -> None:
         file = await self.frappe_client.get_list("Files", filters={"key": ["=", data.key]})
         if not file:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
         file = file[0]
-
-        print(file)
-
-        project = file.get("project")
-        if not project:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-        project = await self.frappe_client.get_value(
-            "Project",
-            "custom_team",
-            filters={"project_name": project},
-        )
-        if user.sub not in project["custom_team"]:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         try:
             self.s3_client.delete_object(
