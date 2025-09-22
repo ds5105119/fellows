@@ -4,8 +4,6 @@ from .blog.api.endpoint.blog import router as blog_router
 from .fellows.api.endpoint.help import router as help_router
 from .fellows.api.endpoint.project import router as project_router
 from .fellows.api.endpoint.terms import router as terms_router
-from .gov_api.api.endpoint.fiscal import router as fiscal_router
-from .gov_api.api.endpoint.welfare import router as welfare_router
 from .map.api.endpoint.map import router as map_router
 from .payment.api.endpoint.payment import router as payment_router
 from .user.api.endpoint.alert import router as alert_router
@@ -17,9 +15,7 @@ router = APIRouter()
 
 router.include_router(user_data_router, prefix="/user/data", tags=["user_data"])
 router.include_router(alert_router, prefix="/user/alert", tags=["alert"])
-router.include_router(fiscal_router, prefix="/fiscal", tags=["fiscal"])
 router.include_router(terms_router, prefix="/term", tags=["term"])
-router.include_router(welfare_router, prefix="/welfare", tags=["welfare"])
 router.include_router(map_router, prefix="/map", tags=["map"])
 router.include_router(wakapi_router, prefix="/wakapi", tags=["wakapi"])
 router.include_router(project_router, prefix="/project", tags=["project"])
