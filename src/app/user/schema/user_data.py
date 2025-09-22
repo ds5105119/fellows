@@ -26,6 +26,7 @@ class KakaoAddressDto(LocationDto, Coord2AddrResponse):
 
 
 class UserAttributes(BaseModel):
+    sub: str
     bio: list[str] | None = Field(default=None)
     birthdate: list[str] | None = Field(default=None)
     country: list[str] | None = Field(default=None)
@@ -48,6 +49,7 @@ class UserAttributes(BaseModel):
 
 
 class ProjectAdminUserAttributes(BaseModel):
+    sub: str
     bio: list[str] | None = Field(default=None)
     birthdate: list[str] | None = Field(default=None)
     country: list[str] | None = Field(default=None)
@@ -68,6 +70,7 @@ class ProjectAdminUserAttributes(BaseModel):
 
 
 class ExternalUserAttributes(BaseModel):
+    sub: str
     bio: list[str] | None = Field(default=None)
     birthdate: list[str] | None = Field(default=None)
     gender: list[str] | None = Field(default=None)

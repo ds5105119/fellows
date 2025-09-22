@@ -139,7 +139,13 @@ class ProjectService:
         project = await self.frappe_repository.get_project_by_id(project_id, user.sub)
         data = await self.keycloak_admin.a_get_user(project.customer)
 
-        return ProjectAdminUserAttributes.model_validate(data["attributes"] | {"email": data["email"]})
+        return ProjectAdminUserAttributes.model_validate(
+            data["attributes"]
+            | {
+                "email": data["email"],
+                "sub": data["id"],
+            }
+        )
 
     async def get_projects(
         self,

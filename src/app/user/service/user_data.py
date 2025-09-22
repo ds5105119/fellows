@@ -100,15 +100,37 @@ class UserDataService:
         """
 
     async def read_users(self, _: get_current_user, sub: Annotated[list[str], Query()]):
-        users = await asyncio.gather(*[self.keycloak_admin.a_get_user(s) for s in sub])
-        return [ExternalUserAttributes.model_validate(data["attributes"] | {"email": data["email"]}) for data in users]
+        search_query = "id:" + " ".join(sub)
+        users = await self.keycloak_admin.a_get_users({"search": search_query})
+        return [
+            ExternalUserAttributes.model_validate(
+                data["attributes"]
+                | {
+                    "email": data["email"],
+                    "sub": data["id"],
+                }
+            )
+            for data in users
+        ]
 
     async def read_user(self, user: get_current_user, sub: str = Path()):
         data = await self.keycloak_admin.a_get_user(sub)
 
         if user.sub == sub:
-            return UserAttributes.model_validate(data["attributes"] | {"email": data["email"]})
-        return ExternalUserAttributes.model_validate(data["attributes"] | {"email": data["email"]})
+            return UserAttributes.model_validate(
+                data["attributes"]
+                | {
+                    "email": data["email"],
+                    "sub": data["id"],
+                }
+            )
+        return ExternalUserAttributes.model_validate(
+            data["attributes"]
+            | {
+                "email": data["email"],
+                "sub": data["id"],
+            }
+        )
 
     async def update_user(
         self,
