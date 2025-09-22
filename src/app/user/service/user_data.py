@@ -7,13 +7,10 @@ from botocore.exceptions import ClientError
 from fastapi import HTTPException, Path, Query, status
 from keycloak import KeycloakAdmin
 from mypy_boto3_sesv2 import SESV2Client
-from sqlalchemy.exc import IntegrityError
 from webtool.cache import RedisCache
 
-from src.app.user.repository.user_data import UserBusinessDataRepository, UserDataRepository
 from src.app.user.schema.user_data import *
 from src.core.dependencies.auth import get_current_user
-from src.core.dependencies.db import db_session
 
 logger = getLogger(__name__)
 
@@ -81,14 +78,10 @@ def _create_verification_email_body(otp: str):
 class UserDataService:
     def __init__(
         self,
-        repository: UserDataRepository,
-        user_business_data_repository: UserBusinessDataRepository,
         keycloak_admin: KeycloakAdmin,
         redis_cache: RedisCache,
         ses_client: SESV2Client,
     ):
-        self.repository = repository
-        self.user_business_data_repository = user_business_data_repository
         self.keycloak_admin = keycloak_admin
         self.redis_cache = redis_cache
         self.ses_client = ses_client
@@ -105,84 +98,6 @@ class UserDataService:
             timeout (int):
             api_config (ApiConfig):
         """
-
-    async def create_user_data(
-        self,
-        data: UserDataDto,
-        session: db_session,
-        user: get_current_user,
-    ):
-        try:
-            await self.repository.create(
-                session,
-                sub=user.sub,
-                **data.model_dump(exclude_unset=True),
-            )
-        except IntegrityError:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
-
-    async def read_user_data(
-        self,
-        session: db_session,
-        user: get_current_user,
-    ):
-        result = await self.repository.get(
-            session,
-            [self.repository.model.sub == user.sub],
-        )
-
-        return result.mappings().first()
-
-    async def update_user_data(
-        self,
-        data: PartialUserDataDto,
-        session: db_session,
-        user: get_current_user,
-    ):
-        await self.repository.update(
-            session,
-            [self.repository.model.sub == user.sub],
-            **data.model_dump(exclude_unset=True),
-        )
-
-    async def create_business_data(
-        self,
-        data: UserBusinessDataDto,
-        session: db_session,
-        user: get_current_user,
-    ):
-        try:
-            await self.user_business_data_repository.create(
-                session,
-                sub=user.sub,
-                **data.model_dump(),
-            )
-        except IntegrityError:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
-
-    async def read_business_data(
-        self,
-        session: db_session,
-        user: get_current_user,
-    ):
-        result = await self.user_business_data_repository.get(
-            session,
-            [self.user_business_data_repository.model.sub == user.sub],
-        )
-
-        return result.mappings().first()
-
-    async def update_business_data(
-        self,
-        data: UserBusinessDataDto,
-        session: db_session,
-        user: get_current_user,
-    ):
-        await self.user_business_data_repository.update(
-            session,
-            [self.user_business_data_repository.model.sub == user.sub],
-            **data.model_dump(),
-        )
 
     async def read_users(self, _: get_current_user, sub: Annotated[list[str], Query()]):
         users = await asyncio.gather(*[self.keycloak_admin.a_get_user(s) for s in sub])
