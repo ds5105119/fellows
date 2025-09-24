@@ -137,6 +137,10 @@ class ERPNextProject(BaseModel):
     department: str | None = Field(default=None)
     customer: str | None = Field(None)
 
+    custom_environment_domain: str | None = Field(default=None)
+    custom_environment_id: str | None = Field(default=None)
+    custom_environment_password: str | None = Field(default=None)
+
     custom_project_title: str | None = Field(default=None)
     custom_project_summary: str | None = Field(default=None)
     custom_project_status: CustomProjectStatus | None = Field(default=CustomProjectStatus.DRAFT)
@@ -201,6 +205,10 @@ class ERPNextProjectForUser(BaseModel):
     actual_end_date: datetime.date | None = Field(default=None)
     actual_time: float | None = Field(default=None)
     customer: str | None = Field(None)
+
+    custom_environment_domain: str | None = Field(default=None)
+    custom_environment_id: str | None = Field(default=None)
+    custom_environment_password: str | None = Field(default=None)
 
     custom_project_title: str
     custom_project_summary: str
