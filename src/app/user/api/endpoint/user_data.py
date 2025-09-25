@@ -32,7 +32,7 @@ async def update_address_kakao(_: Annotated[None, Depends(user_data_service.upda
 @limiter(1, 20)
 @router.post("/phone")
 async def update_phone_number_by_biz_message(
-    _: Annotated[None, Depends(user_data_service.update_phone_number_by_biz_message)],
+    _: Annotated[None, Depends(user_data_service.update_phone_number_by_biz_message_request)],
 ):
     pass
 
