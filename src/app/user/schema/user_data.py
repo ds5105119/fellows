@@ -91,14 +91,21 @@ class UpdateUserAttributes(BaseModel):
     locality: list[str] | None = Field(default=None)
     location: list[str] | None = Field(default=None)
     name: list[str] | None = Field(default=None)
-    phoneNumber: list[str] | None = Field(default=None)
-    phoneNumberVerified: list[str] | None = Field(default=None)
     picture: list[str] | None = Field(default=None)
     postal_code: list[str] | None = Field(default=None)
     region: list[str] | None = Field(default=None)
     street: list[str] | None = Field(default=None)
     sub_locality: list[str] | None = Field(default=None)
     userData: list[str] | None = Field(default=None)
+
+
+class PhoneNumberUpdateRequest(BaseModel):
+    phone_number: str
+
+
+class PhoneNumberUpdateVerify(BaseModel):
+    phone_number: str
+    otp: str
 
 
 class EmailUpdateRequest(BaseModel):

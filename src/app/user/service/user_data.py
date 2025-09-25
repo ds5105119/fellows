@@ -1,18 +1,51 @@
-import asyncio
 from logging import getLogger
 from random import randint
+from time import time
 from typing import Annotated
 
 from botocore.exceptions import ClientError
-from fastapi import HTTPException, Path, Query, status
+from fastapi import HTTPException, Path, Query, Request, status
+from httpx import AsyncClient, HTTPError
 from keycloak import KeycloakAdmin
 from mypy_boto3_sesv2 import SESV2Client
 from webtool.cache import RedisCache
 
 from src.app.user.schema.user_data import *
+from src.core.config import settings
 from src.core.dependencies.auth import get_current_user
+from src.core.dependencies.infra import make_ncloud_signature_v2
 
 logger = getLogger(__name__)
+
+
+def _create_verification_biz_message(
+    to: list[str],
+    content: str,
+):
+    timestamp = int(time() * 1000)
+    timestamp = str(timestamp)
+
+    header = {
+        "Content-Type": "application/json; charset=utf-8",
+        "x-ncp-apigw-timestamp": timestamp,
+        "x-ncp-iam-access-key": settings.ncloud_api.id,
+        "x-ncp-apigw-signature-v2": make_ncloud_signature_v2(timestamp),
+    }
+
+    data = {
+        "plusFriendId": "@fellows",
+        "templateCode": "otp",
+        "messages": [
+            {
+                "to": t,
+                "content": content,
+                "useSmsFailover": False,
+            }
+            for t in to
+        ],
+    }
+
+    return header, data
 
 
 def _create_verification_email_body(otp: str):
@@ -144,6 +177,23 @@ class UserDataService:
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
         return await self.keycloak_admin.a_get_user(user.sub)
 
+    async def send_biz_message(self, request: Request, header: dict, body: dict):
+        client: AsyncClient = request.app.requests_client
+        service_id = settings.ncloud_api.biz_message_service_id
+
+        try:
+            response = await client.post(
+                f"https://sens.apigw.ntruss.com/alimtalk/v2/services/{service_id}/messages",
+                headers=header,
+                data=body,
+            )
+            data = response.json()
+
+            return data
+        except HTTPError as e:
+            logger.error(f"Failed to send email using SESv2: {e}")
+            return False
+
     async def send_email(self, to_email: str, subject: str, body_text: str, body_html: str):
         try:
             response = self.ses_client.send_email(
@@ -173,6 +223,30 @@ class UserDataService:
         except ClientError as e:
             logger.error(f"Failed to send email using SESv2: {e.response['Error']['Message']}")
             return False
+
+    async def update_phone_number_by_biz_message_request(
+        self,
+        request: Request,
+        data: PhoneNumberUpdateRequest,
+        user: get_current_user,
+    ):
+        existing_user = await self.keycloak_admin.a_get_users({"phoneNumber": data.phone_number})
+        if existing_user:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+        otp = f"{randint(0, 999999):06d}"
+        await self.redis_cache.set(f"{user.sub}{data.phone_number}-phone_number_update_request", otp, 60 * 60 * 2)
+
+        subject = f"\n\n인증번호는 {otp} 입니다"
+        header, body = _create_verification_biz_message(to=[data.phone_number], content=subject)
+
+        biz_message_sent = await self.send_biz_message(request, header, body)
+
+        if not biz_message_sent:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="인증 메시지 발송에 실패했습니다. 잠시 후 다시 시도해주세요.",
+            )
 
     async def update_email_request(
         self,

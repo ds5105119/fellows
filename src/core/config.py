@@ -76,6 +76,12 @@ class KCP(BaseModel):
     cert_info: str
 
 
+class NCLOUDApi(ApiAdapter):
+    id: str
+    sms_service_id: str
+    biz_message_service_id: str
+
+
 class Settings(BaseSettings):
     base_dir: Path = Path(__file__).resolve().parent.parent.parent
 
@@ -104,6 +110,7 @@ class Settings(BaseSettings):
 
     kakao_api: ApiAdapter
     openai_api: ApiAdapter
+    ncloud_api: NCLOUDApi
     frappe_api: FrappeApi
 
     kcp: KCP
