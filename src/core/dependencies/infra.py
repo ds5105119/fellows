@@ -37,13 +37,10 @@ ses = boto3.client(
 )
 
 
-def make_ncloud_signature_v2(timestamp: str):
+def make_ncloud_signature_v2(method: str, uri: str, timestamp: str):
     access_key = settings.ncloud_api.id
     secret_key = settings.ncloud_api.key
     secret_key = bytes(secret_key, "UTF-8")
-
-    method = "GET"
-    uri = "/photos/puppy.jpg?query1=&query2"
 
     message = method + " " + uri + "\n" + timestamp + "\n" + access_key
     message = bytes(message, "UTF-8")

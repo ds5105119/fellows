@@ -1,3 +1,4 @@
+import pprint
 from logging import getLogger
 from random import randint
 from time import time
@@ -16,36 +17,6 @@ from src.core.dependencies.auth import get_current_user
 from src.core.dependencies.infra import make_ncloud_signature_v2
 
 logger = getLogger(__name__)
-
-
-def _create_verification_biz_message(
-    to: list[str],
-    content: str,
-):
-    timestamp = int(time() * 1000)
-    timestamp = str(timestamp)
-
-    header = {
-        "Content-Type": "application/json; charset=utf-8",
-        "x-ncp-apigw-timestamp": timestamp,
-        "x-ncp-iam-access-key": settings.ncloud_api.id,
-        "x-ncp-apigw-signature-v2": make_ncloud_signature_v2(timestamp),
-    }
-
-    data = {
-        "plusFriendId": "@fellows",
-        "templateCode": "otp",
-        "messages": [
-            {
-                "to": t,
-                "content": content,
-                "useSmsFailover": False,
-            }
-            for t in to
-        ],
-    }
-
-    return header, data
 
 
 def _create_verification_email_body(otp: str):
@@ -177,18 +148,45 @@ class UserDataService:
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
         return await self.keycloak_admin.a_get_user(user.sub)
 
-    async def send_biz_message(self, request: Request, header: dict, body: dict):
+    async def send_biz_message(self, request: Request, to: list[str], content: str):
         client: AsyncClient = request.app.requests_client
+
         service_id = settings.ncloud_api.biz_message_service_id
+        uri = f"/alimtalk/v2/services/{service_id}/messages"
+
+        timestamp = int(time() * 1000)
+        timestamp = str(timestamp)
+
+        signature = make_ncloud_signature_v2("POST", uri, timestamp)
+
+        header = {
+            "Content-Type": "application/json; charset=utf-8",
+            "x-ncp-apigw-timestamp": timestamp,
+            "x-ncp-iam-access-key": settings.ncloud_api.id,
+            "x-ncp-apigw-signature-v2": signature,
+        }
+
+        data = {
+            "plusFriendId": "@fellows",
+            "templateCode": "otp",
+            "messages": [
+                {
+                    "to": t,
+                    "content": content,
+                    "useSmsFailover": False,
+                    "buttons": [],
+                }
+                for t in to
+            ],
+        }
 
         try:
             response = await client.post(
-                f"https://sens.apigw.ntruss.com/alimtalk/v2/services/{service_id}/messages",
+                "https://sens.apigw.ntruss.com" + uri,
                 headers=header,
-                data=body,
+                json=data,
             )
             data = response.json()
-
             return data
         except HTTPError as e:
             logger.error(f"Failed to send email using SESv2: {e}")
@@ -230,17 +228,19 @@ class UserDataService:
         data: PhoneNumberUpdateRequest,
         user: get_current_user,
     ):
-        existing_user = await self.keycloak_admin.a_get_users({"phoneNumber": data.phone_number})
+        search_query = "profile.attributes.phoneNumber:" + data.phone_number
+        existing_user = await self.keycloak_admin.a_get_users({"search": search_query})
+        pprint.pprint(existing_user)
         if existing_user:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
         otp = f"{randint(0, 999999):06d}"
-        await self.redis_cache.set(f"{user.sub}{data.phone_number}-phone_number_update_request", otp, 60 * 60 * 2)
+        await self.redis_cache.set(f"{user.sub}{data.phone_number}-phone_number_update_request", otp, 60 * 5)
 
-        subject = f"\n\n인증번호는 {otp} 입니다"
-        header, body = _create_verification_biz_message(to=[data.phone_number], content=subject)
+        content = f"\n\n인증번호는 {otp} 입니다"
+        biz_message_sent = await self.send_biz_message(request, to=[data.phone_number], content=content)
 
-        biz_message_sent = await self.send_biz_message(request, header, body)
+        pprint.pprint(biz_message_sent)
 
         if not biz_message_sent:
             raise HTTPException(
