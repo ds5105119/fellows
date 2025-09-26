@@ -226,8 +226,8 @@ class UserDataService:
         data: PhoneNumberUpdateRequest,
         user: get_current_user,
     ):
-        search_query = "profile.attributes.phoneNumber:" + data.phone_number
-        existing_user = await self.keycloak_admin.a_get_users({"search": search_query})
+        search_query = "phoneNumber:" + data.phone_number
+        existing_user = await self.keycloak_admin.a_get_users({"q": search_query})
 
         if existing_user:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
@@ -254,8 +254,8 @@ class UserDataService:
         if otp.decode() != data.otp:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-        search_query = "profile.attributes.phoneNumber:" + data.phone_number
-        existing_user = await self.keycloak_admin.a_get_users({"search": search_query})
+        search_query = "phoneNumber:" + data.phone_number
+        existing_user = await self.keycloak_admin.a_get_users({"q": search_query})
 
         if existing_user:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)

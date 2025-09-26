@@ -38,6 +38,14 @@ async def update_phone_number_by_biz_message(
 
 
 @limiter(1, 2)
+@router.post("/phone/verify")
+async def update_phone_number_by_biz_verify(
+    _: Annotated[None, Depends(user_data_service.update_phone_number_by_biz_message_verify)],
+):
+    pass
+
+
+@limiter(1, 2)
 @router.post("/email")
 async def update_email_request(_: Annotated[None, Depends(user_data_service.update_email_request)]):
     pass
