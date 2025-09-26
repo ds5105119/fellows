@@ -244,6 +244,28 @@ class UserDataService:
                 detail="인증 메시지 발송에 실패했습니다. 잠시 후 다시 시도해주세요.",
             )
 
+    async def update_phone_number_by_biz_message_verify(
+        self,
+        data: PhoneNumberUpdateVerify,
+        user: get_current_user,
+    ):
+        otp = await self.redis_cache.get(f"{user.sub}{data.phone_number}-phone_number_update_request")
+
+        if otp.decode() != data.otp:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        search_query = "profile.attributes.phoneNumber:" + data.phone_number
+        existing_user = await self.keycloak_admin.a_get_users({"search": search_query})
+
+        if existing_user:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+        payload = await self.keycloak_admin.a_get_user(user.sub)
+        payload["attributes"].update({"phoneNumber": data.phone_number, "phoneNumberVerified": True})
+
+        await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
+        return await self.keycloak_admin.a_get_user(user.sub)
+
     async def update_email_request(
         self,
         data: EmailUpdateRequest,
