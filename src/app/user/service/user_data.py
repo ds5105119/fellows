@@ -1,4 +1,3 @@
-import pprint
 from logging import getLogger
 from random import randint
 from time import time
@@ -174,7 +173,6 @@ class UserDataService:
                     "to": t,
                     "content": content,
                     "useSmsFailover": False,
-                    "buttons": [],
                 }
                 for t in to
             ],
@@ -230,17 +228,15 @@ class UserDataService:
     ):
         search_query = "profile.attributes.phoneNumber:" + data.phone_number
         existing_user = await self.keycloak_admin.a_get_users({"search": search_query})
-        pprint.pprint(existing_user)
+
         if existing_user:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
         otp = f"{randint(0, 999999):06d}"
         await self.redis_cache.set(f"{user.sub}{data.phone_number}-phone_number_update_request", otp, 60 * 5)
 
-        content = f"\n\n인증번호는 {otp} 입니다"
+        content = f"\\n\\n인증번호는 {otp} 입니다"
         biz_message_sent = await self.send_biz_message(request, to=[data.phone_number], content=content)
-
-        pprint.pprint(biz_message_sent)
 
         if not biz_message_sent:
             raise HTTPException(
