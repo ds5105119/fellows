@@ -1,3 +1,4 @@
+import asyncio
 from logging import getLogger
 from random import randint
 from time import time
@@ -307,6 +308,17 @@ class UserDataService:
         existing_user = await self.keycloak_admin.a_get_users({"email": data.email})
         if existing_user:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+        social_login = await self.keycloak_admin.a_get_user_social_logins(user_id=user.sub)
+        await asyncio.gather(
+            *[
+                self.keycloak_admin.a_delete_user_social_login(
+                    user_id=user.sub,
+                    provider_id=provider["identityProvider"],
+                )
+                for provider in social_login
+            ]
+        )
 
         payload = await self.keycloak_admin.a_get_user(user.sub)
         payload["email"] = data.email
