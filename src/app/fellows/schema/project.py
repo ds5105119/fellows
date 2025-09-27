@@ -749,6 +749,7 @@ class UpdateERPNextContract(BaseModel):
     signee_company: str | None = Field(default=None)
     ip_address: str | None = Field(default=None)
     is_signed: bool | None = Field(default=None)
+    custom_contract_status: CustomContractStatus | None = Field(default=None)
 
 
 class ERPNextContractRequest(BaseModel):
