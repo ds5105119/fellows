@@ -168,7 +168,7 @@ class UserDataService:
 
         data = {
             "plusFriendId": "@fellows",
-            "templateCode": "otp",
+            "templateCode": "otp2",
             "messages": [
                 {
                     "to": t,
@@ -236,7 +236,7 @@ class UserDataService:
         otp = f"{randint(0, 999999):06d}"
         await self.redis_cache.set(f"{user.sub}{data.phone_number}-phone_number_update_request", otp, 60 * 5)
 
-        content = f"\\n\\n인증번호는 {otp} 입니다"
+        content = f"인증번호는 {otp} 입니다"
         biz_message_sent = await self.send_biz_message(request, to=[data.phone_number], content=content)
 
         if not biz_message_sent:
@@ -263,6 +263,13 @@ class UserDataService:
 
         payload = await self.keycloak_admin.a_get_user(user.sub)
         payload["attributes"].update({"phoneNumber": data.phone_number, "phoneNumberVerified": True})
+
+        await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
+        return await self.keycloak_admin.a_get_user(user.sub)
+
+    async def delete_phone_number(self, user: get_current_user):
+        payload = await self.keycloak_admin.a_get_user(user.sub)
+        payload["attributes"].update({"phoneNumber": None, "phoneNumberVerified": False})
 
         await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
         return await self.keycloak_admin.a_get_user(user.sub)

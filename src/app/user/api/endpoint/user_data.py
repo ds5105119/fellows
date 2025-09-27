@@ -46,6 +46,12 @@ async def update_phone_number_by_biz_verify(
 
 
 @limiter(1, 2)
+@router.delete("/phone")
+async def delete_phone_number(_: Annotated[None, Depends(user_data_service.delete_phone_number)]):
+    pass
+
+
+@limiter(1, 2)
 @router.post("/email")
 async def update_email_request(_: Annotated[None, Depends(user_data_service.update_email_request)]):
     pass

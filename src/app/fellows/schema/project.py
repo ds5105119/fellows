@@ -666,6 +666,15 @@ class ERPNextIssuePaginatedResponse(BaseModel):
 # --- Contract Model ---
 
 
+class CustomContractStatus(str, Enum):
+    UNSIGNED = "Unsigned"
+    SIGNED = "Signed"
+    PAYMENT = "Payment"
+    ACTIVE = "Active"
+    COMPLETE = "Complete"
+    INACTIVE = "Inactive"
+
+
 class ERPNextContract(BaseModel):
     name: str
     owner: str
@@ -685,6 +694,7 @@ class ERPNextContract(BaseModel):
     party_full_name: str | None = Field(default=None)
     start_date: datetime.date | None = Field(default=None)
     end_date: datetime.date | None = Field(default=None)
+    custom_contract_status: CustomContractStatus
     custom_fee: int | None = Field(default=None)
     custom_down_payment: float | None = Field(default=None)
     custom_balance: float | None = Field(default=None)
@@ -719,6 +729,7 @@ class UserERPNextContract(BaseModel):
     start_date: datetime.date | None = Field(default=None)
     end_date: datetime.date | None = Field(default=None)
     custom_fee: int | None = Field(default=None)
+    custom_contract_status: CustomContractStatus
     custom_down_payment: float | None = Field(default=None)
     custom_balance: float | None = Field(default=None)
     custom_maintenance: int | None = Field(default=None)
