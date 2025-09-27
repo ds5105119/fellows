@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, Path, status
 from starlette.responses import StreamingResponse
 from webtool.throttle import limiter
 
-from src.app.fellows.api.dependencies import project_service
+from src.app.fellows.api.dependencies import contract_service, project_service, report_service
+from src.app.fellows.schema.contract import ERPNextContractPaginatedResponse, UserERPNextContract
 from src.app.fellows.schema.project import *
+from src.app.fellows.schema.report import ReportResponse
 from src.app.user.schema.user_data import ProjectAdminUserAttributes
 from src.core.dependencies.auth import get_current_user
 
@@ -13,17 +15,23 @@ router = APIRouter()
 
 
 @router.get("/contract", response_model=ERPNextContractPaginatedResponse)
-async def get_contracts(contracts: Annotated[ERPNextContractPaginatedResponse, Depends(project_service.get_contracts)]):
+async def get_contracts(
+    contracts: Annotated[ERPNextContractPaginatedResponse, Depends(contract_service.get_contracts)],
+):
     return contracts
 
 
 @router.get("/contract/{contract_id}", response_model=UserERPNextContract)
-async def get_contract(contract: Annotated[UserERPNextContract, Depends(project_service.get_contract)]):
+async def get_contract(
+    contract: Annotated[UserERPNextContract, Depends(contract_service.get_contract)],
+):
     return contract
 
 
 @router.put("/contract/{contract_id}", response_model=UserERPNextContract)
-async def update_contract(contract: Annotated[UserERPNextContract, Depends(project_service.update_contracts)]):
+async def update_contract(
+    contract: Annotated[UserERPNextContract, Depends(contract_service.update_contracts)],
+):
     return contract
 
 
@@ -186,12 +194,12 @@ async def delete_files(_: Annotated[None, Depends(project_service.delete_file)])
 
 
 @router.get("/{project_id}/report/daily", response_model=ReportResponse)
-async def get_daily_report(report: Annotated[ReportResponse, Depends(project_service.get_daily_report)]):
+async def get_daily_report(report: Annotated[ReportResponse, Depends(report_service.get_daily_report)]):
     return report
 
 
 @router.get("/{project_id}/report/monthly", response_model=ReportResponse)
-async def get_daily_report(report: Annotated[ReportResponse, Depends(project_service.get_monthly_report)]):
+async def get_daily_report(report: Annotated[ReportResponse, Depends(report_service.get_monthly_report)]):
     return report
 
 
@@ -233,13 +241,13 @@ async def estimate_title(
 
 
 @router.get("/estimate/report/{report_id}/status", response_model=bool)
-async def estimate_stream_status(s: Annotated[bool, Depends(project_service.get_report_summary_status)]):
+async def estimate_report_status(s: Annotated[bool, Depends(report_service.get_report_summary_status)]):
     return s
 
 
 @limiter(max_requests=100, interval=60 * 60 * 24)
 @router.get("/estimate/report/{report_id}", response_model=ReportResponse)
 async def estimate_report_summary(
-    report: Annotated[ReportResponse, Depends(project_service.get_report_summary)],
+    report: Annotated[ReportResponse, Depends(report_service.get_report_summary)],
 ):
     return report

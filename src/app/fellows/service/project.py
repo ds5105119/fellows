@@ -16,8 +16,6 @@ from src.app.fellows.schema.project import (
     CreateERPNextIssue,
     CreateERPNextProject,
     CustomProjectStatus,
-    DailyReportRequest,
-    ERPNextContractRequest,
     ERPNextFile,
     ERPNextFileRequest,
     ERPNextFilesResponse,
@@ -36,11 +34,8 @@ from src.app.fellows.schema.project import (
     ProjectSummary2InfoResponse,
     Quote,
     QuoteSlot,
-    ReportResponse,
-    UpdateERPNextContract,
     UpdateERPNextIssue,
     UpdateERPNextProject,
-    UserERPNextContract,
 )
 from src.app.user.repository.alert import AlertRepository
 from src.app.user.schema.user_data import ProjectAdminUserAttributes
@@ -737,86 +732,6 @@ class ProjectService:
 
         return await self.frappe_repository.get_tasks(**data.model_dump(), sub=user.sub)
 
-    async def get_daily_report(
-        self,
-        user: get_current_user,
-        data: Annotated[DailyReportRequest, Query()],
-        project_id: str | None = Path(),
-    ) -> ReportResponse:
-        report = await self.frappe_repository.get_report_by_project_id(project_id, user.sub, data.date)
-
-        tasks = await self.frappe_repository.get_tasks(
-            0,
-            1000,
-            user.sub,
-            project_id=project_id,
-            start=data.date,
-            end=data.date,
-        )
-
-        timesheets = await self.frappe_repository.get_timesheets(
-            0,
-            100,
-            user.sub,
-            project_id=project_id,
-            start_date=data.date,
-            end_date=data.date,
-        )
-
-        if not report:
-            report = await self.frappe_repository.create_report(project_id, data.date, data.date, "")
-
-        return ReportResponse.model_validate(
-            {
-                "report": report,
-                "tasks": tasks.items,
-                "timesheets": timesheets.items,
-            },
-            from_attributes=True,
-        )
-
-    async def get_monthly_report(
-        self,
-        user: get_current_user,
-        data: Annotated[DailyReportRequest, Query()],
-        project_id: str | None = Path(),
-    ) -> ReportResponse:
-        last_day = calendar.monthrange(data.date.year, data.date.month)[1]
-        start_date = data.date.replace(day=1)
-        end_date = data.date.replace(day=last_day)
-
-        report = await self.frappe_repository.get_report_by_project_id(project_id, user.sub, start_date, end_date)
-
-        tasks = await self.frappe_repository.get_tasks(
-            0,
-            1000,
-            user.sub,
-            project_id=project_id,
-            start=start_date,
-            end=end_date,
-        )
-
-        timesheets = await self.frappe_repository.get_timesheets(
-            0,
-            100,
-            user.sub,
-            project_id=project_id,
-            start_date=start_date,
-            end_date=end_date,
-        )
-
-        if not report:
-            report = await self.frappe_repository.create_report(project_id, start_date, end_date, "")
-
-        return ReportResponse.model_validate(
-            {
-                "report": report,
-                "tasks": tasks.items,
-                "timesheets": timesheets.items,
-            },
-            from_attributes=True,
-        )
-
     async def create_issue(
         self,
         user: get_current_user,
@@ -917,77 +832,6 @@ class ProjectService:
             )
 
         return await self.frappe_repository.delete_issue_by_id(issue.name)
-
-    async def get_contract(self, user: get_current_user, contract_id: str = Path()) -> UserERPNextContract:
-        contract = await self.frappe_repository.get_contract(contract_id)
-
-        if not contract.document_name:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to update issues in this project.",
-            )
-
-        project, level = await self.frappe_repository.get_user_project_permission(contract.document_name, user.sub)
-
-        if level > 2:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to update issues in this project.",
-            )
-
-        return contract
-
-    async def get_contracts(
-        self,
-        data: Annotated[ERPNextContractRequest, Query()],
-        user: get_current_user,
-    ):
-        """
-        사용자의 계약서 목록을 조회합니다.
-
-        Args:
-            data: 페이지네이션 및 필터링 옵션.
-            user: 현재 인증된 사용자 정보. 권한 레벨 0-3의 프로젝트만 조회됩니다.
-
-        Returns:
-            계약서 목록과 페이지네이션 정보.
-        """
-        return await self.frappe_repository.get_contracts(data, user.sub)
-
-    async def update_contracts(
-        self,
-        data: UpdateERPNextContract,
-        user: get_current_user,
-        contract_id: str = Path(),
-    ):
-        """
-        사용자의 계약서를 업데이트합니다
-
-        Args:
-            data: 업데이트할 계약서 정보
-            user: 현재 인증된 사용자 정보. 계약자이면서 어드민 이상만 사인할 수 있습니다.
-            contract_id: 계약서 번호
-
-        Returns:
-            None
-        """
-        contract = await self.frappe_repository.get_contract(contract_id)
-
-        if not contract.document_name:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to update issues in this project.",
-            )
-
-        project, level = await self.frappe_repository.get_user_project_permission(contract.document_name, user.sub)
-
-        if project.customer != user.sub:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to update the contracts.",
-            )
-
-        return await self.frappe_repository.update_contract_by_id(contract.name, data)
 
     async def generate_project_info_by_summary(
         self,
@@ -1189,109 +1033,3 @@ class ProjectService:
         total_amount = int(result[1])
 
         return emoji, total_amount
-
-    async def get_report_summary_status(
-        self,
-        user: get_current_user,
-        report_id: str = Path(),
-    ) -> bool:
-        is_loading = await self.redis_cache.get(report_id)
-
-        if is_loading == b"1":
-            return True
-
-        return False
-
-    async def get_report_summary(
-        self,
-        user: get_current_user,
-        report_id: str = Path(),
-    ):
-        is_loading = await self.redis_cache.get(report_id)
-
-        if is_loading == b"1":
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
-
-        await self.redis_cache.set(report_id, b"1", 60 * 10)
-
-        try:
-            report = await self.frappe_repository.get_report_by_name(report_id)
-            project, level = await self.frappe_repository.get_user_project_permission(report.project, user.sub)
-
-            if level > 2:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You do not have permission to cancel project submission.",
-                )
-
-            tasks = await self.frappe_repository.get_tasks(
-                0,
-                1000,
-                user.sub,
-                project_id=report.project,
-                start=report.start_date,
-                end=report.end_date,
-            )
-
-            timesheets = await self.frappe_repository.get_timesheets(
-                0,
-                100,
-                user.sub,
-                project_id=report.project,
-                start_date=report.start_date,
-                end_date=report.end_date,
-            )
-
-            task_items = [
-                task.model_dump(
-                    include={
-                        "subject",
-                        "status",
-                        "exp_start_date",
-                        "expected_time",
-                        "exp_end_date",
-                        "progress",
-                        "description",
-                    }
-                )
-                for task in tasks.items
-            ]
-            timesheet_items = [
-                timesheet.model_dump(
-                    include={
-                        "name",
-                        "creation",
-                        "start_date",
-                        "end_date",
-                        "total_hours",
-                        "note",
-                    }
-                )
-                for timesheet in timesheets.items
-            ]
-
-            response = await self.openai_client.responses.create(
-                model="gpt-5-mini",
-                instructions=report_summary_instruction,
-                input=f"tasks={task_items}, timesheet={timesheet_items}",
-                max_output_tokens=10000,
-                top_p=1.0,
-            )
-
-            result = response.output_text
-            report = await self.frappe_repository.update_report(report_id, summary=result)
-
-            return ReportResponse.model_validate(
-                {
-                    "report": report,
-                    "tasks": tasks.items,
-                    "timesheets": timesheets.items,
-                },
-                from_attributes=True,
-            )
-
-        except Exception:
-            pass
-
-        finally:
-            await self.redis_cache.delete(report_id)
