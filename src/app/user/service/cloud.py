@@ -224,11 +224,6 @@ class CloudService:
         if not key:
             raise HTTPException(status_code=403)
 
-        file = await self.frappe_client.get_list("Files", filters={"key": ["=", key]})
-        if not file:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-        file = file[0]
-
         try:
             self.s3_client.delete_object(
                 Bucket=settings.cloudflare.storage_bucket_name,
@@ -238,7 +233,10 @@ class CloudService:
             logger.error("Cloudflare delete error: %s", e)
             raise HTTPException(status_code=500, detail="Deletion failed")
 
-        await self.frappe_client.delete("Files", file["name"])
+        file = await self.frappe_client.get_list("Files", filters={"key": ["=", key]})
+        if file:
+            file = file[0]
+            await self.frappe_client.delete("Files", file["name"])
 
     async def delete_files(self, files: ERPNextFilesResponse):
         files_key = [file.key for file in files.items]
