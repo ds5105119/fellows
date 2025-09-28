@@ -214,16 +214,26 @@ class CloudService:
     async def delete_file(
         self,
         data: Annotated[PresignedDeleteRequest, Query()],
+        body: PresignedDeleteRequestBody,
     ) -> None:
-        file = await self.frappe_client.get_list("Files", filters={"key": ["=", data.key]})
+        if body.secret_key != settings.secret_key:
+            raise HTTPException(status_code=403)
+
+        key = data.key or body.key
+        sse_key = data.sse_key or body.sse_key
+
+        file = await self.frappe_client.get_list("Files", filters={"key": ["=", key]})
         if not file:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         file = file[0]
 
+        if file["sse_key"] and file["sse_key"] != sse_key:
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
+
         try:
             self.s3_client.delete_object(
                 Bucket=settings.cloudflare.storage_bucket_name,
-                Key=data.key,
+                Key=key,
             )
         except ClientError as e:
             logger.error("Cloudflare delete error: %s", e)

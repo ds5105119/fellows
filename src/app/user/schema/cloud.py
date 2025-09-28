@@ -53,6 +53,12 @@ class PresignedDeleteRequest(BaseModel):
     sse_key: str | None = Field(default=None)
 
 
+class PresignedDeleteRequestBody(BaseModel):
+    secret_key: str
+    key: str | None = Field(default=None)
+    sse_key: str | None = Field(default=None)
+
+
 class PresignedHeader(BaseModel):
     x_amz_server_side_encryption_customer_algorithm: str | None = Field(default=None)
     x_amz_server_side_encryption_customer_key: str | None = Field(default=None)

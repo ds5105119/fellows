@@ -1,5 +1,4 @@
 import asyncio
-import calendar
 import json
 from datetime import datetime, timedelta
 from logging import getLogger
