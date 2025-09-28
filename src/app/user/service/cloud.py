@@ -222,6 +222,9 @@ class CloudService:
         key = data.key or body.key
         sse_key = data.sse_key or body.sse_key
 
+        if not key:
+            raise HTTPException(status_code=403)
+
         file = await self.frappe_client.get_list("Files", filters={"key": ["=", key]})
         if not file:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
