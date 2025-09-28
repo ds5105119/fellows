@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 from uuid import uuid4
 
 from botocore.client import ClientError
-from fastapi import Header, HTTPException, Query, Request, Response, status
+from fastapi import Body, Header, HTTPException, Query, Request, Response, status
 from mypy_boto3_s3 import S3Client
 
 from src.app.fellows.schema.project import ERPNextFilesResponse
@@ -214,13 +214,12 @@ class CloudService:
     async def delete_file(
         self,
         data: Annotated[PresignedDeleteRequest, Query()],
-        body: PresignedDeleteRequestBody,
+        body: Annotated[PresignedDeleteRequestBody, Body()],
     ) -> None:
         if body.secret_key != settings.secret_key:
             raise HTTPException(status_code=403)
 
         key = data.key or body.key
-        sse_key = data.sse_key or body.sse_key
 
         if not key:
             raise HTTPException(status_code=403)
@@ -229,9 +228,6 @@ class CloudService:
         if not file:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         file = file[0]
-
-        if file["sse_key"] and file["sse_key"] != sse_key:
-            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
 
         try:
             self.s3_client.delete_object(
