@@ -104,3 +104,8 @@ class ERPNextContractRequest(BaseModel):
 
 class ERPNextContractPaginatedResponse(BaseModel):
     items: list[UserERPNextContract]
+
+
+class NewContractCallbackRequest(BaseModel):
+    secret_key: str
+    name: str

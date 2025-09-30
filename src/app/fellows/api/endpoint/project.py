@@ -35,6 +35,11 @@ async def update_contract(
     return contract
 
 
+@router.post("/contract/callback/new")
+async def new_contract_callback(_: Annotated[None, Depends(contract_service.new_contract_callback)]):
+    return None
+
+
 @router.get("/task", response_model=ERPNextTaskPaginatedResponse)
 async def get_tasks(tasks: Annotated[ERPNextTaskPaginatedResponse, Depends(project_service.read_tasks)]):
     return tasks

@@ -1,20 +1,27 @@
+from datetime import timedelta
 from logging import getLogger
+from time import time
 from typing import Annotated
 
 import openai
-from fastapi import HTTPException, Path, Query, status
+from fastapi import Body, HTTPException, Path, Query, Request, status
+from httpx import AsyncClient, HTTPError
 from keycloak import KeycloakAdmin
 from webtool.cache import RedisCache
 
 from src.app.fellows.repository.contract import ContractRepository
 from src.app.fellows.schema.contract import (
     ERPNextContractRequest,
+    NewContractCallbackRequest,
     UpdateERPNextContract,
     UserERPNextContract,
 )
 from src.app.user.repository.alert import AlertRepository
+from src.app.user.schema.user_data import UserAttributes
 from src.app.user.service.cloud import CloudService
+from src.core.config import settings
 from src.core.dependencies.auth import get_current_user
+from src.core.dependencies.infra import make_ncloud_signature_v2
 
 logger = getLogger(__name__)
 
@@ -106,3 +113,109 @@ class ContrctService:
             )
 
         return await self.contract_repository.update_contract_by_id(contract.name, data)
+
+    async def send_biz_message(self, request: Request, to: list[str], data: dict):
+        client: AsyncClient = request.app.requests_client
+
+        service_id = settings.ncloud_api.biz_message_service_id
+        uri = f"/alimtalk/v2/services/{service_id}/messages"
+
+        timestamp = int(time() * 1000)
+        timestamp = str(timestamp)
+
+        signature = make_ncloud_signature_v2("POST", uri, timestamp)
+
+        header = {
+            "Content-Type": "application/json; charset=utf-8",
+            "x-ncp-apigw-timestamp": timestamp,
+            "x-ncp-iam-access-key": settings.ncloud_api.id,
+            "x-ncp-apigw-signature-v2": signature,
+        }
+
+        data = {
+            "plusFriendId": "@fellows",
+            "templateCode": "contract",
+            "messages": [
+                {
+                    "to": t,
+                    **data,
+                    "useSmsFailover": False,
+                }
+                for t in to
+            ],
+        }
+
+        try:
+            response = await client.post(
+                "https://sens.apigw.ntruss.com" + uri,
+                headers=header,
+                json=data,
+            )
+            data = response.json()
+
+            return data
+        except HTTPError as e:
+            logger.error(f"Failed to send email using SESv2: {e}")
+            return False
+
+    async def new_contract_callback(
+        self,
+        request: Request,
+        body: Annotated[NewContractCallbackRequest, Body()],
+    ):
+        if body.secret_key != settings.secret_key:
+            raise HTTPException(status_code=403)
+
+        contract = await self.contract_repository.get_contract(body.name)
+        user_data = await self.keycloak_admin.a_get_user(contract.party_name)
+        user_attributes = UserAttributes.model_validate(
+            user_data["attributes"]
+            | {
+                "email": user_data["email"],
+                "sub": user_data["id"],
+            }
+        )
+        project = await self.contract_repository.get_project_by_id(contract.document_name, user_attributes.sub)
+
+        data = {
+            "content": f"안녕하세요 {user_attributes.name[0]}님, 고객님이 의뢰하신 {project.custom_project_title}의 계약서가 도착하였습니다.",
+            "headerContent": "계약서 서명 요청",
+            "itemHighlight": {
+                "title": f"{contract.custom_name}",
+                "description": f"사인 전",
+            },
+            "item": {
+                "list": [
+                    {
+                        "title": "계약 시작일",
+                        "description": f"{contract.start_date}",
+                    },
+                    {
+                        "title": "계약 종료일",
+                        "description": f"{contract.end_date}",
+                    },
+                    {
+                        "title": "계약 금액",
+                        "description": f"{contract.custom_fee} 원",
+                    },
+                    {
+                        "title": "서명 요청자",
+                        "description": "IIH(contact@iihus.com)",
+                    },
+                    {
+                        "title": "서명 가능일",
+                        "description": f"{contract.start_date - timedelta(days=1)} 까지",
+                    },
+                ],
+            },
+            "buttons": [
+                {
+                    "type": "WL",
+                    "name": "서명하기",
+                    "linkMobile": f"https://www.iihus.com/service/project/contracts/{contract.name}",
+                    "linkPc": f"https://www.iihus.com/service/project/contracts/{contract.name}",
+                }
+            ],
+        }
+
+        await self.send_biz_message(request, user_attributes.phoneNumber, data)
