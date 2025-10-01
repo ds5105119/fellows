@@ -1,7 +1,6 @@
 import base64
 import hashlib
 import hmac
-import time
 
 import boto3
 import openai

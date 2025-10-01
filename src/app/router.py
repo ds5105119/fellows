@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from .blog.api.endpoint.blog import router as blog_router
+from .fellows.api.endpoint.contact import router as contact_router
 from .fellows.api.endpoint.help import router as help_router
 from .fellows.api.endpoint.project import router as project_router
 from .fellows.api.endpoint.terms import router as terms_router
@@ -23,3 +24,4 @@ router.include_router(cloud_router, prefix="/cloud", tags=["cloud"])
 router.include_router(blog_router, prefix="/blog", tags=["blog"])
 router.include_router(payment_router, prefix="/payment", tags=["payment"])
 router.include_router(help_router, prefix="/help", tags=["help"])
+router.include_router(contact_router, prefix="/contact", tags=["contact"])

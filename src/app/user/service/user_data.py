@@ -55,7 +55,7 @@ def _create_verification_email_body(otp: str):
                 <p>본인이 요청하지 않은 경우, 이 이메일을 무시해 주세요.</p>
             </div>
             <div class="footer">
-                <p>© 2024 Fellows. All rights reserved.</p>
+                <p>© 2025 Fellows. All rights reserved.</p>
             </div>
         </div>
     </body>
