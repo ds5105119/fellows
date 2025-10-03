@@ -11,13 +11,15 @@ from webtool.cache import RedisCache
 
 from src.app.fellows.repository.contract import ContractRepository
 from src.app.fellows.schema.contract import (
+    CustomContractStatus,
     ERPNextContractRequest,
     NewContractCallbackRequest,
     UpdateERPNextContract,
+    UpdateERPNextContractForInner,
     UserERPNextContract,
 )
 from src.app.user.repository.alert import AlertRepository
-from src.app.user.schema.user_data import UserAttributes
+from src.app.user.schema.user_data import ProjectAdminUserAttributes, UserAttributes
 from src.app.user.service.cloud import CloudService
 from src.core.config import settings
 from src.core.dependencies.auth import get_current_user
@@ -110,6 +112,46 @@ class ContrctService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to update the contracts.",
+            )
+
+        if (
+            contract.custom_contract_status == CustomContractStatus.UNSIGNED
+            and data.custom_contract_status == CustomContractStatus.SIGNED
+        ):
+            data = await self.keycloak_admin.a_get_user(project.customer)
+
+            customer = ProjectAdminUserAttributes.model_validate(
+                data["attributes"]
+                | {
+                    "email": data["email"],
+                    "sub": data["id"],
+                }
+            )
+
+            if not (
+                customer.name
+                and customer.birthdate
+                and customer.email
+                and customer.phoneNumber
+                and customer.gender
+                and customer.sub_locality
+                and customer.street
+            ):
+                raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE)
+
+            return await self.contract_repository.update_contract_by_id(
+                contract.name,
+                UpdateERPNextContractForInner.model_validate(
+                    {
+                        "custom_customer_name": customer.name[0],
+                        "custom_customer_birthdate": customer.birthdate[0],
+                        "custom_customer_email": customer.email[0],
+                        "custom_customer_phone": customer.phoneNumber[0],
+                        "custom_customer_gender": customer.gender[0],
+                        "custom_customer_address": customer.sub_locality[0] + " " + customer.street[0],
+                        **data,
+                    }
+                ),
             )
 
         return await self.contract_repository.update_contract_by_id(contract.name, data)

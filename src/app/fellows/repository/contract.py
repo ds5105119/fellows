@@ -6,6 +6,7 @@ from src.app.fellows.schema.contract import (
     ERPNextContractPaginatedResponse,
     ERPNextContractRequest,
     UpdateERPNextContract,
+    UpdateERPNextContractForInner,
 )
 from src.core.utils.frappeclient import AsyncFrappeClient
 
@@ -87,7 +88,7 @@ class ContractUpdateRepository:
     ):
         self.frappe_client = frappe_client
 
-    async def update_contract_by_id(self, name: str, data: UpdateERPNextContract):
+    async def update_contract_by_id(self, name: str, data: UpdateERPNextContractForInner | UpdateERPNextContract):
         updated_contract = await self.frappe_client.update(
             {
                 "doctype": "Contract",

@@ -90,6 +90,21 @@ class UpdateERPNextContract(BaseModel):
     custom_contract_status: CustomContractStatus | None = Field(default=None)
 
 
+class UpdateERPNextContractForInner(BaseModel):
+    signee: str | None = Field(default=None)
+    signed_on: datetime.datetime | None = Field(default=None)
+    signee_company: str | None = Field(default=None)
+    ip_address: str | None = Field(default=None)
+    is_signed: bool | None = Field(default=None)
+    custom_contract_status: CustomContractStatus | None = Field(default=None)
+    custom_customer_name: str | None = Field(default=None)
+    custom_customer_birthdate: str | None = Field(default=None)
+    custom_customer_phone: str | None = Field(default=None)
+    custom_customer_email: str | None = Field(default=None)
+    custom_customer_gender: str | None = Field(default=None)
+    custom_customer_address: str | None = Field(default=None)
+
+
 class ERPNextContractRequest(BaseModel):
     page: int = Field(0, ge=0, description="Page number")
     size: int = Field(10, ge=1, le=100, description="Page size")
