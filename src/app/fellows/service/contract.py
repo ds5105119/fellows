@@ -146,7 +146,7 @@ class ContrctService:
                         "custom_customer_phone": customer.phoneNumber[0],
                         "custom_customer_gender": customer.gender[0],
                         "custom_customer_address": customer.street[0] + " " + customer.sub_locality[0],
-                        **data.model_dump(),
+                        **data.model_dump(exclude_unset=True),
                     }
                 ),
             )
