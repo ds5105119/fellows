@@ -593,6 +593,8 @@ class ERPNextIssue(BaseModel):
     total_hold_time: float | None = Field(default=None)
     avg_response_time: float | None = Field(default=None)
 
+    opening_date: datetime.date | None = Field(default=None)
+
     project: str | None = Field(default=None)
     company: str | None = Field(default=None)
     custom_task: str | None = Field(default=None)

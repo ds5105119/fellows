@@ -340,6 +340,7 @@ class FrappReadRepository:
             limit_page_length=data.size,
             order_by=order_by,
         )
+
         return ERPNextIssuePaginatedResponse.model_validate({"items": issues}, from_attributes=True)
 
     async def get_timesheets(
