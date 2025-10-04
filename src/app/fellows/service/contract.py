@@ -114,10 +114,7 @@ class ContrctService:
                 detail="You do not have permission to update the contracts.",
             )
 
-        if (
-            contract.custom_contract_status == CustomContractStatus.UNSIGNED
-            and data.custom_contract_status == CustomContractStatus.SIGNED
-        ):
+        if contract.custom_contract_status == CustomContractStatus.UNSIGNED and data.is_signed == True:
             data = await self.keycloak_admin.a_get_user(project.customer)
 
             customer = ProjectAdminUserAttributes.model_validate(
