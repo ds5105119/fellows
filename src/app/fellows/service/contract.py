@@ -115,13 +115,13 @@ class ContrctService:
             )
 
         if contract.custom_contract_status == CustomContractStatus.UNSIGNED and data.is_signed == True:
-            data = await self.keycloak_admin.a_get_user(project.customer)
+            user_data = await self.keycloak_admin.a_get_user(project.customer)
 
             customer = ProjectAdminUserAttributes.model_validate(
-                data["attributes"]
+                user_data["attributes"]
                 | {
-                    "email": data["email"],
-                    "sub": data["id"],
+                    "email": user_data["email"],
+                    "sub": user_data["id"],
                 }
             )
 
@@ -145,8 +145,8 @@ class ContrctService:
                         "custom_customer_email": customer.email[0],
                         "custom_customer_phone": customer.phoneNumber[0],
                         "custom_customer_gender": customer.gender[0],
-                        "custom_customer_address": customer.sub_locality[0] + " " + customer.street[0],
-                        **data,
+                        "custom_customer_address": customer.street[0] + " " + customer.sub_locality[0],
+                        **data.model_dump(),
                     }
                 ),
             )
