@@ -595,6 +595,7 @@ class ERPNextIssue(BaseModel):
 
     project: str | None = Field(default=None)
     company: str | None = Field(default=None)
+    custom_task: str | None = Field(default=None)
 
 
 class ERPNextIssuesRequest(BaseModel):
@@ -616,6 +617,7 @@ class CreateERPNextIssue(BaseModel):
     priority: str | None = Field(default=None)
     issue_type: IssueType | None = Field(default=None)
     description: str | None = Field(default=None)
+    custom_task: str | None = Field(default=None)
 
 
 class UpdateERPNextIssue(BaseModel):
