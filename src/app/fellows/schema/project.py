@@ -626,6 +626,7 @@ class UpdateERPNextIssue(BaseModel):
     description: str | None = Field(default=None)
 
     project: str | None = Field(default=None)
+    custom_task: str | None = Field(default=None)
 
 
 class ERPNextIssuePaginatedResponse(BaseModel):
