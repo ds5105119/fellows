@@ -14,6 +14,16 @@ from src.core.dependencies.auth import get_current_user
 router = APIRouter()
 
 
+@router.get("/customer", response_model=ERPNextCustomer)
+async def get_customer(customer: Annotated[ERPNextCustomer, Depends(project_service.get_customer)]):
+    return customer
+
+
+@router.put("/customer", response_model=ERPNextCustomer)
+async def update_customer(customer: Annotated[ERPNextCustomer, Depends(project_service.update_customer)]):
+    return customer
+
+
 @router.get("/contract", response_model=ERPNextContractPaginatedResponse)
 async def get_contracts(
     contracts: Annotated[ERPNextContractPaginatedResponse, Depends(contract_service.get_contracts)],
@@ -176,7 +186,6 @@ async def get_quote_slots(
     return slots
 
 
-@limiter(1, 2)
 @router.post("/{project_id}/files", status_code=status.HTTP_204_NO_CONTENT)
 async def create_files(_: Annotated[None, Depends(project_service.create_file)]):
     pass

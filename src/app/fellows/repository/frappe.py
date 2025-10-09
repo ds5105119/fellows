@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from src.app.fellows.schema.project import (
     CreateERPNextIssue,
     CreateERPNextProject,
+    ERPNextCustomer,
     ERPNextFile,
     ERPNextFilesResponse,
     ERPNextIssue,
@@ -26,6 +27,7 @@ from src.app.fellows.schema.project import (
     ERPNextToDo,
     OverviewProjectsPaginatedResponse,
     ProjectsPaginatedResponse,
+    UpdateERPNextCustomer,
     UpdateERPNextIssue,
     UpdateERPNextProject,
 )
@@ -83,10 +85,10 @@ class FrappCreateRepository:
         file = await self.frappe_client.insert(data.model_dump(exclude_unset=True) | {"doctype": "Files"})
         return ERPNextFile(**file)
 
-    async def get_or_create_customer(self, user: get_current_user):
+    async def get_or_create_customer(self, user: get_current_user) -> ERPNextCustomer:
         customer = await self.frappe_client.get_doc("Customer", user.sub)
         if not customer:
-            await self.frappe_client.insert(
+            customer = await self.frappe_client.insert(
                 {
                     "doctype": "Customer",
                     "customer_name": user.sub,
@@ -96,6 +98,8 @@ class FrappCreateRepository:
                     "email_id": user.email,
                 }
             )
+
+        return ERPNextCustomer(**customer)
 
 
 class FrappReadRepository:
@@ -575,6 +579,17 @@ class FrappUpdateRepository:
         )
 
         return ERPNextIssue(**updated_issue)
+
+    async def update_customer_by_id(self, name: str, data: UpdateERPNextCustomer):
+        customer = await self.frappe_client.update(
+            {
+                "doctype": "Customer",
+                "name": name,
+                **data.model_dump(by_alias=True, exclude_unset=True),
+            }
+        )
+
+        return ERPNextCustomer(**customer)
 
 
 class FrappDeleteRepository:

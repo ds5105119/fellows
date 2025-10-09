@@ -690,3 +690,28 @@ class ProjectFeatureEstimateRequest(BaseModel):
 
 class ProjectFeatureEstimateResponse(BaseModel):
     feature_list: list[str]
+
+
+class ERPNextCustomerType(str, Enum):
+    COMPANY = "Company"
+    INDIVIDUAL = "Individual"
+    PARTNERSHIP = "Partnership"
+
+
+class ERPNextCustomer(BaseModel):
+    name: str
+    creation: datetime.datetime
+    modified: datetime.datetime
+    customer_name: str
+    customer_type: ERPNextCustomerType
+    custom_username: str
+    is_internal_customer: int
+    language: str
+    email_id: str
+    tax_id: str | None = Field(default=None)
+
+
+class UpdateERPNextCustomer(BaseModel):
+    customer_type: ERPNextCustomerType | None = Field(default=None)
+    language: str | None = Field(default=None)
+    tax_id: str | None = Field(default=None)

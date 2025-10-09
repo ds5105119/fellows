@@ -33,6 +33,7 @@ from src.app.fellows.schema.project import (
     ProjectSummary2InfoResponse,
     Quote,
     QuoteSlot,
+    UpdateERPNextCustomer,
     UpdateERPNextIssue,
     UpdateERPNextProject,
 )
@@ -626,8 +627,18 @@ class ProjectService:
                 detail="You do not have permission to create files in this project.",
             )
 
-        payload = ERPNextFile(**data.model_dump(exclude={"project"}), project=project.project_name)
-        return await self.frappe_repository.create_file(payload)
+        is_loading = await self.redis_cache.get("project_file_upload" + project_id + data.key)
+
+        if is_loading == b"1":
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+        await self.redis_cache.set("project_file_upload" + project_id + data.key, b"1", 60 * 10)
+
+        try:
+            payload = ERPNextFile(**data.model_dump(exclude={"project"}), project=project.project_name)
+            return await self.frappe_repository.create_file(payload)
+        finally:
+            await self.redis_cache.delete("project_file_upload" + project_id + data.key)
 
     async def read_file(
         self,
@@ -831,6 +842,12 @@ class ProjectService:
             )
 
         return await self.frappe_repository.delete_issue_by_id(issue.name)
+
+    async def get_customer(self, user: get_current_user):
+        return await self.frappe_repository.get_or_create_customer(user)
+
+    async def update_customer(self, user: get_current_user, data: UpdateERPNextCustomer):
+        return await self.frappe_repository.update_customer_by_id(user.sub, data)
 
     async def generate_project_info_by_summary(
         self,
