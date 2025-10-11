@@ -22,9 +22,9 @@ class User(BaseModel):
     sub: str
     email: str
     username: str
-    gender: str
-    birthdate: str | date
     access_token: str
+    gender: str | None = Field(default=None)
+    birthdate: str | date | None = Field(default=None)
     picture: str | None = Field(default=None)
     location: list[int] | None = Field(default_factory=list)
     bio: str | None = Field(default=None)
