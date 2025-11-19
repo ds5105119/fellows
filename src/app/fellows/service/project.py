@@ -865,7 +865,7 @@ class ProjectService:
             예측된 기능 이름의 리스트.
         """
         response = await self.openai_client.responses.create(
-            model="gpt-4.1-mini",
+            model="gpt-5-mini",
             instructions=description_to_title_instruction,
             input=project_summary,
             max_output_tokens=1000,
@@ -981,7 +981,7 @@ class ProjectService:
             )
 
             stream = await self.openai_client.responses.create(
-                model="o4-mini",
+                model="gpt-5-mini",
                 instructions=estimation_instruction,
                 input=payload,
                 max_output_tokens=10000,
