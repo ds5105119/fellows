@@ -227,12 +227,6 @@ class UserDataService:
         data: PhoneNumberUpdateRequest,
         user: get_current_user,
     ):
-        search_query = "phoneNumber:" + data.phone_number
-        existing_user = await self.keycloak_admin.a_get_users({"q": search_query})
-
-        if existing_user:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
-
         otp = f"{randint(0, 999999):06d}"
         await self.redis_cache.set(f"{user.sub}{data.phone_number}-phone_number_update_request", otp, 60 * 5)
 
@@ -259,7 +253,11 @@ class UserDataService:
         existing_user = await self.keycloak_admin.a_get_users({"q": search_query})
 
         if existing_user:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+            for ex_user in existing_user:
+                payload = await self.keycloak_admin.a_get_user(ex_user.sub)
+                payload["attributes"].update({"phoneNumber": None, "phoneNumberVerified": False})
+
+                await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
 
         payload = await self.keycloak_admin.a_get_user(user.sub)
         payload["attributes"].update({"phoneNumber": data.phone_number, "phoneNumberVerified": True})
