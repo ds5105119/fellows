@@ -254,10 +254,9 @@ class UserDataService:
 
         if existing_user:
             for ex_user in existing_user:
-                payload = await self.keycloak_admin.a_get_user(ex_user.sub)
+                payload = await self.keycloak_admin.a_get_user(ex_user["id"])
                 payload["attributes"].update({"phoneNumber": None, "phoneNumberVerified": False})
-
-                await self.keycloak_admin.a_update_user(user_id=user.sub, payload=payload)
+                await self.keycloak_admin.a_update_user(user_id=ex_user["id"], payload=payload)
 
         payload = await self.keycloak_admin.a_get_user(user.sub)
         payload["attributes"].update({"phoneNumber": data.phone_number, "phoneNumberVerified": True})
