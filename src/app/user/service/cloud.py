@@ -109,7 +109,7 @@ class CloudService:
         user: get_current_user,
         data: Annotated[PresignedPutRequest, Query()],
     ) -> SSECPresignedResponse:
-        key = f"/{data.suffix}/{user.sub}/{data.name}_{uuid4()}"
+        key = f"/{data.suffix}/{data.name}/{user.sub}_{uuid4()}"
         headers = self.generate_sse_c_headers()
         presigned_url = self.get_presigned_url("put_object", key, 600, headers)
 
