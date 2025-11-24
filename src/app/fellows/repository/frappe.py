@@ -614,7 +614,7 @@ class FrappDeleteRepository:
             ),
         )
 
-        # 2. timesheet 및 contract 캔슬
+        # 2. timesheet 및 contract 캔슬 + 삭제
         async def cancel_and_delete_timesheet(ts):
             if ts.get("docstatus") == 1:  # Submitted
                 await self.frappe_client.cancel("Timesheet", ts["name"])
@@ -630,29 +630,34 @@ class FrappDeleteRepository:
             *(cancel_and_delete_contract(ct) for ct in contracts),
         )
 
-        # 3. Tasks Dependency 제거
-        await self.frappe_client.bulk_update(
-            [
-                {
-                    "doctype": "Task",
-                    "docname": task["name"],
-                    "parent_task": None,
-                    "depends_on": None,
-                    "depends_on_tasks": None,
-                }
-                for task in tasks
-            ]
-        )
+        # 3. Tasks Dependency 제거 (parent_task, depends_on 등)
+        if tasks:
+            await self.frappe_client.bulk_update(
+                [
+                    {
+                        "doctype": "Task",
+                        "docname": task["name"],
+                        "parent_task": None,
+                        "depends_on": None,
+                        "depends_on_tasks": None,
+                    }
+                    for task in tasks
+                ]
+            )
 
-        # 이외 제거
+        # 4. Task를 참조하는 것들 먼저 삭제: Issue, Files, Project Report
         await asyncio.gather(
-            *(self.frappe_client.delete("Task", t["name"]) for t in tasks),
             *(self.frappe_client.delete("Issue", i["name"]) for i in issues),
             *(self.frappe_client.delete("Files", f["name"]) for f in files),
             *(self.frappe_client.delete("Project Report", r["name"]) for r in reports),
         )
 
-        # 5. 마지막에 Project 삭제
+        # 5. Task 삭제
+        await asyncio.gather(
+            *(self.frappe_client.delete("Task", t["name"]) for t in tasks),
+        )
+
+        # 6. Project 삭제
         await self.frappe_client.delete("Project", project_id)
 
     async def delete_task_by_id(self, task_id: str):
