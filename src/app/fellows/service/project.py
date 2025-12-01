@@ -506,7 +506,7 @@ class ProjectService:
         await self.frappe_repository.update_project_by_id(
             project_id,
             UpdateERPNextProject(
-                custom_project_status=CustomProjectStatus.PROCESS_1,
+                custom_project_status=CustomProjectStatus.PROCESS_2,
                 expected_start_date=quote_date,
                 is_active=IsActive.YES,
             ),
