@@ -50,6 +50,11 @@ async def new_contract_callback(_: Annotated[None, Depends(contract_service.new_
     return None
 
 
+@router.post("/contract/callback/signed")
+async def signed_contract_callback(_: Annotated[None, Depends(contract_service.signed_contract_callback)]):
+    return None
+
+
 @router.get("/task", response_model=ERPNextTaskPaginatedResponse)
 async def get_tasks(tasks: Annotated[ERPNextTaskPaginatedResponse, Depends(project_service.read_tasks)]):
     return tasks

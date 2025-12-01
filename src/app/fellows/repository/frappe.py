@@ -522,7 +522,6 @@ class FrappReadRepository:
         return available_slots_info
 
 
-# ... FrappUpdateRepository, FrappDeleteRepository, FrappeRepository는 기존 코드 유지 ...
 class FrappUpdateRepository:
     def __init__(
         self,

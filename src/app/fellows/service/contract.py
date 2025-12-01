@@ -14,6 +14,7 @@ from src.app.fellows.schema.contract import (
     CustomContractStatus,
     ERPNextContractRequest,
     NewContractCallbackRequest,
+    SignedContractCallbackRequest,
     UpdateERPNextContract,
     UpdateERPNextContractForInner,
     UserERPNextContract,
@@ -153,7 +154,7 @@ class ContrctService:
 
         return await self.contract_repository.update_contract_by_id(contract.name, data)
 
-    async def send_biz_message(self, request: Request, to: list[str], data: dict):
+    async def send_biz_message(self, request: Request, to: list[str], data: dict, template_code: str):
         client: AsyncClient = request.app.requests_client
 
         service_id = settings.ncloud_api.biz_message_service_id
@@ -173,7 +174,7 @@ class ContrctService:
 
         data = {
             "plusFriendId": "@fellows",
-            "templateCode": "contract",
+            "templateCode": template_code,
             "messages": [
                 {
                     "to": t,
@@ -257,4 +258,28 @@ class ContrctService:
             ],
         }
 
-        await self.send_biz_message(request, user_attributes.phoneNumber, data)
+        await self.send_biz_message(request, user_attributes.phoneNumber, data, "contract")
+
+    async def signed_contract_callback(
+        self,
+        request: Request,
+        body: Annotated[SignedContractCallbackRequest, Body()],
+    ):
+        if body.secret_key != settings.secret_key:
+            raise HTTPException(status_code=403)
+
+        contract = await self.contract_repository.get_contract(body.name)
+        user_data = await self.keycloak_admin.a_get_user(contract.party_name)
+        user_attributes = UserAttributes.model_validate(
+            user_data["attributes"]
+            | {
+                "email": user_data["email"],
+                "sub": user_data["id"],
+            }
+        )
+
+        data = {
+            "content": f"{'카카오뱅크 3333-35-1194608'}에 {f'{contract.start_date}까지 {contract.custom_fee * contract.custom_balance}'}원 입금바랍니다.",
+        }
+
+        await self.send_biz_message(request, user_attributes.phoneNumber, data, "paycontract")
