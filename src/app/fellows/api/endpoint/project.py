@@ -50,8 +50,8 @@ async def new_contract_callback(_: Annotated[None, Depends(contract_service.new_
     return None
 
 
-@router.post("/contract/callback/signed")
-async def signed_contract_callback(_: Annotated[None, Depends(contract_service.signed_contract_callback)]):
+@router.post("/contract/callback/payment")
+async def signed_contract_callback(_: Annotated[None, Depends(contract_service.payment_contract_callback)]):
     return None
 
 
