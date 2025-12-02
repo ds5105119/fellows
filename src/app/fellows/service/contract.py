@@ -154,7 +154,7 @@ class ContrctService:
             )
 
         if (
-            contract.custom_customer_status != CustomContractStatus.PAYMENT
+            contract.custom_contract_status != CustomContractStatus.PAYMENT
             and data.custom_contract_status == CustomContractStatus.PAYMENT
         ):
             await self.payment_contract_callback(request, contract)
