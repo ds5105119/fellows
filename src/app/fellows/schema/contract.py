@@ -124,8 +124,3 @@ class ERPNextContractPaginatedResponse(BaseModel):
 class NewContractCallbackRequest(BaseModel):
     secret_key: str
     name: str
-
-
-class SignedContractCallbackRequest(BaseModel):
-    secret_key: str
-    name: str

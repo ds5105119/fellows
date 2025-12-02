@@ -12,9 +12,9 @@ from webtool.cache import RedisCache
 from src.app.fellows.repository.contract import ContractRepository
 from src.app.fellows.schema.contract import (
     CustomContractStatus,
+    ERPNextContract,
     ERPNextContractRequest,
     NewContractCallbackRequest,
-    SignedContractCallbackRequest,
     UpdateERPNextContract,
     UpdateERPNextContractForInner,
     UserERPNextContract,
@@ -84,6 +84,7 @@ class ContrctService:
 
     async def update_contracts(
         self,
+        request: Request,
         data: UpdateERPNextContract,
         user: get_current_user,
         contract_id: str = Path(),
@@ -151,6 +152,12 @@ class ContrctService:
                     }
                 ),
             )
+
+        if (
+            contract.custom_customer_status != CustomContractStatus.PAYMENT
+            and data.custom_contract_status == CustomContractStatus.PAYMENT
+        ):
+            await self.payment_contract_callback(request, contract)
 
         return await self.contract_repository.update_contract_by_id(contract.name, data)
 
@@ -260,15 +267,11 @@ class ContrctService:
 
         await self.send_biz_message(request, user_attributes.phoneNumber, data, "contract")
 
-    async def signed_contract_callback(
+    async def payment_contract_callback(
         self,
         request: Request,
-        body: Annotated[SignedContractCallbackRequest, Body()],
+        contract: ERPNextContract,
     ):
-        if body.secret_key != settings.secret_key:
-            raise HTTPException(status_code=403)
-
-        contract = await self.contract_repository.get_contract(body.name)
         user_data = await self.keycloak_admin.a_get_user(contract.party_name)
         user_attributes = UserAttributes.model_validate(
             user_data["attributes"]
@@ -279,7 +282,7 @@ class ContrctService:
         )
 
         data = {
-            "content": f"{'카카오뱅크 3333-35-1194608'}에 {f'{contract.start_date}까지 {contract.custom_fee * contract.custom_balance}'}원 입금바랍니다.",
+            "content": f"{'카카오뱅크 3333-35-1194608'}에 {f'{contract.start_date - timedelta(days=1)}까지 {int(contract.custom_fee * contract.custom_balance)}원, {contract.end_date}까지 {int(contract.custom_fee * contract.custom_down_payment)}'}원 입금바랍니다.",
         }
 
         await self.send_biz_message(request, user_attributes.phoneNumber, data, "paycontract")
